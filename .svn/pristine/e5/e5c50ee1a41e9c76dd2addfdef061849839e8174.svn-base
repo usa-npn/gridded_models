@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourceManagerImpl" format="xml" hash="484383959">
+    <data-source source="LOCAL" name="PostgreSQL - climate@150.135.175.19" uuid="977159ee-ce65-4bd4-832b-065037dacfd5">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://150.135.175.19:5432/climate</jdbc-url>
+    </data-source>
+    <data-source source="LOCAL" name="PostgreSQL - climate@localhost" uuid="139d2168-1825-4351-9028-3dee49c7837f">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://localhost:5432/climate</jdbc-url>
+    </data-source>
+    <data-source source="LOCAL" name="MySQL - climate@www-dev.usanpn.org" uuid="a3d58430-34df-4af9-aca5-8f1a15225c44">
+      <driver-ref>mysql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>com.mysql.jdbc.Driver</jdbc-driver>
+      <jdbc-url>jdbc:mysql://www-dev.usanpn.org:3306/climate</jdbc-url>
+      <driver-properties>
+        <property name="autoReconnect" value="true" />
+        <property name="zeroDateTimeBehavior" value="convertToNull" />
+        <property name="tinyInt1isBit" value="false" />
+        <property name="characterEncoding" value="utf8" />
+        <property name="characterSetResults" value="utf8" />
+        <property name="yearIsDateType" value="false" />
+      </driver-properties>
+    </data-source>
+  </component>
+</project>

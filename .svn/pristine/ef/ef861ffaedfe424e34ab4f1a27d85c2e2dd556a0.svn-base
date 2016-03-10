@@ -1,0 +1,20 @@
+#!/usr/bin/python3
+from rtma.importer import download_historical_temps
+from datetime import date
+
+
+def main():
+    # the following two links provide the place and information to get historical rtma data
+    # http://nomads.ncdc.noaa.gov/data/ndgd/201510/20151005/
+    # http://www.nws.noaa.gov/infoservicechanges/tin11-42rtma_oper.txt
+
+    # downloads hourly rtma temps into our postgis db for the past 24 hours each hour represents GMT
+    # download_hourly_temps()
+
+    # downloads rtma data for the date range (both hourly temps and daily tmin/tmax
+    start = date(2014, 1, 1)
+    end = date(2014, 12, 31)
+    download_historical_temps(start, end)
+
+if __name__ == "__main__":
+    main()

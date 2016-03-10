@@ -1,0 +1,57 @@
+from osgeo import gdal
+import ogr
+import osr
+import os
+import subprocess
+
+
+def write_raster(file_path, rast_array, no_data_value, rast_cols, rast_rows, projection, transform):
+    driver = gdal.GetDriverByName('Gtiff')
+    raster = driver.Create(file_path, rast_cols, rast_rows, 1, gdal.GDT_Float32)
+    band = raster.GetRasterBand(1)
+    band.SetNoDataValue(no_data_value)
+    band.WriteArray(rast_array)
+    raster.SetProjection(projection)
+    raster.SetGeoTransform(transform)
+    band.FlushCache()
+
+
+def apply_usa_mask(rast_array):
+    print('path: ' + os.path.abspath(os.path.join(os.path.dirname(__file__), 'usa_mask.tif')))
+    mask = gdal.Open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'usa_mask.tif')))
+    mask_band = mask.GetRasterBand(1)
+    mask_array = mask_band.ReadAsArray()
+    rast_array[rast_array == 0] = .0001
+    rast_array *= mask_array
+    rast_array[rast_array == 0] = -9999
+
+
+def warp_to_rtma_resolution(source_file, dest_file):
+    warp_command = "gdalwarp -r bilinear -ts 2606 1228 -srcnodata -9999 -dstnodata -9999 {source_file} {dest_file}"\
+        .format(source_file=source_file, dest_file=dest_file)
+    ps = subprocess.Popen(warp_command, stdout=subprocess.PIPE, shell=True)
+    ps.wait()
+
+
+def get_point_as_long_lat(coord_x, coord_y, input_epsg):
+    # Spatial Reference System
+    output_epsg = 4326
+
+    # create a geometry from coordinates
+    point = ogr.Geometry(ogr.wkbPoint)
+    point.AddPoint(coord_x, coord_y)
+
+    # create coordinate transformation
+    in_spatial_ref = osr.SpatialReference()
+    in_spatial_ref.ImportFromEPSG(input_epsg)
+
+    out_spatial_ref = osr.SpatialReference()
+    out_spatial_ref.ImportFromEPSG(output_epsg)
+
+    coord_transform = osr.CoordinateTransformation(in_spatial_ref, out_spatial_ref)
+
+    # transform point
+    point.Transform(coord_transform)
+
+    # print point in EPSG 4326
+    return point.GetX(), point.GetY()

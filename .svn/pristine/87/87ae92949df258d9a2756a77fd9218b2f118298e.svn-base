@@ -1,0 +1,215 @@
+import os.path
+from urllib.request import urlretrieve
+import urllib
+import glob
+import ftplib
+from datetime import timedelta
+import datetime as dt
+from osgeo import gdal
+import numpy as np
+from util.database import *
+
+
+with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as ymlfile:
+    cfg = yaml.load(ymlfile)
+save_path = cfg["rtma_path"]
+temp_path = save_path + 'temp' + os.sep
+
+
+def download_hourly_temps():
+    os.makedirs(save_path, exist_ok=True)
+
+    # delete any files from previous last imports
+    for bin_file in glob.glob(save_path + "*.bin"):
+        os.remove(bin_file)
+
+    base_url_temp = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndgd/GT.rtma/AR.conus/'
+
+    ftp = ftplib.FTP('tgftp.nws.noaa.gov')
+    ftp.login()
+
+    for hour in range(0, 24):
+        got_modified = False
+        while not got_modified:
+            try:
+                last_modified = str.split(ftp.sendcmd('MDTM '+ '/SL.us008001/ST.opnl/DF.gr2/DC.ndgd/GT.rtma/AR.conus/' + 'RT.' + "{0:0=2d}".format(hour) + '/ds.temp.bin'))[1]
+            except ftplib.all_errors as e:
+                print('error getting last_modified (retrying): ' + str(e))
+            else:
+                got_modified = True
+        rast_date = last_modified[:8]
+        print(last_modified)
+        url = base_url_temp + 'RT.' + "{0:0=2d}".format(hour) + '/ds.temp.bin'
+        print('retrieving ' + url)
+        retrieved = False
+        while not retrieved:
+            try:
+                urlretrieve(url, save_path + 'temp_' + rast_date + '_' + str(hour) + '.bin')
+            except urllib.error.URLError as e:
+                print('error retrieving file (retrying): ' + str(e))
+            except urllib.error.ContentTooShortError as e:
+                print('error retrieving file (retrying): ' + str(e))
+            else:
+                retrieved = True
+
+    # import the downloaded rasters to the database
+    for bin_file in glob.glob(save_path + "*.bin"):
+        rast_year = os.path.basename(bin_file).split('_')[1][:4]
+        table_name = 'rtma_' + rast_year
+        postgis_import(bin_file, table_name, True)
+
+
+def write_raster(file_path, rast_array, no_data_value, rast_cols, rast_rows, projection, transform):
+    driver = gdal.GetDriverByName('Gtiff')
+    raster = driver.Create(file_path, rast_cols, rast_rows, 1, gdal.GDT_Float32)
+    band = raster.GetRasterBand(1)
+    band.SetNoDataValue(no_data_value)
+    band.WriteArray(rast_array)
+    raster.SetProjection(projection)
+    raster.SetGeoTransform(transform)
+    band.FlushCache()
+
+
+def download_historical_temps(start_date, end_date):
+
+    os.makedirs(temp_path, exist_ok=True)
+    base_url_temp = 'http://nomads.ncdc.noaa.gov/data/ndgd/'
+
+    delta = end_date - start_date
+    year = None
+    for i in range(delta.days + 1):
+        day = start_date + timedelta(days=i)
+        temps = []
+
+        # prism data is only historical, never look for today or in the future
+        if day >= dt.datetime.today().date():
+            continue
+
+        # hit a new year
+        if year != day.year:
+            year = day.year
+            hourly_table_name = 'rtma_' + str(year)
+            daily_tmin_table_name = "rtma_tmin_" + str(year)
+            daily_tmax_table_name = "rtma_tmax_" + str(year)
+
+
+            # check if tmin table exists for said year
+            new_table = not table_exists(daily_tmin_table_name)
+
+            # query db for temps already downloaded for said year, because we don't want to download them again
+            retrieved_days = set()
+            if not new_table:
+                query = "SELECT DISTINCT rast_date FROM %s ;"
+                data = [AsIs(daily_tmin_table_name)]
+                curs.execute(query, data)
+                for record in curs:
+                    retrieved_days.add(record[0])
+
+        # loop through days, if not already downloaded get it
+        if day not in retrieved_days:
+            mask_array = np.empty((1377, 2145))
+            tmin = np.empty((1377, 2145))
+            tmax = np.empty((1377, 2145))
+            projection = None
+            transform = None
+
+            for hour in range(0, 24):
+                temps_array = np.empty((1377, 2145))
+                file_name = 'LTIA98_KWBR_' + day.strftime("%Y%m%d") + "{0:0=2d}".format(hour) + "00"
+                url = base_url_temp + day.strftime("%Y%m") + '/' + day.strftime("%Y%m%d") + '/' \
+                      + file_name
+                print('retrieving ' + url)
+                retrieved = False
+                while not retrieved:
+                    try:
+                        urlretrieve(url, temp_path + file_name)
+                    except urllib.error.URLError as e:
+                        print('error retrieving file (retrying): ' + str(e))
+                    except urllib.error.ContentTooShortError as e:
+                        print('error retrieving file (retrying): ' + str(e))
+                    else:
+                        retrieved = True
+
+                # hack to grab the temp band rather than the temp error band
+                # by checking if the mean temp makes any sense (between -30 and 50 celcius)
+                # todo find a better way
+                ds = gdal.Open(temp_path + file_name)
+                band1 = ds.GetRasterBand(1)
+                mean1 = band1.GetStatistics(0,1)[2]
+                band2 = ds.GetRasterBand(2)
+                # mean2 = band2.GetStatistics(0,1)[2]
+                if -30 < mean1 < 50:
+                    temps_array = band1.ReadAsArray()
+                else:
+                    temps_array = band2.ReadAsArray()
+
+                projection = ds.GetProjection()
+                transform = ds.GetGeoTransform()
+
+
+                # mask out non land areas
+                mask = gdal.Open('util/mask.tif')
+                mask_band = mask.GetRasterBand(1)
+                mask_array = mask_band.ReadAsArray()
+                temps_array[temps_array == 0] = .0001
+                temps_array *= mask_array
+                temps_array[temps_array == 0] = -9999
+                temps.append(temps_array)
+
+                # write masked file to disk
+                write_raster(temp_path + file_name + '.tif', temps_array, -9999, 2145, 1377, projection, transform)
+
+                # import raster into database
+                postgis_import(temp_path + file_name + '.tif', hourly_table_name, True, day, hour)
+
+                ds = None
+                mask = None
+                os.remove(temp_path + file_name)
+
+        # compute tmin and tmax rasters if all 24 hours of temp data is available
+        if len(temps) == 24:
+            tmin = np.minimum.reduce(temps)
+            tmax = np.maximum.reduce(temps)
+            tmin_path = temp_path + 'tmin_' + day.strftime("%Y%m%d") + '.tif'
+            tmax_path = temp_path + 'tmax_' + day.strftime("%Y%m%d") + '.tif'
+            write_raster(tmin_path, tmin, -9999, 2145, 1377, projection, transform)
+            write_raster(tmax_path, tmax, -9999, 2145, 1377, projection, transform)
+
+            # save tmin/tmax rasters to the db
+            postgis_import(tmin_path, daily_tmin_table_name, False, day, None)
+            postgis_import(tmax_path, daily_tmax_table_name, False, day, None)
+
+
+def postgis_import(rast_path, table_name, hourly, date, hour):
+    new_table = not table_exists(table_name)
+
+    save_raster_to_postgis(rast_path, table_name)
+
+    if new_table:
+        # create entry in mosaic table (for geoserver to work)
+        add_mosaic_entry(table_name, -2764486.928, -265060.521, 2683176.007, 3232110.510, 2539.703000000000000, 2539.703000000000000)
+
+        # add rast_date and possible rast_hour columns
+        query = "ALTER TABLE %(table)s ADD rast_date DATE;"
+        curs.execute(query, {"table": AsIs(table_name)})
+        if hourly:
+            query = "ALTER TABLE %(table)s ADD rast_hour INTEGER;"
+            curs.execute(query, {"table": AsIs(table_name)})
+        conn.commit()
+
+    # rast_date = os.path.basename(rast_path).split('_')[1]
+    query = "UPDATE %(table)s SET rast_date = to_date(%(rast_date)s, 'YYYYMMDD') WHERE rast_date IS NULL;"
+    data = {"table": AsIs(table_name), "rast_date": date.strftime("%Y%m%d")}
+    curs.execute(query, data)
+
+    if hourly:
+        # rast_hour = os.path.basename(rast_path).split('_')[2].split('.')[0]
+        query = "UPDATE %(table)s SET rast_hour = %(rast_hour)s WHERE rast_hour IS NULL;"
+        data = {"table": AsIs(table_name), "rast_hour": "{0:0=2d}".format(hour)}
+        curs.execute(query, data)
+
+    conn.commit()
+
+
+if __name__ == "__main__":
+    download_hourly_temps()

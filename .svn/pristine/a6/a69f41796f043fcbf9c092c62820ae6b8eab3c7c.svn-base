@@ -1,0 +1,140 @@
+import yaml
+import psycopg2
+from psycopg2.extensions import AsIs
+import os.path
+import subprocess
+
+with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as ymlfile:
+    cfg = yaml.load(ymlfile)
+db = cfg["postgis"]
+conn = psycopg2.connect(dbname=db["db"], port=db["port"], user=db["user"],
+                        password=db["password"], host=db["host"])
+
+
+def table_exists(table_name):
+    curs = conn.cursor()
+    query = "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = %s;"
+    curs.execute(query, [table_name])
+    if curs.fetchone()[0] == 1:
+        return True
+    else:
+        return False
+
+
+def row_exists(table_name, date):
+    curs = conn.cursor()
+
+    query = "SELECT EXISTS (SELECT TRUE FROM %s WHERE rast_date = %s);"
+    data = (AsIs(table_name), date.strftime("%Y-%m-%d"))
+    curs.execute(query, data)
+
+    result = curs.fetchone()[0]
+    curs.close()
+    return result
+
+
+def save_raster_to_postgis(raster_path, table_name, srid):
+    curs = conn.cursor()
+    new_table = not table_exists(table_name)
+
+    # remove old entry if already exists
+    if not new_table:
+        query = "DELETE FROM %(table)s WHERE filename = %(filename)s;"
+        data = {"table": AsIs(table_name), "filename": os.path.basename(raster_path)}
+        curs.execute(query, data)
+        conn.commit()
+
+    # insert the raster (either create a new table or append to previously created table)
+    if new_table:
+        if srid:
+            import_command = "raster2pgsql -s {srid} -c -R -I -C -F -t auto {file} public.{table}"\
+                .format(file=raster_path, table=table_name, srid=srid)
+        else:
+            import_command = "raster2pgsql -c -R -I -C -F -t auto {file} public.{table}"\
+                .format(file=raster_path, table=table_name)
+    else:
+        if srid:
+            import_command = "raster2pgsql -s {srid} -a -R -F -t auto {file} public.{table}"\
+                .format(file=raster_path, table=table_name, srid=srid)
+        else:
+            import_command = "raster2pgsql -a -R -F -t auto {file} public.{table}"\
+                .format(file=raster_path, table=table_name)
+    import_command2 = "psql -h {host} -p {port} -d {database} -U {user} --no-password"\
+        .format(host=db["host"], port=db["port"], database=db["db"], user=db["user"])
+
+    # for windows machine (also works on linux, but i think has mem leak)
+    # ps = subprocess.Popen(import_command, stdout=subprocess.PIPE, shell=True)
+    # subprocess.check_output(import_command2, stdin=ps.stdout, shell=True)
+    # ps.wait()
+
+    # for linux machine
+    subprocess.check_output(import_command + " | " + import_command2, shell=True)
+
+    # get rid of generated enforce_max_extent_rast constraint because rounding error was preventing some rasters from being saved to db
+    if new_table:
+        query = "ALTER TABLE %(table)s DROP CONSTRAINT IF EXISTS enforce_max_extent_rast;"
+        data = {"table": AsIs(table_name)}
+        curs.execute(query, data)
+        conn.commit()
+
+
+def set_date_column(table_name, rast_date, new_table):
+    curs = conn.cursor()
+
+    if new_table:
+        query = "ALTER TABLE %(table)s ADD rast_date DATE;"
+        curs.execute(query, {"table": AsIs(table_name)})
+        query = "CREATE INDEX ON %(table)s (rast_date);"
+        curs.execute(query, {"table": AsIs(table_name)})
+        query = "CREATE INDEX ON %(table)s (filename);"
+        curs.execute(query, {"table": AsIs(table_name)})
+        conn.commit()
+
+    query = "UPDATE %(table)s SET rast_date = to_date(%(rast_date)s, 'YYYYMMDD') WHERE rast_date IS NULL;"
+    data = {"table": AsIs(table_name), "rast_date": rast_date.strftime("%Y%m%d")}
+    curs.execute(query, data)
+
+    conn.commit()
+
+
+def update_time_series(time_series_table, file_name, rast_date):
+    curs = conn.cursor()
+
+    query = "DELETE FROM %(table)s WHERE location = %(filename)s;"
+    data = {"table": AsIs(time_series_table), "filename": file_name}
+    curs.execute(query, data)
+
+    query = """INSERT INTO %(table)s (the_geom, location, ingestion) (
+      SELECT the_geom, %(filename)s, to_timestamp(%(rast_date)s, 'YYYY-MM-DD') FROM %(table)s LIMIT 1
+      );"""
+    data = {"table": AsIs(time_series_table), "filename": file_name, "rast_date": rast_date.strftime("%Y-%m-%d")}
+    curs.execute(query, data)
+    conn.commit()
+
+
+# DEPRECIATED - no longer using image mosaic jdbc
+# def add_mosaic_entry(table_name, minx, miny, maxx, maxy, resx, resy):
+#     curs = conn.cursor()
+#     query = """
+#       CREATE TABLE IF NOT EXISTS mosaic(
+#       name text,
+#       tiletable text,
+#       minx float,
+#       miny float,
+#       maxx float,
+#       maxy float,
+#       resx float,
+#       resy float);"""
+#     curs.execute(query)
+#     conn.commit()
+#
+#     query = "DELETE FROM mosaic WHERE tiletable = %s"
+#     curs.execute(query, [table_name])
+#     conn.commit()
+#
+#     query = """
+#       INSERT INTO mosaic (name, tiletable, minx, miny, maxx, maxy, resx, resy)
+#       VALUES (%s, %s, %s, %s, %s, %s, %s, %s);"""
+#     data = (table_name, table_name, minx, miny, maxx, maxy, resx, resy)
+#     curs.execute(query, data)
+#     conn.commit()

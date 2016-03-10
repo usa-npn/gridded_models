@@ -1,0 +1,120 @@
+import time
+
+import psycopg2
+from osgeo import gdal
+import osr
+import numpy as np
+
+from optimized.spring_index import spring_index
+
+t0 = time.time()
+
+database_server = "localhost"
+database_name = "prism"
+database_user = "postgres"
+database_password = "npn"
+database_port = 5432
+
+conn = psycopg2.connect(dbname=database_name, port=database_port, user=database_user,
+                        password=database_password, host=database_server)
+curs = conn.cursor()
+
+# Load raster from postgis into a virtual memory file
+vsipath = '/vsimem/from_postgis'
+
+min_temps = np.empty((240, 621, 1405))
+for day in range(0, 240):
+    raster_query = "SELECT ST_AsGDALRaster(rast, 'Gtiff') FROM tmin_2004 WHERE rid =" + str(day+1) + ";"
+
+    curs.execute(raster_query)
+    gdal.FileFromMemBuffer(vsipath, bytes(curs.fetchone()[0]))
+
+    # Read first band of raster with GDAL
+    ds = gdal.Open(vsipath)
+    band = ds.GetRasterBand(1)
+    min_temps[day] = band.ReadAsArray()
+
+# reshape the array to be station lat, station long, day of year, temperature
+min_temps = np.swapaxes(min_temps, 1, 0)
+min_temps = np.swapaxes(min_temps, 2, 1)
+
+max_temps = np.empty((240, 621, 1405))
+for day in range(0, 240):
+    raster_query = "SELECT ST_AsGDALRaster(rast, 'Gtiff') FROM tmax_2004 WHERE rid =" + str(day+1) + ";"
+
+    curs.execute(raster_query)
+    gdal.FileFromMemBuffer(vsipath, bytes(curs.fetchone()[0]))
+
+    # Read first band of raster with GDAL
+    ds = gdal.Open(vsipath)
+    band = ds.GetRasterBand(1)
+    max_temps[day] = band.ReadAsArray()
+
+# Get geometry information from raster
+geo_transform = (upper_left_x, x_size, x_rotation, upper_left_y, y_rotation, y_size) = ds.GetGeoTransform()
+
+# Get projection information from raster
+projection = ds.GetProjection()
+prj = ds.GetProjectionRef()
+srs = osr.SpatialReference(prj.title())
+srid = srs.GetAuthorityCode('GEOGCS')
+
+# Get additional information about the raster
+no_data_value = band.GetNoDataValue()
+band_minimum = band.GetMinimum()
+band_maximum = band.GetMaximum()
+scale = band.GetScale()
+band_unit_type = band.GetUnitType()
+
+# Close and clean up virtual memory file
+ds = band = None
+gdal.Unlink(vsipath)
+
+# reshape the array to be station lat, station long, day of year, temperature
+max_temps = np.swapaxes(max_temps, 1, 0)
+max_temps = np.swapaxes(max_temps, 2, 1)
+
+# convert to farenheight
+max_temps[max_temps != -9999.0] *= 1.8
+max_temps[max_temps != -9999.0] += 32
+min_temps[min_temps != -9999.0] *= 1.8
+min_temps[min_temps != -9999.0] += 32
+
+# manipulate array(s) here via spring index code
+spring_index_array = np.empty((621, 1405))
+rasterOrigin = (upper_left_x, upper_left_y)
+pixelWidth = x_size
+pixelHeight = y_size
+
+cols = spring_index_array.shape[1]
+rows = spring_index_array.shape[0]
+originX = rasterOrigin[0]
+originY = rasterOrigin[1]
+
+xdim = 0.04166666666667
+ydim = 0.04166666666667
+base_temp = 31
+start_date = 0
+plants = {'lilac': 0, 'arnold_red': 1, 'zabelli': 2}
+pheno_events = {'leaf': 0, 'bloom': 1}
+pheno_event = 'leaf' #pheno_events['leaf']
+plant = 'lilac' #plants['lilac']
+
+spring_index_array = spring_index(max_temps, min_temps, base_temp, start_date, pheno_event, plant, upper_left_y, ydim)
+
+t1 = time.time()
+print('finished computing spring index:')
+print(t1-t0)
+
+# Create a new raster using the manipulated arrays data
+newRasterfn = 'test_spring_index_lilac_optimized2.tiff'
+driver = gdal.GetDriverByName('Gtiff')
+outRaster = driver.Create(newRasterfn, cols, rows, 1, gdal.GDT_Float32)
+outRaster.SetGeoTransform(geo_transform)
+outband = outRaster.GetRasterBand(1)
+outband.SetNoDataValue(no_data_value)
+outband.WriteArray(spring_index_array)
+outRaster.SetProjection(projection)
+outband.FlushCache()
+
+# TODO: Write raster out to postgis spring_index table

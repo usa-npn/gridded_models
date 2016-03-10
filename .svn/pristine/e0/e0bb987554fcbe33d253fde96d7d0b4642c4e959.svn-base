@@ -1,0 +1,10 @@
+#!/usr/bin/python3
+from rtma.importer import *
+
+
+def main():
+    download_hourly_temps()
+    postgis_import()
+
+if __name__ == "__main__":
+    main()

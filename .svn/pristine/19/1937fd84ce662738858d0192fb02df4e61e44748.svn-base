@@ -1,0 +1,257 @@
+from datetime import datetime, timedelta
+from util.raster import *
+from util.database import *
+import numpy as np
+from datetime import date
+import logging
+
+
+with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as ymlfile:
+    cfg = yaml.load(ymlfile)
+
+
+def import_agdd_anomalies(anomaly_date, base):
+    logging.info(' ')
+    logging.info('-----------------populating agdd anomalies (base %s)-----------------', base)
+
+    first_day_of_year = date(anomaly_date.year, 1, 1)
+    day = first_day_of_year
+    delta = timedelta(days=1)
+
+    if base is 32:
+        agdd_table_name = 'agdd_' + anomaly_date.strftime("%Y")
+        agdd_avg_table = 'prism_30yr_avg_agdd'
+        agdd_anomaly_table_name = 'agdd_anomaly_' + anomaly_date.strftime("%Y")
+        time_series_table_name = 'agdd_anomaly'
+        save_path = cfg["agdd_anomaly_path"]
+    elif base is 50:
+        agdd_table_name = 'agdd_50f_' + anomaly_date.strftime("%Y")
+        agdd_avg_table = 'prism_30yr_avg_agdd_50f'
+        agdd_anomaly_table_name = 'agdd_anomaly_50f_' + anomaly_date.strftime("%Y")
+        time_series_table_name = 'agdd_anomaly_50f'
+        save_path = cfg["agdd_anomaly_50f_path"]
+    else:
+        logging.error('unsupported base: %s', base)
+        return
+
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+
+    new_table = not table_exists(agdd_anomaly_table_name)
+    new_time_series = not table_exists(time_series_table_name)
+
+    (rast_cols, rast_rows, transform, projection, no_data_value) = get_raster_info(agdd_table_name, first_day_of_year)
+
+    while day <= anomaly_date:
+        day_of_year = day.timetuple().tm_yday
+        today = datetime.today().date()
+
+        #can't see more than a week into the future
+        if day > (today + timedelta(days=8)):
+            day += delta
+            continue
+
+        # skip if agdd anomaly has already been computed and is older than 3 days
+        # (otherwise recompute it, because newer tmin/tmax files get updated nightly)
+        if not new_table and day < (today - timedelta(days=3)) and row_exists(agdd_anomaly_table_name, day):
+            # logging.info('skipping day %s because it already exists', day.strftime("%Y-%m-%d"))
+            day += delta
+            continue
+
+        agdd = get_raster_array(agdd_table_name, 'rast_date', day.strftime("%Y-%m-%d"))
+        av_agdd = get_raster_array(agdd_avg_table, 'filename', 'agdd_' + str(day_of_year) + '.tif')
+
+        if agdd is None:
+            logging.warning('skipping - could not get agdd for date: %s', day.strftime("%Y-%m-%d"))
+            day += delta
+            continue
+
+        if av_agdd is None:
+            logging.warning('skipping - could not get av_agdd for day of year: %s', str(day_of_year))
+            day += delta
+            continue
+
+        # convert -9999 values to not a number so we don't have to worry about manipulating them
+        agdd[agdd == -9999.0] = np.nan
+        av_agdd[av_agdd == -9999.0] = np.nan
+
+        diff_agdd = agdd - av_agdd
+        diff_agdd[diff_agdd == np.nan] = -9999
+
+        # write the raster to disk and import it to the database
+        file_name = 'agdd_anomaly_' + day.strftime("%Y%m%d") + '.tif'
+        file_path = save_path + file_name
+        write_raster(file_path, diff_agdd, no_data_value, rast_cols, rast_rows, projection, transform)
+        save_raster_to_postgis(file_path, agdd_anomaly_table_name, 4269)
+        set_date_column(agdd_anomaly_table_name, day, new_table)
+        if not new_time_series:
+            update_time_series(time_series_table_name, file_name, day)
+        new_table = False
+        logging.info('populated agdd anomaly (base %s) for %s based on historical agdd average for doy %s', base, day.strftime("%Y-%m-%d"), str(day_of_year))
+
+        day += delta
+
+
+def import_agdd(agdd_date, base):
+    logging.info(' ')
+    logging.info('-----------------populating agdds (base %s)-----------------', base)
+    if base is 32:
+        save_path = cfg["agdd_path"]
+        agdd_table_name = 'agdd_' + agdd_date.strftime("%Y")
+        time_series_table_name = 'agdd'
+    elif base is 50:
+        save_path = cfg["agdd_50f_path"]
+        agdd_table_name = 'agdd_50f_' + agdd_date.strftime("%Y")
+        time_series_table_name = 'agdd_50f'
+    else:
+        logging.error('unsupported base: %s', base)
+        return
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    tmin_table_name = 'tmin_' + agdd_date.strftime("%Y")
+    tmax_table_name = 'tmax_' + agdd_date.strftime("%Y")
+
+    first_day_of_year = date(agdd_date.year, 1, 1)
+    day = first_day_of_year
+    delta = timedelta(days=1)
+
+    new_table = not table_exists(agdd_table_name)
+    new_time_series = not table_exists(time_series_table_name)
+
+    (rast_cols, rast_rows, transform, projection, no_data_value) = get_raster_info(tmin_table_name, first_day_of_year)
+
+    while day <= agdd_date:
+
+        today = datetime.today().date()
+
+        #can't see more than a week into the future
+        if day > (today + timedelta(days=8)):
+            day += delta
+            continue
+
+        # skip if agdd has already been computed and is older than 3 days
+        # (otherwise recompute it, because newer tmin/tmax files get updated nightly)
+        if not new_table and day < (today - timedelta(days=3)) and row_exists(agdd_table_name, day):
+            day += delta
+            continue
+
+        # only need to get previous days gdd if it's not Jan 1st
+        if day != first_day_of_year:
+            previous_day = day - delta
+            previous_day_agdd = get_raster_array(agdd_table_name, 'rast_date', previous_day.strftime("%Y-%m-%d"))
+
+            if previous_day_agdd is None:
+                logging.warning('skipping - could not get agdd for date: %s', previous_day.strftime("%Y-%m-%d"))
+                day += delta
+                continue
+            else:
+                # convert -9999 values to not a number so we don't have to worry about manipulating them
+                previous_day_agdd[previous_day_agdd == -9999.0] = np.nan
+
+        # compute gdd
+        try:
+            tmin = get_climate_data(tmin_table_name, day)
+            tmax = get_climate_data(tmax_table_name, day)
+            if tmin is None:
+                logging.warning('skipping - could not get tmin for date: %s', day.strftime("%Y-%m-%d"))
+                day += delta
+                continue
+
+            if tmax is None:
+                logging.warning('skipping - could not get tmax for date: %s', day.strftime("%Y-%m-%d"))
+                day += delta
+                continue
+
+            gdd = (tmin + tmax) / 2 - base
+            gdd[gdd < 0] = 0
+
+            # compute agdd
+            if day != first_day_of_year:
+                agdd = previous_day_agdd + gdd
+            else:
+                agdd = gdd
+
+            # replace no data values
+            agdd[agdd == np.nan] = -9999
+
+            # write the raster to disk and import it to the database
+            file_name = 'agdd_' + day.strftime("%Y%m%d") + '.tif'
+            file_path = save_path + file_name
+            write_raster(file_path, agdd, no_data_value, rast_cols, rast_rows, projection, transform)
+            save_raster_to_postgis(file_path, agdd_table_name, 4269)
+            set_date_column(agdd_table_name, day, new_table)
+            if not new_time_series:
+                update_time_series(time_series_table_name, file_name, day)
+            new_table = False
+            logging.info('populated agdd (base %s) for %s', base, day.strftime("%Y-%m-%d"))
+        except():
+            logging.error('skipping - could not compute agdd (base %s) for date: %s due to an exception', base, day.strftime("%Y-%m-%d"))
+
+        day += delta
+
+
+def import_average_agdd(first_year, last_year, base):
+    logging.info('importing average agdds')
+    if base is 32:
+        save_path = cfg["avg_agdd_path"]
+        agdd_avg_table = 'prism_30yr_avg_agdd'
+    elif base is 50:
+        save_path = cfg["avg_agdd_50f_path"]
+        agdd_avg_table = 'prism_30yr_avg_agdd_50f'
+    else:
+        logging.error('unsupported base: %s', base)
+        return
+    (rast_cols, rast_rows, transform, projection, no_data_value) = get_raster_info('prism_tmin_2000', datetime(2000, 1, 1))
+    agdd = np.zeros((last_year - first_year, rast_rows, rast_cols))
+    for day_of_year in range(1,366):
+        logging.info('doy: %s', str(day_of_year))
+        years_accumulated = 0
+        total_over_years = np.zeros((rast_rows, rast_cols))
+        for year in range(first_year, last_year):
+            year_idx = year - first_year
+            logging.info('year: %s', str(year))
+            try:
+                date_from_doy = date(year, 1, 1) + timedelta(day_of_year - 1)
+                logging.info('date_from_doy: %s', date_from_doy.strftime("%Y-%m-%d"))
+                tmin_table_name = 'prism' + "_" + 'tmin' + "_" + date_from_doy.strftime("%Y")
+                tmax_table_name = 'prism' + "_" + 'tmax' + "_" + date_from_doy.strftime("%Y")
+                tmin = get_climate_data(tmin_table_name, date_from_doy)
+                tmax = get_climate_data(tmax_table_name, date_from_doy)
+
+                gdd = (tmin + tmax) / 2 - base
+                gdd[gdd < 0] = 0
+
+                if agdd[year_idx] == None:
+                    agdd[year_idx] = gdd
+                else:
+                    agdd[year_idx] += gdd
+                total_over_years += agdd[year_idx]
+                years_accumulated += 1
+            except():
+                logging.error('skipping - could not compute agdd average for year: %s (doy: %s)' ,str(year), str(day_of_year))
+        average_agdd = total_over_years / years_accumulated
+
+        prewarped_file_path = save_path + 'agdd_unwarped_' + str(day_of_year) + '.tif'
+        postwarped_file_path = save_path + 'agdd_' + str(day_of_year) + '.tif'
+        os.makedirs(os.path.dirname(postwarped_file_path), exist_ok=True)
+        write_raster(prewarped_file_path, average_agdd, no_data_value, rast_cols, rast_rows, projection, transform)
+
+        warp_to_rtma_resolution(prewarped_file_path, postwarped_file_path)
+        os.remove(prewarped_file_path)
+
+        save_raster_to_postgis(postwarped_file_path, agdd_avg_table, 4269)
+        logging.info('populated average agdd for day of year: %s', str(day_of_year))
+
+
+def get_climate_data(table_name, date):
+    outarray = get_raster_array(table_name, 'rast_date', date.strftime("%Y-%m-%d"))
+
+    if outarray is None:
+        return outarray
+
+    # convert -9999 values to not a number so we don't have to worry about manipulating them
+    outarray[outarray == -9999.0] = np.nan
+
+    # convert to fahrenheit
+    outarray *= 1.8
+    outarray += 32
+
+    return outarray

@@ -1,0 +1,28 @@
+#!/usr/bin/python3
+from ndfd.importer import *
+
+
+def main():
+    # This script downloads forecast data for the next 6 to 7 days of daily tmin/tmax starting with tomorrow.
+    # It converts the downloaded multi-band bin files into single band bil files
+    # then reprojects, crops, and rescales them so that ndfd raster overlays a prism raster nicely.
+    # The rescaling is from 2.5km to 4km
+    # After warping the bil file, it imports it into either the tmin_forecast, tmax_forcast table in the climate db
+    # as well as putting an entry in the mosaic table for geoserver to create a coverage from.
+    # This script can be ran multiple times, inserting new rows for new data
+    # and overwriting old rows for data we already retrieved.
+    # Look in config.yml to specify ndfd_path: <loc where bin files are downloaded> and database connection variables.
+
+    # So far it looks like projections are updated every 3 hours UTC(0000, 0300, 0600, 0900, 1200, 1500, 1800, 2100).
+    # For more details on the ndfd data see: http://www.nws.noaa.gov/ndfd/technical.htm
+    # For more details on ndfd spacial reference see: http://graphical.weather.gov/docs/ndfdSRS.htm
+
+    download_forecast()
+    extract_bands()
+    set_projection_and_mask()
+    import_rasters()
+    # warp_to_prism()
+    # postgis_import()
+
+if __name__ == "__main__":
+    main()

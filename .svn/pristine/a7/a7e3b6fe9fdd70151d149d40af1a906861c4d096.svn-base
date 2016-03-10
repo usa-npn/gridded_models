@@ -1,0 +1,118 @@
+import psycopg2
+from psycopg2.extensions import AsIs
+from osgeo import gdal
+import numpy as np
+from datetime import date
+from datetime import timedelta as td
+import os.path
+import yaml
+
+
+base_temp = 31
+
+with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as ymlfile:
+    cfg = yaml.load(ymlfile)
+db = cfg["postgis"]
+conn = psycopg2.connect(dbname=db["db"], port=db["port"], user=db["user"],
+                    password=db["password"], host=db["host"])
+save_path = cfg["postgis_raster_path"]
+
+geo_transform = None
+projection = None
+no_data_value = None
+xdim = 0.04166666666667
+ydim = 0.04166666666667
+
+
+def tmax(hourly_temps):
+    return np.maximum.reduce(hourly_temps)
+
+
+def tmin(hourly_temps):
+    return np.minimum.reduce(hourly_temps)
+
+# GDD are calculated by taking the average of the daily maximum and minimum temperatures
+# compared to a base temperature, tbase, (usually 10 °C). As an equation:
+# GDD = tmax + tmin / 2 - tbase
+def daily_gdd(tmin, tmax, tbase):
+    return ((tmin + tmax) / 2) - tbase
+
+
+def total_gdd(num_days, tmin, tmax, agdd, tbase):
+    for day in num_days:
+       agdd += daily_gdd(tmin[day], tmax[day], tbase)
+
+
+def celcius_to_fahrenheit(temps, nodata):
+    temps[temps != nodata] *= 1.8
+    temps[temps != nodata] += 32
+
+
+def get_raster(table_name, rast_date, curs, vsipath):
+    query = "SELECT ST_AsGDALRaster(ST_Union(rast), 'Gtiff') FROM %s WHERE rast_date = %s;"
+    data = (AsIs(table_name), rast_date.strftime("%Y-%m-%d"))
+    curs.execute(query, data)
+
+    gdal.FileFromMemBuffer(vsipath, bytes(curs.fetchone()[0]))
+
+    # Read first band of raster with GDAL
+    ds = gdal.Open(vsipath)
+    band = ds.GetRasterBand(1)
+    return band.ReadAsArray()
+
+
+def create_raster(file_name, result_array):
+    # Create a new raster using the manipulated arrays data
+    cols = result_array.shape[1]
+    rows = result_array.shape[0]
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    save_to = save_path + file_name
+    driver = gdal.GetDriverByName('Gtiff')
+    outRaster = driver.Create(save_to, cols, rows, 1, gdal.GDT_Int16)
+    outRaster.SetGeoTransform(geo_transform)
+    outband = outRaster.GetRasterBand(1)
+    outband.SetNoDataValue(no_data_value)
+    outband.WriteArray(result_array)
+    outRaster.SetProjection(projection)
+    outband.FlushCache()
+
+
+def load_climate_data(min_temps, max_temps, year, num_days):
+    # Load raster from postgis into a virtual memory file
+    curs = conn.cursor()
+    vsipath = '/vsimem/from_postgis'
+    start_date = date(year, 1, 1)
+    for day in range(0, num_days):
+        current_date = start_date + td(days=day)
+        min_temps[day] = get_raster("tmin_" + str(year), current_date, curs, vsipath)
+        max_temps[day] = get_raster("tmax_" + str(year), current_date, curs, vsipath)
+
+    # reshape the array to be station lat, station long, day of year, temperature
+    min_temps = np.swapaxes(min_temps, 1, 0)
+    min_temps = np.swapaxes(min_temps, 2, 1)
+    max_temps = np.swapaxes(max_temps, 1, 0)
+    max_temps = np.swapaxes(max_temps, 2, 1)
+
+    ds = gdal.Open(vsipath)
+    band = ds.GetRasterBand(1)
+    global geo_transform, projection, no_data_value
+    geo_transform = ds.GetGeoTransform()
+    projection = ds.GetProjection()
+    no_data_value = band.GetNoDataValue()
+
+    # Close and clean up virtual memory file
+    gdal.Unlink(vsipath)
+
+    # convert to fahrenheit
+    celcius_to_fahrenheit(max_temps, -9999.0)
+    celcius_to_fahrenheit(min_temps, -9999.0)
+
+
+def compute_gdd(year, num_days):
+    min_temps = np.empty((num_days, 621, 1405))
+    max_temps = np.empty((num_days, 621, 1405))
+    agdd = np.empty((621, 1405))
+
+    load_climate_data(min_temps, max_temps, year, num_days)
+    total_gdd(num_days, min_temps, max_temps, agdd, base_temp)
+    create_raster('agdd_' + year + '.tif', agdd)

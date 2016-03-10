@@ -1,0 +1,30 @@
+# setup your environment here
+postgis:
+    host:
+    user:
+    password:
+    db:
+    port:
+mysql:
+  user:
+  password:
+  host:
+  db:
+  port:
+six_path:
+avg_six_path:
+six_anomaly_path:
+avg_agdd_path:
+avg_agdd_50f_path:
+agdd_path:
+agdd_50f_path:
+prism_agdd_path:
+prism_agdd_50f_path:
+agdd_anomaly_path:
+agdd_anomaly_50f_path:
+prism_path:
+temp_path:
+hourly_temp_path:
+hourly_utemp_path:
+daily_tmin_path:
+daily_tmax_path:

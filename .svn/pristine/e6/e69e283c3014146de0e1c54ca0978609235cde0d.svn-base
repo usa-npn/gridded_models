@@ -1,0 +1,25 @@
+import six.postgis_driver as driver
+import time
+
+
+def main():
+
+    t0 = time.time()
+
+    year = 2013
+    start_date = 0
+    plants = ['lilac', 'arnold_red', 'zabelli']
+    phenophases = ['leaf', 'bloom']
+
+    driver.Six.load_climate_data(year)
+    driver.Six.compute_index('lilac', 'leaf', start_date)
+    driver.Six.create_raster('lilac', 'leaf', year)
+    driver.Six.postgis_import('lilac', 'leaf', year)
+
+    t1 = time.time()
+    print('finished computing spring index:')
+    print(t1-t0)
+
+
+if __name__ == "__main__":
+    main()
