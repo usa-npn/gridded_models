@@ -53,7 +53,7 @@ def main():
     hour_shift = -12
     compute_tmin_tmax(start, end, hour_shift)
 
-    # populate agdds for year
+    # populate NCEP agdds for year
     # files older than 3 days won't get overwritten, but newer ones will due to tmin/tmax updates
     climate_data_provider = "ncep"
     agdd_date = date(2016, 12, 31)
@@ -61,6 +61,15 @@ def main():
     import_agdd(agdd_date, base, climate_data_provider)
     base = 50
     import_agdd(agdd_date, base, climate_data_provider)
+
+    # populate PRISM agdds for year
+    # files older than 3 days won't get overwritten, but newer ones will due to tmin/tmax updates
+    climate_data_provider = "prism"
+    agdd_date = date(2016, 12, 31)
+    base = 32
+    import_agdd(agdd_date, base, climate_data_provider)
+    # base = 50
+    # import_agdd(agdd_date, base, climate_data_provider)
 
     # populate agdd anomalies
     # files older than 3 days won't get overwritten, but newer ones will due to tmin/tmax updates

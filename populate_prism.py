@@ -1,8 +1,9 @@
 #!/usr/bin/python3
 from datetime import date
-from prism.importer import get_climate_data
+from prism.importer import get_prism_data
 import logging
 import time
+
 
 def main():
     # This script downloads climate data available from January 1981 through yesterday at a 4k resolution.
@@ -41,7 +42,7 @@ def main():
     start = date(2015, 1, 1)
     end = date(2016, 12, 31)
 
-    get_climate_data(start, end, request_params)
+    get_prism_data(start, end, request_params)
 
     t1 = time.time()
     logging.info('*****************************************************************************')

@@ -108,7 +108,7 @@ def import_agdd_anomalies(anomaly_date, base):
 
 def import_agdd(agdd_date, base, climate_data_provider):
     logging.info(' ')
-    logging.info('-----------------populating agdds (base %s)-----------------', base)
+    logging.info('-----------------populating %s agdds (base %s)-----------------', climate_data_provider, base)
 
     # set up path to save geotiffs to along with geoserver layer table
     scale = 'fahrenheit'
@@ -173,9 +173,9 @@ def import_agdd(agdd_date, base, climate_data_provider):
             day += delta
             continue
 
-        # skip if agdd has already been computed and is older than 3 days
+        # skip if agdd has already been computed and is older than 3 days and it's not from PRISM
         # (otherwise recompute it, because newer tmin/tmax files get updated nightly)
-        if not new_table and day < (today - timedelta(days=3)) and agdd_row_exists(agdd_table_name, scale, base, day):
+        if climate_data_provider != 'prism' and not new_table and day < (today - timedelta(days=3)) and agdd_row_exists(agdd_table_name, scale, base, day):
             day += delta
             continue
 

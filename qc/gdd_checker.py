@@ -304,7 +304,7 @@ def populate_agdds(start_date, end_date, source, source_id, stations):
             tmax = get_agdd(station['id'], source_id, day, 32, 'tmax')
 
             already_retrieved = False
-            if tmin is not None and tmin != 'M' and tmax is not None and tmax != 'M':
+            if tmin is not None and tmin != 'M' and tmax is not None and tmax != 'M' and source != 'PRISM':
                 already_retrieved = True
 
             # don't have already have tmin and tmax locally so grab from URMA postgis db or ACIS data
@@ -312,7 +312,7 @@ def populate_agdds(start_date, end_date, source, source_id, stations):
                 if source == 'URMA':
                     tmin = get_urma_climate_data(station['longitude'], station['latitude'], day, 'tmin')
                     tmax = get_urma_climate_data(station['longitude'], station['latitude'], day, 'tmax')
-                    # URMA is celsius in our postgis db everything else is Fer so convert here
+                    # URMA and PRISM are in celsius in our postgis db everything else is Fer so convert here
                     if tmin is not None:
                         tmin = tmin * 1.8 + 32
                     if tmax is not None:
@@ -320,6 +320,10 @@ def populate_agdds(start_date, end_date, source, source_id, stations):
                 elif source == 'PRISM':
                     tmin = get_prism_climate_data(station['longitude'], station['latitude'], day, 'tmin')
                     tmax = get_prism_climate_data(station['longitude'], station['latitude'], day, 'tmax')
+                    if tmin is not None:
+                        tmin = tmin * 1.8 + 32
+                    if tmax is not None:
+                        tmax = tmax * 1.8 + 32
                 elif acis_station is not None:
                     tmin = acis_station['data'][i][0]
                     tmax = acis_station['data'][i][1]
@@ -388,11 +392,12 @@ def populate_climate_qc():
     end_date = datetime.now().date()
     populate_agdds(start_date, end_date, 'ACIS', acis_source_id, stations)
 
-    # logging.info(' ')
-    # logging.info('-----------------populating prism qc agdds-----------------')
-    # start_date = date(2016, 1, 1) #datetime.now().date() - timedelta(days=7)
-    # end_date = datetime.now().date() - timedelta(days=9)
-    # populate_agdds(start_date, end_date, 'PRISM', prism_source_id, stations)
+    logging.info(' ')
+    logging.info('-----------------populating prism qc agdds-----------------')
+    start_date = datetime.now().date() - timedelta(days=7)
+    # date(2016, 1, 1) #datetime.now().date() - timedelta(days=7)
+    end_date = datetime.now().date() - timedelta(days=3)
+    populate_agdds(start_date, end_date, 'PRISM', prism_source_id, stations)
 
 
 if __name__ == "__main__":

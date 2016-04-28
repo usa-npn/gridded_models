@@ -86,7 +86,7 @@ def postgis_import(filename, raster_date, climate_variable):
     conn.commit()
 
 
-def get_climate_data(start_date, end_date, climate_variables):
+def get_prism_data(start_date, end_date, climate_variables):
     # create directory structure to store zips
     for climate_variable in climate_variables:
         zipped_files_path = prism_path + "zipped" + os.sep + climate_variable + os.sep
