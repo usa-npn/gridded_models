@@ -1,3 +1,4 @@
+-- noinspection SqlDialectInspectionForFile
 --
 -- PostgreSQL database dump
 --

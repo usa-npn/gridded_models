@@ -114,7 +114,7 @@ stations_not_found = ['RSW00037201'
 
 def load_stations_csv_to_db():
     cursor = mysql_conn.cursor()
-    csvReader = csv.DictReader(open('crn-stations.csv'))
+    csvReader = csv.DictReader(open('crn-stations-v2.csv'))
     for station in csvReader:
         if station['WMO ID'].isdigit():
             station_id = int(station['WMO ID'])
@@ -128,7 +128,19 @@ def load_stations_csv_to_db():
     cursor.close()
 
 
-def load_station_states(stations):
+def get_stations():
+    cursor = mysql_conn.cursor(dictionary=True)
+    query = "SELECT * FROM climate.stations;"
+    cursor.execute(query)
+    stations = []
+    for station in cursor:
+        stations.append(station)
+    return stations
+
+
+def load_station_states():
+
+    stations = get_stations()
 
     cursor = mysql_conn.cursor(dictionary=True)
 
@@ -139,7 +151,7 @@ def load_station_states(stations):
         if attribute['name'] == 'state':
             state_attribute_id = attribute['id']
 
-    csvReader = csv.DictReader(open('crn-stations.csv'))
+    csvReader = csv.DictReader(open('crn-stations-v2.csv'))
     for station in stations:
         for csv_station in csvReader:
             if csv_station['ID'] == station['char_network_id']:
@@ -355,7 +367,7 @@ def populate_agdds(start_date, end_date, source, source_id, stations):
                 add_agdd_row(station['id'], source_id, gdd50, agdd50, day.year, doy, day, 50, missing_data, tmin, tmax)
 
 
-def populate_climate_qc():
+def populate_climate_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end):
     logging.info(' ')
     logging.info('-----------------beginning climate quality check population-----------------')
 
@@ -382,27 +394,31 @@ def populate_climate_qc():
 
     logging.info(' ')
     logging.info('-----------------populating urma qc agdds-----------------')
-    start_date = datetime.now().date() - timedelta(days=3)
-    end_date = datetime.now().date()
-    populate_agdds(start_date, end_date, 'URMA', urma_source_id, stations)
+    populate_agdds(urma_start, urma_end, 'URMA', urma_source_id, stations)
 
     logging.info(' ')
     logging.info('-----------------populating acis qc agdds-----------------')
-    start_date = datetime.now().date() - timedelta(days=7)
-    end_date = datetime.now().date()
-    populate_agdds(start_date, end_date, 'ACIS', acis_source_id, stations)
+    populate_agdds(acis_start, acis_end, 'ACIS', acis_source_id, stations)
 
     logging.info(' ')
     logging.info('-----------------populating prism qc agdds-----------------')
-    start_date = datetime.now().date() - timedelta(days=7)
-    # date(2016, 1, 1) #datetime.now().date() - timedelta(days=7)
-    end_date = datetime.now().date() - timedelta(days=3)
-    populate_agdds(start_date, end_date, 'PRISM', prism_source_id, stations)
+    populate_agdds(prism_start, prism_end, 'PRISM', prism_source_id, stations)
+
+
+def load_acis_csv_to_db():
+    load_stations_csv_to_db()
+    load_station_states()
+
+    # populates various climate variables in the climate agdds mysql db
+    urma_start = date(2016, 1, 1)
+    urma_end = datetime.now().date()
+    acis_start = date(2016, 1, 1)
+    acis_end = datetime.now().date()
+    prism_start = date(2016, 1, 1)
+    prism_end = datetime.now().date() - timedelta(days=3)
+    populate_climate_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end)
 
 
 if __name__ == "__main__":
-    # todo prism is not yet working populate later
-    # prism_tmins = get_prism_climate_data(-91.8731, 30.0917, "tmin", 2014)
-    # prism_tmaxs = get_prism_climate_data(-91.8731, 30.0917, "tmax", 2014)
-
-    populate_climate_qc()
+    load_acis_csv_to_db()
+    # populate_climate_qc()
