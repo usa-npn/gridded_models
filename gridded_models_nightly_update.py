@@ -123,14 +123,14 @@ def main():
     phenophase = 'bloom'
     import_six_anomalies(spring_index_anom_date, phenophase)
 
-    # # populates various climate variables in the climate agdds mysql db
-    # urma_start = datetime.now().date() - timedelta(days=3)
-    # urma_end = datetime.now().date()
-    # acis_start = datetime.now().date() - timedelta(days=7)
-    # acis_end = datetime.now().date()
-    # prism_start = datetime.now().date() - timedelta(days=7)
-    # prism_end = datetime.now().date() - timedelta(days=3)
-    # populate_climate_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end)
+    # populates various climate variables in the climate agdds mysql db
+    urma_start = datetime.now().date() - timedelta(days=3)
+    urma_end = datetime.now().date()
+    acis_start = datetime.now().date() - timedelta(days=7)
+    acis_end = datetime.now().date()
+    prism_start = datetime.now().date() - timedelta(days=7)
+    prism_end = datetime.now().date() - timedelta(days=3)
+    populate_climate_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end)
 
     t1 = time.time()
     logging.info('*****************************************************************************')
