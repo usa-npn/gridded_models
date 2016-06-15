@@ -2,6 +2,7 @@
 from climate.importer import *
 from prism.importer import get_prism_data
 from datetime import date
+from datetime import timedelta
 import logging
 import time
 
@@ -35,11 +36,13 @@ def main():
     download_hourly_temp_uncertainty('rtma')
     download_hourly_temp_uncertainty('urma')
 
-    # download and import rtma data for the date range (never looks for days past yesterday)
+    # download and import rtma data for the date range that was missed for any reason
+    # this looks back one week,
+    # another script is in place to delete rtma data older than two weeks for which we also have urma data
     # won't overwrite any previously downloaded files
-    start = date(2016, 1, 1)
+    one_week_ago = date.today() - timedelta(days=7)
     end = date(2016, 12, 31)
-    download_historical_temps(start, end)
+    download_historical_temps(one_week_ago, end)
 
     # compute daily tmin/tmax based on hourly data
     # computation is based on mixture of rtma and urma data; rtma is only used when urma isn't available
