@@ -52,7 +52,7 @@ def main():
     end = date(2016, 12, 31)
     # makes data match prism (prism day goes from -12 utc to +12 utc
     hour_shift = -12
-    compute_tmin_tmax(start, end, hour_shift)
+    compute_tmin_tmax(start, end, hour_shift, 3)
 
     # POPULATE PRISM
     # Specify the climate elements you want to download as well as the date range to download those elements for:

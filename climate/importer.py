@@ -241,7 +241,7 @@ def download_hourly_temp_uncertainty(dataset):
         cleanup(working_path)
 
 
-def compute_tmin_tmax(start_date, end_date, shift):
+def compute_tmin_tmax(start_date, end_date, shift, skip_older_than_x_days):
     logging.info(' ')
     logging.info('-----------------populating tmin/tmax based on hourly temps-----------------')
     # hourly_temp_path = cfg["hourly_temp_path"]
@@ -262,7 +262,7 @@ def compute_tmin_tmax(start_date, end_date, shift):
         # skip if the file already has been imported and is older than 3 days
         today = dt.datetime.now().date()
         day_dif = (today - day).days
-        if day_dif > 3 and os.path.isfile(tmin_save_path + tmin_file_name) and os.path.isfile(tmax_save_path + tmax_file_name):
+        if day_dif > skip_older_than_x_days and os.path.isfile(tmin_save_path + tmin_file_name) and os.path.isfile(tmax_save_path + tmax_file_name):
             continue
 
         # skip if day is more than 7 days into the future
@@ -441,6 +441,118 @@ def download_historical_temps(start_date, end_date):
 
                     # import raster into database
                     rtma_import(save_path + file_name + '.tif', hourly_table_name, True, day, hour, "rtma")
+
+            if not retrieved or not temp_band_found:
+                if previous_file_name == None:
+                    logging.warning("the first file you tried to retrieve either doesn't exist or doesn't have a temp band. Try rerunning this script starting with an earlier date.")
+                    return
+                # copy last successfully retrieved temp band in place of the missing hour
+                copy(save_path + previous_file_name + '.tif', save_path + file_name + '.tif')
+                rtma_import(save_path + file_name + '.tif', hourly_table_name, True, day, hour, "rtma")
+                logging.info('imported %s', save_path + file_name + '.tif')
+
+            previous_file_name = file_name
+            ds = None
+            cleanup(working_path)
+
+
+def download_historical_urma(start_date, end_date):
+    logging.info(' ')
+    logging.info('-----------------populating historical urma-----------------')
+    working_path = cfg["temp_path"]
+    save_path = cfg["hourly_temp_path"]
+    tmin_save_path = cfg["daily_tmin_path"]
+    tmax_save_path = cfg["daily_tmin_path"]
+    os.makedirs(working_path, exist_ok=True)
+    os.makedirs(save_path, exist_ok=True)
+    os.makedirs(tmin_save_path, exist_ok=True)
+    os.makedirs(tmax_save_path, exist_ok=True)
+    cleanup(working_path)
+
+    base_url_temp = 'ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/urma/prod/urma2p5.'
+
+    delta = end_date - start_date
+    year = None
+    previous_file_name = None
+
+    for i in range(delta.days + 1):
+        day = start_date + timedelta(days=i)
+
+        # urma data is only historical, never look for today or in the future
+        if day >= dt.datetime.today().date():
+            continue
+
+        # hit a new year
+        if year != day.year:
+            year = day.year
+            hourly_table_name = 'hourly_temp_' + str(year)
+
+        for hour in range(0, 24):
+            zero_padded_hour = "{0:0=2d}".format(hour)
+            url_file_name = 'urma2p5.t' + zero_padded_hour + 'z.2dvaranl_ndfd.grb2'
+            url = base_url_temp + day.strftime("%Y%m%d") + '/' + url_file_name
+            file_name = 'urma_' + day.strftime("%Y%m%d") + "{0:0=2d}".format(hour)
+
+            # skip if the file already has been imported
+            if os.path.isfile(save_path + file_name + '.tif'):
+                previous_file_name = file_name
+                continue
+
+            retrieved = False
+            file_not_found = False
+            while not retrieved and not file_not_found:
+                try:
+                    logging.info('downloading %s to %s', url, working_path + file_name)
+                    urlretrieve(url, working_path + file_name)
+                except urllib.error.URLError as e:
+                    if str(e) == "HTTP Error 404: Not Found":
+                        logging.warning("file not found so copying last retrieved hour to this hour: %s", str(e))
+                        file_not_found = True
+                    else:
+                        logging.warning("couldn't retrieve file (retrying): %s", str(e))
+                except urllib.error.ContentTooShortError as e:
+                    logging.warning("couldn't retrieve file (retrying): %s", str(e))
+                else:
+                    retrieved = True
+
+            if retrieved:
+                file_size = os.path.getsize(working_path + file_name)
+                if file_size == 0:
+                    os.remove(working_path + file_name)
+                    logging.warning("retrieved file has file size: %s so copying last retrieved hour to this hour", str(file_size))
+                    retrieved = False
+
+            if retrieved:
+
+                # warp the downloaded raster to EPSG 4269
+                warp_to_prism(working_path + file_name)
+                ds = gdal.Open(working_path + file_name)
+
+                # hack to grab the temp band rather than the temp error band
+                # by checking if the mean temp makes any sense (between -30 and 50 celsius)
+                # todo find a better way
+                temp_band_found = False
+                band3 = ds.GetRasterBand(3)
+                if band3 is not None:
+                    mean = band3.GetStatistics(0,1)[2]
+                    if -30 < mean < 50:
+                        temps_array = band3.ReadAsArray()
+                        temp_band_found = True
+                if not temp_band_found:
+                    logging.warning('temperature band not found, using previous hour')
+
+                if temp_band_found:
+                    projection = ds.GetProjection()
+                    transform = ds.GetGeoTransform()
+
+                    # mask out non land areas
+                    apply_usa_mask(temps_array)
+
+                    # write masked file to disk
+                    write_raster(save_path + file_name + '.tif', temps_array, -9999, temps_array.shape[1], temps_array.shape[0], projection, transform)
+
+                    # import raster into database
+                    rtma_import(save_path + file_name + '.tif', hourly_table_name, True, day, hour, "urma")
 
             if not retrieved or not temp_band_found:
                 if previous_file_name == None:
