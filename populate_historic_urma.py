@@ -5,7 +5,7 @@ from datetime import date
 from datetime import timedelta
 import logging
 import time
-from qc.gdd_checker import *
+from qc.gdd_checker import populate_climate_qc
 
 
 # this script grabs historic urma data and populates npn databases/geoserver
