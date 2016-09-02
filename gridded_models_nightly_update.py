@@ -142,4 +142,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (SystemExit, KeyboardInterrupt):
+        raise
+    except:
+        logging.error('The script failed to finish: ', exc_info=True)
