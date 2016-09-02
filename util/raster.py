@@ -28,7 +28,6 @@ def write_int16_raster(file_path, rast_array, no_data_value, rast_cols, rast_row
 
 
 def apply_usa_mask(rast_array):
-    print('path: ' + os.path.abspath(os.path.join(os.path.dirname(__file__), 'usa_mask.tif')))
     mask = gdal.Open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'usa_mask.tif')))
     mask_band = mask.GetRasterBand(1)
     mask_array = mask_band.ReadAsArray()
