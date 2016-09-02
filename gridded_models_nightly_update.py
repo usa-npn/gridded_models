@@ -12,11 +12,6 @@ from datetime import timedelta
 
 
 def main():
-    # logging.basicConfig(filename='D:\gridded_models_nightly_update.log',
-    logging.basicConfig(filename='/usr/local/scripts/gridded_models/gridded_models_nightly_update.log',
-                        level=logging.INFO,
-                        format='%(asctime)s %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p')
     t0 = time.time()
 
     logging.info(' ')
@@ -142,9 +137,21 @@ def main():
 
 
 if __name__ == "__main__":
+    # logging.basicConfig(filename='D:\gridded_models_nightly_update.log',
+    logging.basicConfig(filename='/usr/local/scripts/gridded_models/gridded_models_nightly_update.log',
+                        level=logging.INFO,
+                        format='%(asctime)s %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p')
+
+    formatter = logging.Formatter('%(asctime)s : %(message)s')
+    error_log = logging.getLogger('error_log')
+    error_log.addHandler(logging.FileHandler('/usr/local/scripts/gridded_models/error.log', mode='w'))
+    error_log.addHandler(logging.StreamHandler().setFormatter(formatter))
+    error_log.setLevel(logging.ERROR)
+
     try:
         main()
     except (SystemExit, KeyboardInterrupt):
         raise
     except:
-        logging.error('The script failed to finish: ', exc_info=True)
+        error_log.error('gridded_models_nightly_update.py failed to finish: ', exc_info=True)
