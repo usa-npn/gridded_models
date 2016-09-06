@@ -22,10 +22,10 @@ Additionally a [Geoserver](http://geoserver.org/) instance is used to ingest the
 
 After cloning the project you will need to take the following steps.
 
-Install the Mysql, Postgres, and PostGIS databases and set up the database schema and tables for each
+Install Postgres with the PostGIS extension import the schema.sql
 
 ```
-import schema.sql into your database
+psql databasename < schema.sql
 ```
 
 Fill out the config file specifying database connection params and the various paths where geotiffs will both be read from and written to. When configuring your Geoserver instance you will point it's layers to these paths.
