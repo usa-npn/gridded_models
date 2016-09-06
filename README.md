@@ -51,7 +51,7 @@ At this point if you look in the paths configured in config.yml you should have 
 
 ## Deployment
 
-The populate_climate_data.py and gridded_models_nightly_update.py scripts are ran nightly through cronjobs. This maintains the flow of incoming climate data, production of new geotiffs, communication with Geoserver about the location of the new maps.
+The populate_climate_data.py and gridded_models_nightly_update.py scripts are ran nightly through cronjobs. This maintains the flow of incoming climate data, production of new geotiffs, and communication with the Geoserver instance that these maps are available.
 
 
 ## Versioning
