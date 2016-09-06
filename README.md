@@ -13,7 +13,7 @@ There are several moving parts to the creation and delivery of the maps. Notable
 * [Python 3](https://www.python.org/downloads/)
 * [GDAL with appropriate python bindings](http://gdal.org/)
 * [Numpy](http://www.numpy.org/) is used for most of the raster math
-* [Postgres](https://www.postgresql.org/) with [Postgis extension](http://postgis.net/) and connect from Python using [psycopg2](http://initd.org/psycopg/)
+* [Postgres](https://www.postgresql.org/) with [PostGIS extension](http://postgis.net/) and connect from Python using [psycopg2](http://initd.org/psycopg/)
 * [Mysql](https://www.mysql.com/) connected from Python using mysql.connector
 
 Additionally a [Geoserver](http://geoserver.org/) instance is used to ingest the geotiffs produced by these scripts and in turn deliver them via WMS and WCS.
@@ -22,31 +22,31 @@ Additionally a [Geoserver](http://geoserver.org/) instance is used to ingest the
 
 After cloning the project you will need to take the following steps.
 
-Install the Mysql, Postgres, and PostGis databases and set up the database schema and tables for each
+Install the Mysql, Postgres, and PostGIS databases and set up the database schema and tables for each
 
 ```
-TODO: import schema.sql
+import schema.sql into your database
 ```
 
-Fill out the config file specifying database connection params and various paths where geotiffs will both be read from and written to.
+Fill out the config file specifying database connection params and the various paths where geotiffs will both be read from and written to. When configuring your Geoserver instance you will point it's layers to these paths.
 
 ```
 vi config.yml
 ```
 
-Import some climate data.
+Import some climate data - the following script will create daily tmin/tmax geotiffs through querying various climate web services ([NDFD](http://www.nws.noaa.gov/ndfd/), [RTMA](http://www.nco.ncep.noaa.gov/pmb/products/rtma/), [URMA](http://www.nco.ncep.noaa.gov/pmb/products/rtma/#URMA), and [PRISM](http://prism.oregonstate.edu/)).
 
 ```
 python3 populate_climate_data.py
 ```
 
-Generate some maps
+Generate some phenology maps - the following script will generate AGDD and SI-X
 
 ```
 python3 gridded_models_nightly_update.py
 ```
 
-At this point you should have geotiffs generated for both AGDD and SI-X products.
+At this point if you look in the paths configured in config.yml you should have geotiffs for daily tmin, TMAX, as well as AGDD and SI-X products which can all be served out by Geoserver.
 
 
 ## Deployment
