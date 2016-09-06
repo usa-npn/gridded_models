@@ -22,7 +22,7 @@ Additionally a [Geoserver](http://geoserver.org/) instance is used to ingest the
 
 After cloning the project you will need to take the following steps.
 
-Install Postgres with the PostGIS extension import the schema.sql
+Install Postgres with the PostGIS extension and import the schema.sql
 
 ```
 psql databasename < schema.sql
