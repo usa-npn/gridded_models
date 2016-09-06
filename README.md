@@ -14,7 +14,7 @@ There are several moving parts to the creation and delivery of the maps. Notable
 * [GDAL with appropriate python bindings](http://gdal.org/)
 * [Numpy](http://www.numpy.org/) is used for most of the raster math
 * [Postgres](https://www.postgresql.org/) with [Postgis extension](http://postgis.net/) and connect from Python using [psycopg2](http://initd.org/psycopg/)
-* Mysql connected from Python using mysql.connector
+* [Mysql](https://www.mysql.com/) connected from Python using mysql.connector
 
 Additionally a [Geoserver](http://geoserver.org/) instance is used to ingest the geotiffs produced by these scripts and in turn deliver them via WMS and WCS.
 
