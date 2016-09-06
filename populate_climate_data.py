@@ -4,17 +4,13 @@ from prism.importer import get_prism_data
 from datetime import date
 from datetime import timedelta
 import logging
+from util.log_manager import get_error_log
 import time
 
 
 # this script grabs climate data from various data sources and populates npn databases/geoserver
 
 def main():
-    # logging.basicConfig(filename='D:\gridded_models_nightly_update.log',
-    logging.basicConfig(filename='/usr/local/scripts/gridded_models/populate_climate_data.log',
-                        level=logging.INFO,
-                        format='%(asctime)s %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p')
     t0 = time.time()
 
     logging.info(' ')
@@ -68,4 +64,18 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # logging.basicConfig(filename='D:\gridded_models_nightly_update.log',
+    logging.basicConfig(filename='/usr/local/scripts/gridded_models/populate_climate_data.log',
+                        level=logging.INFO,
+                        format='%(asctime)s %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p')
+
+    error_log = get_error_log()
+
+    try:
+        main()
+    except (SystemExit, KeyboardInterrupt):
+        raise
+    except:
+        error_log.error('populate_climate_data.py failed to finish: ', exc_info=True)
+
