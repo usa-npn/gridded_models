@@ -54,14 +54,6 @@ At this point you should have geotiffs generated for both AGDD and SI-X products
 The populate_climate_data.py and gridded_models_nightly_update.py scripts are ran nightly through cronjobs. This maintains the flow of incoming climate data, production of new geotiffs, communication with Geoserver about the location of the new maps.
 
 
-## Contributing
-
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
-
 ## Authors
 
 * **Jeff Switzer** - *Coding* - [NPN](https://github.com/usa-npn)
