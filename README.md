@@ -46,7 +46,7 @@ Generate some phenology maps - the following script will generate [AGDD](https:/
 python3 gridded_models_nightly_update.py
 ```
 
-At this point if you look in the paths configured in config.yml you should have geotiffs for daily tmin, TMAX, as well as AGDD and SI-X products which can all be served out by Geoserver.
+At this point if you look in the paths configured in config.yml you should have geotiffs for daily min temp, max temp, as well as AGDD and SI-X products which can all be served out by Geoserver.
 
 
 ## Deployment
