@@ -8,7 +8,10 @@ import mysql.connector
 from psycopg2.extensions import AsIs
 import os.path
 import logging
+from util.log_manager import get_error_log
 
+
+error_log = get_error_log()
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
@@ -16,8 +19,11 @@ db = cfg["postgis"]
 conn = psycopg2.connect(dbname=db["db"], port=db["port"], user=db["user"],
                         password=db["password"], host=db["host"])
 mysql_db = cfg["mysql"]
-mysql_conn = mysql.connector.connect(database=mysql_db["db"], port=mysql_db["port"], user=mysql_db["user"],
+try:
+    mysql_conn = mysql.connector.connect(database=mysql_db["db"], port=mysql_db["port"], user=mysql_db["user"],
                         password=mysql_db["password"], host=mysql_db["host"])
+except:
+    error_log.error('database.py failed to connect to the database: ', exc_info=True)
 
 
 # # list of stations in station csv list that ACIS doesn't respond to
