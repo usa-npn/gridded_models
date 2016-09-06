@@ -54,6 +54,13 @@ At this point you should have geotiffs generated for both AGDD and SI-X products
 The populate_climate_data.py and gridded_models_nightly_update.py scripts are ran nightly through cronjobs. This maintains the flow of incoming climate data, production of new geotiffs, communication with Geoserver about the location of the new maps.
 
 
+## Related Projects
+
+This repository only contains server code used for the generation of phenology maps. The following repositories contain code used to view these maps through a web browser.
+
+* [USA-NPN Geoserver Request Builder](https://github.com/usa-npn/geoserver-request-builder)
+* [USA-NPN Visualization Tool](https://github.com/usa-npn/npn-viz-tool)
+
 ## Authors
 
 * **Jeff Switzer** - *Coding* - [NPN](https://github.com/usa-npn)
