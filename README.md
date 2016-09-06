@@ -40,7 +40,7 @@ Import some climate data - the following script will create daily tmin/tmax geot
 python3 populate_climate_data.py
 ```
 
-Generate some phenology maps - the following script will generate AGDD and SI-X
+Generate some phenology maps - the following script will generate [AGDD](https://www.usanpn.org/data/agdd_maps) and [SI-X](https://www.usanpn.org/data/spring_indices) geotiffs.
 
 ```
 python3 gridded_models_nightly_update.py
