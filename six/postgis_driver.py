@@ -13,6 +13,7 @@ import yaml
 import osr
 from util.raster import *
 import time
+import shutil
 
 
 class Six:
@@ -262,6 +263,20 @@ class Six:
                 Six.bloom_average_array = Six.bloom_average_array + Six.bloom_array
         else:
             print('invalid phenophase: ' + phenophase)
+
+
+    @staticmethod
+    def copy_spring_index_raster(plant, phenophase, climate_source, from_date, to_date):
+        folder_name = "six_" + plant + "_" + phenophase + "_" + climate_source + os.sep
+
+        source_file_name = plant + '_' + phenophase + '_' + climate_source + '_' + from_date.strftime("%Y%m%d") + '.tif'
+        dest_file_name = plant + '_' + phenophase + '_' + climate_source + '_' + to_date.strftime("%Y%m%d") + '.tif'
+
+        source_file_path = Six.save_path + folder_name + source_file_name
+        dest_file_path = Six.save_path + folder_name + dest_file_name
+
+        if os.path.isfile(source_file_path) and not os.path.isfile(dest_file_path):
+            shutil.copyfile(source_file_path, dest_file_path)
 
 
     @staticmethod

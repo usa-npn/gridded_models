@@ -4,6 +4,7 @@ from util.database import *
 import numpy as np
 from datetime import date
 import logging
+import shutil
 # from urllib.request import urlretrieve
 # import urllib
 
@@ -67,6 +68,38 @@ def populate_six_30yr_average(plant, phenophase):
         set_doy_column(six_avg_table_name, day_of_year, new_table)
         new_table = False
         logging.info('populated average six %s for day of year: %s', phenophase, str(day_of_year))
+
+
+def copy_spring_index_anomaly_raster(phenophase, from_date, to_date):
+    six_anomaly_table_name = 'six_anomaly'
+    plant = 'average'
+    new_table = False
+    day_of_year = to_date.timetuple().tm_yday
+
+    if phenophase is 'bloom':
+        time_series_table_name = 'six_bloom_anomaly'
+        source_file_name = 'six_bloom_anomaly_' + from_date.strftime("%Y%m%d") + '.tif'
+        dest_file_name = 'six_bloom_anomaly_' + to_date.strftime("%Y%m%d") + '.tif'
+        folder_name = 'six_bloom_anomaly' + os.sep
+    else:
+        time_series_table_name = 'six_leaf_anomaly'
+        source_file_name = 'six_leaf_anomaly_' + from_date.strftime("%Y%m%d") + '.tif'
+        dest_file_name = 'six_leaf_anomaly_' + to_date.strftime("%Y%m%d") + '.tif'
+        folder_name = 'six_leaf_anomaly' + os.sep
+
+    source_file_path = cfg["six_anomaly_path"] + folder_name + source_file_name
+    dest_file_path = cfg["six_anomaly_path"] + folder_name + dest_file_name
+
+    if os.path.isfile(source_file_path) and not os.path.isfile(dest_file_path):
+        shutil.copyfile(source_file_path, dest_file_path)
+
+        save_raster_to_postgis(dest_file_path, six_anomaly_table_name, 4269)
+        set_date_column(six_anomaly_table_name, to_date, new_table)
+        set_plant_column(six_anomaly_table_name, plant, new_table)
+        set_phenophase_column(six_anomaly_table_name, phenophase, new_table)
+        update_time_series(time_series_table_name, dest_file_path, to_date)
+        logging.info('copied six %s anomaly for %s - doy %s from doy 240', phenophase,
+                     to_date.strftime("%Y-%m-%d"), str(day_of_year))
 
 
 def import_six_anomalies(anomaly_date, phenophase):

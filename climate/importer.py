@@ -259,7 +259,7 @@ def compute_tmin_tmax(start_date, end_date, shift, skip_older_than_x_days):
         tmin_file_name = 'tmin_' + day.strftime("%Y%m%d") + '.tif'
         tmax_file_name = 'tmax_' + day.strftime("%Y%m%d") + '.tif'
 
-        # skip if the file already has been imported and is older than 3 days
+        # skip if the file already has been imported and is older than 7 days
         today = dt.datetime.now().date()
         day_dif = (today - day).days
         if day_dif > skip_older_than_x_days and os.path.isfile(tmin_save_path + tmin_file_name) and os.path.isfile(tmax_save_path + tmax_file_name):
