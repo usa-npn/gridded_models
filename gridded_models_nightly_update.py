@@ -93,20 +93,24 @@ def main():
 
     if today > day_250_of_current_year:
         logging.info('No need to recalculate si-x past day 250, copying day 240 into missing days.')
+        date_diff = today - day_250_of_current_year
         # copy geotiffs for individual plants
         for plant in plants:
             for phenophase in phenophases:
-                for i in range(today - day_250_of_current_year):
-                    day = today + timedelta(days=i)
+                for i in range(date_diff.days + 1):
+                    day = day_250_of_current_year + timedelta(days=i)
+                    logging.info('attempting to copy si-x plant: %s phenophase: %s for day: %s', plant, phenophase, day)
                     driver.Six.copy_spring_index_raster(plant, phenophase, climate_data_provider, day_240_of_current_year, day)
                     driver.Six.postgis_import(plant, phenophase, climate_data_provider, day, "day")
         # copy geotiffs for six averages and anomalies
         for phenophase in phenophases:
-            for i in range(today - day_250_of_current_year):
-                day = today + timedelta(days=i)
+            for i in range(date_diff.days + 1):
+                day = day_250_of_current_year + timedelta(days=i)
+                logging.info('attempting to copy si-x plant: %s phenophase: %s for day: %s', 'average', phenophase, day)
                 driver.Six.copy_spring_index_raster("average", phenophase, climate_data_provider, day_240_of_current_year, day)
                 driver.Six.postgis_import("average", phenophase, climate_data_provider, day, "day")
                 # copy geotiffs for six anomalies and import them into the database
+                logging.info('attempting to copy si-x anomaly: phenophase: %s for day: %s', phenophase, day)
                 copy_spring_index_anomaly_raster(phenophase, day_240_of_current_year, day)
     else:
         # populate spring index for year through six days in the future
