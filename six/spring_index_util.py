@@ -97,7 +97,7 @@ def copy_spring_index_anomaly_raster(phenophase, from_date, to_date):
         set_date_column(six_anomaly_table_name, to_date, new_table)
         set_plant_column(six_anomaly_table_name, plant, new_table)
         set_phenophase_column(six_anomaly_table_name, phenophase, new_table)
-        update_time_series(time_series_table_name, dest_file_path, to_date)
+        update_time_series(time_series_table_name, dest_file_name, to_date)
         logging.info('copied six %s anomaly for %s - doy %s from doy 240', phenophase,
                      to_date.strftime("%Y-%m-%d"), str(day_of_year))
 
