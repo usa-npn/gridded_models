@@ -97,14 +97,14 @@ def main():
         # copy geotiffs for individual plants
         for plant in plants:
             for phenophase in phenophases:
-                for i in range(date_diff.days + 1):
+                for i in range(date_diff.days + 7):
                     day = day_250_of_current_year + timedelta(days=i)
                     logging.info('attempting to copy si-x plant: %s phenophase: %s for day: %s', plant, phenophase, day)
                     driver.Six.copy_spring_index_raster(plant, phenophase, climate_data_provider, day_240_of_current_year, day)
                     driver.Six.postgis_import(plant, phenophase, climate_data_provider, day, "day")
         # copy geotiffs for six averages and anomalies
         for phenophase in phenophases:
-            for i in range(date_diff.days + 1):
+            for i in range(date_diff.days + 7):
                 day = day_250_of_current_year + timedelta(days=i)
                 logging.info('attempting to copy si-x plant: %s phenophase: %s for day: %s', 'average', phenophase, day)
                 driver.Six.copy_spring_index_raster("average", phenophase, climate_data_provider, day_240_of_current_year, day)
