@@ -17,9 +17,12 @@ def main():
     today = date.today()
     current_year = today.year
     one_week_ago = today - timedelta(days=7)
+    three_days_ago = today - timedelta(days=3)
     one_week_into_future = today + timedelta(days=7)
     beginning_of_this_year = date(current_year, 1, 1)
-    one_year_ago = today - timedelta(days=365)
+    end_of_this_year = date(current_year, 12, 31)
+    end_of_previous_year = date(current_year - 1, 12, 31)
+    end_of_next_year = date(current_year + 1, 12, 31)
     day_250_of_current_year = beginning_of_this_year + timedelta(days=250)
     day_240_of_current_year = beginning_of_this_year + timedelta(days=240)
 
@@ -58,31 +61,47 @@ def main():
     compute_tmin_tmax(min(beginning_of_this_year, one_week_ago), one_week_into_future, hour_shift, 7)
 
     # #################### AGDD CALCULATIONS ####################################################
-    # populate NCEP agdds for year
+    # populate NCEP agdds and anomalies
     # files older than 3 days won't get overwritten, but newer ones will due to tmin/tmax updates
     climate_data_provider = "ncep"
-    agdd_date = date(2016, 12, 31)
+
+    # calculate AGDDs for current year
     base = 32
-    import_agdd(agdd_date, base, climate_data_provider)
+    import_agdd(end_of_this_year, base, climate_data_provider)
+    import_agdd_anomalies(end_of_this_year, base)
     base = 50
-    import_agdd(agdd_date, base, climate_data_provider)
+    import_agdd(end_of_this_year, base, climate_data_provider)
+    import_agdd_anomalies(end_of_this_year, base)
+
+    # might need compute AGDDs for next year if forecast goes into next year
+    if one_week_into_future.year != end_of_this_year.year:
+        base = 32
+        import_agdd(end_of_next_year, base, climate_data_provider)
+        import_agdd_anomalies(end_of_next_year, base)
+        base = 50
+        import_agdd(end_of_next_year, base, climate_data_provider)
+        import_agdd_anomalies(end_of_next_year, base)
+
+    # might need to recompute last year's AGDDs if we're still updating those tmin/tmaxs
+    if one_week_ago.year != end_of_this_year.year:
+        base = 32
+        import_agdd(end_of_previous_year, base, climate_data_provider)
+        import_agdd_anomalies(end_of_previous_year, base)
+        base = 50
+        import_agdd(end_of_previous_year, base, climate_data_provider)
+        import_agdd_anomalies(end_of_previous_year, base)
 
     # populate PRISM agdds for year
     # files older than 3 days won't get overwritten, but newer ones will due to tmin/tmax updates
     climate_data_provider = "prism"
-    agdd_date = date(2016, 12, 31)
     base = 32
-    import_agdd(agdd_date, base, climate_data_provider)
-    # base = 50
-    # import_agdd(agdd_date, base, climate_data_provider)
+    import_agdd(end_of_this_year, base, climate_data_provider)
 
-    # populate agdd anomalies
-    # files older than 3 days won't get overwritten, but newer ones will due to tmin/tmax updates
-    agdd_anom_date = date(2016, 12, 31)
-    base = 32
-    import_agdd_anomalies(agdd_anom_date, base)
-    base = 50
-    import_agdd_anomalies(agdd_anom_date, base)
+    # might need to recompute last year's AGDDs if we're still updating those tmin/tmaxs
+    if one_week_ago.year != end_of_this_year.year:
+        base = 32
+        import_agdd(end_of_previous_year, base, climate_data_provider)
+
 
     # #################### SI-X CALCULATIONS ####################################################
     plants = ['lilac', 'arnoldred', 'zabelli']
@@ -99,24 +118,25 @@ def main():
             for phenophase in phenophases:
                 for i in range(date_diff.days + 7):
                     day = day_250_of_current_year + timedelta(days=i)
-                    logging.info('attempting to copy si-x plant: %s phenophase: %s for day: %s', plant, phenophase, day)
-                    driver.Six.copy_spring_index_raster(plant, phenophase, climate_data_provider, day_240_of_current_year, day)
-                    driver.Six.postgis_import(plant, phenophase, climate_data_provider, day, "day")
+                    if day.year == current_year:
+                        logging.info('attempting to copy si-x plant: %s phenophase: %s for day: %s', plant, phenophase, day)
+                        driver.Six.copy_spring_index_raster(plant, phenophase, climate_data_provider, day_240_of_current_year, day)
+                        driver.Six.postgis_import(plant, phenophase, climate_data_provider, day, "day")
         # copy geotiffs for six averages and anomalies
         for phenophase in phenophases:
             for i in range(date_diff.days + 7):
                 day = day_250_of_current_year + timedelta(days=i)
-                logging.info('attempting to copy si-x plant: %s phenophase: %s for day: %s', 'average', phenophase, day)
-                driver.Six.copy_spring_index_raster("average", phenophase, climate_data_provider, day_240_of_current_year, day)
-                driver.Six.postgis_import("average", phenophase, climate_data_provider, day, "day")
-                # copy geotiffs for six anomalies and import them into the database
-                logging.info('attempting to copy si-x anomaly: phenophase: %s for day: %s', phenophase, day)
-                copy_spring_index_anomaly_raster(phenophase, day_240_of_current_year, day)
+                if day.year == current_year:
+                    logging.info('attempting to copy si-x plant: %s phenophase: %s for day: %s', 'average', phenophase, day)
+                    driver.Six.copy_spring_index_raster("average", phenophase, climate_data_provider, day_240_of_current_year, day)
+                    driver.Six.postgis_import("average", phenophase, climate_data_provider, day, "day")
+                    # copy geotiffs for six anomalies and import them into the database
+                    logging.info('attempting to copy si-x anomaly: phenophase: %s for day: %s', phenophase, day)
+                    copy_spring_index_anomaly_raster(phenophase, day_240_of_current_year, day)
     else:
         # populate spring index for year through six days in the future
-        start_date = date(2016, 1, 1)
-        end_date = datetime.now().date()
-        end_date += timedelta(days=6)
+        start_date = beginning_of_this_year
+        end_date = today + timedelta(days=6)
 
         driver.Six.load_daily_climate_data(start_date, end_date, climate_data_provider)
         for plant in plants:
@@ -142,19 +162,18 @@ def main():
 
         # populate spring index anomalies
         # files older than 3 days won't get overwritten, but newer ones will due to tmin/tmax updates
-        spring_index_anom_date = date(2016, 12, 31)
         phenophase = 'leaf'
-        import_six_anomalies(spring_index_anom_date, phenophase)
+        import_six_anomalies(end_of_this_year, phenophase)
         phenophase = 'bloom'
-        import_six_anomalies(spring_index_anom_date, phenophase)
+        import_six_anomalies(end_of_this_year, phenophase)
 
     # populates various climate variables in the climate agdds mysql db
-    urma_start = datetime.now().date() - timedelta(days=3)
-    urma_end = datetime.now().date()
-    acis_start = datetime.now().date() - timedelta(days=7)
-    acis_end = datetime.now().date()
-    prism_start = datetime.now().date() - timedelta(days=7)
-    prism_end = datetime.now().date() - timedelta(days=3)
+    urma_start = three_days_ago
+    urma_end = today
+    acis_start = one_week_ago
+    acis_end = today
+    prism_start = one_week_ago
+    prism_end = three_days_ago
     populate_climate_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end)
 
     t1 = time.time()

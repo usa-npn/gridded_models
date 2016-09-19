@@ -273,13 +273,13 @@ def populate_agdds(start_date, end_date, source, source_id, stations):
 
     for station in stations:
         print(station['char_network_id'])
-        # grab previous days tmin, tmax, and agdd for both bases from mysql agdds table
+        # grab previous days tmin, tmax, and agdd for both bases from mysql agdds table and start over at year breaks
         day_before_start_date = start_date - timedelta(days=1)
-
-        prev_tmin = get_agdd(station['id'], source_id, day_before_start_date, 32, 'tmin')
-        prev_tmax = get_agdd(station['id'], source_id, day_before_start_date, 32, 'tmax')
-        agdd32 = get_agdd(station['id'], source_id, day_before_start_date, 32, 'agdd')
-        agdd50 = get_agdd(station['id'], source_id, day_before_start_date, 50, 'agdd')
+        if day_before_start_date.year == start_date.year:
+            prev_tmin = get_agdd(station['id'], source_id, day_before_start_date, 32, 'tmin')
+            prev_tmax = get_agdd(station['id'], source_id, day_before_start_date, 32, 'tmax')
+            agdd32 = get_agdd(station['id'], source_id, day_before_start_date, 32, 'agdd')
+            agdd50 = get_agdd(station['id'], source_id, day_before_start_date, 50, 'agdd')
 
         if prev_tmin is None or prev_tmin == 'M':
             prev_tmin = 0
@@ -307,12 +307,19 @@ def populate_agdds(start_date, end_date, source, source_id, stations):
             if not station_found:
                 print("Could not find station " + station['char_network_id'])
 
+        previous_year = start_date.year
         delta = end_date - start_date
         for i in range(delta.days + 1):
             day = start_date + timedelta(days=i)
             doy = day.timetuple().tm_yday
-            missing_data = False
 
+            # reset the agdd to 0 if we go into a new year
+            if previous_year != day.year:
+                agdd32 = 0
+                agdd50 = 0
+            previous_year = day.year
+
+            missing_data = False
             print(day.strftime("%Y-%m-%d"))
 
             # see if we already have tmin and tmax from local db
@@ -325,7 +332,7 @@ def populate_agdds(start_date, end_date, source, source_id, stations):
             if tmin is not None and tmin != 'M' and tmax is not None and tmax != 'M' and source != 'PRISM':
                 already_retrieved = True
 
-            # don't have already have tmin and tmax locally so grab from URMA postgis db or ACIS data
+            # don't already have tmin and tmax locally so grab from URMA postgis db or ACIS data
             if not already_retrieved:
                 if source == 'URMA':
                     tmin = get_urma_climate_data(station['longitude'], station['latitude'], day, 'tmin')
