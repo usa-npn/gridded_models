@@ -1,6 +1,6 @@
 # USA-NPN gridded models platform
 
-This repository contains the python code used to generate the [USA-NPN phenology maps.](https://www.usanpn.org/data/phenology_maps) Scripts are ran nightly to generate the maps. At a high level everynight new climate data is pulled in, followed by the creation of various accumulated growing degree day and spring index maps. The following steps describe this process in more detail.
+This repository contains the python code used to generate the [USA-NPN phenology maps.](https://www.usanpn.org/data/phenology_maps) Scripts are ran nightly to generate the maps. At a high level every night new climate data is pulled in which is used to create various accumulated growing degree day and spring index maps. These maps are saved as geotiffs and their raster data is also imported into a postgis database in such a way that a Geoserver instance can serve out the maps. The following steps describe this process in more detail and are contained in the gridded_models_nightly_update.py script.
 
 1. Retrieve NDFD daily forecast tmin/tmax data for the next 6 days, import the data into a postgis database and create daily tmin/tmax rasters.
 2. Retrieve RTMA hourly temperature data and import it into postgis.
@@ -11,6 +11,7 @@ This repository contains the python code used to generate the [USA-NPN phenology
 7. Use the daily tmin/tmax rasters to generate daily spring index first leaf and first bloom rasters for three different species. Import these rasters into postgis.
 8. Use the individual species first leaf and first bloom rasters to generate averaged over species first leaf and first bloom rasters. Import these rasters into postgis.
 9. For each of the first leaf and first bloom rasters created, generated an anomaly raster calculated using a historic 30 year average set of rasters (one per day of year) generated from the populate_30yr_averages.py script. These historic averages are based on PRISM daily tmin/tmax data.
+10. The accumulated growing degree day data is imported into a Mysql database along with retrieved [Climate Reference Network Station] (http://www.rcc-acis.org/) accumulated growing degree day data where it is used to estimate uncertainty.
 
 ## Getting Started
 
