@@ -72,7 +72,7 @@ Create 30 year average maps for both accumulated growing degree days and spring 
 python3 populate_30yr_averages.py
 ```
 
-While you only need to do run the above scripts once. The below scripts need to be ran nightly to keep everything up to date.
+While you only need to run the above scripts once. The below scripts need to be ran nightly to keep everything up to date.
 
 Import some climate data - the following script will create daily tmin/tmax geotiffs through querying various climate web services ([NDFD](http://www.nws.noaa.gov/ndfd/), [RTMA](http://www.nco.ncep.noaa.gov/pmb/products/rtma/), [URMA](http://www.nco.ncep.noaa.gov/pmb/products/rtma/#URMA), and [PRISM](http://prism.oregonstate.edu/)).
 
