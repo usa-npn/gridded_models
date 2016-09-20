@@ -42,6 +42,12 @@ Install Postgres with the PostGIS extension and import the schema.sql
 psql databasename < schema.sql
 ```
 
+Optionally import qc_schema.sql into a mysql database. If you don't do this make sure to set import_qc_data = False in gridded_models_nightly_update.py
+
+```
+mysql databasename < qc_schema.sql
+```
+
 Fill out the config file specifying database connection params and the various paths where geotiffs will both be read from and written to. When configuring your Geoserver instance you will point it's layers to these paths.
 
 ```
