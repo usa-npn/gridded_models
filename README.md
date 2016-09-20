@@ -3,7 +3,7 @@
 This repository contains the python code used to generate the [USA-NPN phenology maps.](https://www.usanpn.org/data/phenology_maps) 
 
 ## Overview
-Python scripts from this repository are ran nightly to generate the maps. At a high level every night new climate data ([NDFD](http://www.nws.noaa.gov/ndfd/), [RTMA](http://www.nco.ncep.noaa.gov/pmb/products/rtma/), [URMA](http://www.nco.ncep.noaa.gov/pmb/products/rtma/#URMA), and [PRISM](http://prism.oregonstate.edu/)) is downloaded and used to create various accumulated growing degree day and spring index maps. These maps are saved as geotiffs and their raster data is also imported into a postgis database in such a way that a Geoserver instance can serve out the maps. The following steps contained in the gridded_models_nightly_update.py script describe this process in more detail.
+Python scripts from this repository are ran nightly to generate the maps. At a high level each night new climate data ([NDFD](http://www.nws.noaa.gov/ndfd/), [RTMA](http://www.nco.ncep.noaa.gov/pmb/products/rtma/), [URMA](http://www.nco.ncep.noaa.gov/pmb/products/rtma/#URMA), and [PRISM](http://prism.oregonstate.edu/)) is downloaded and used to create various accumulated growing degree day and spring index maps. These maps are saved as geotiffs and their raster data is also imported into a postgis database in such a way that a Geoserver instance can serve out the maps. The following steps contained in the gridded_models_nightly_update.py script describe this process in more detail.
 
 1. Retrieve NDFD daily forecast tmin/tmax data for the next 6 days, import the data into a postgis database and create daily tmin/tmax rasters.
 2. Retrieve RTMA hourly temperature data and import it into postgis.
