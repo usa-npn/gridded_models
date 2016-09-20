@@ -11,6 +11,8 @@ import time
 from datetime import timedelta
 
 
+# This is the main gridded models script. It runs nightly to both pull climate data and generate various rasters which
+# are also imported into a postgis database
 def main():
     t0 = time.time()
 
@@ -25,6 +27,7 @@ def main():
     end_of_next_year = date(current_year + 1, 12, 31)
     day_250_of_current_year = beginning_of_this_year + timedelta(days=250)
     day_240_of_current_year = beginning_of_this_year + timedelta(days=240)
+    import_qc_data = True
 
     logging.info(' ')
     logging.info('*****************************************************************************')
@@ -167,14 +170,15 @@ def main():
         phenophase = 'bloom'
         import_six_anomalies(end_of_this_year, phenophase)
 
-    # populates various climate variables in the climate agdds mysql db
-    urma_start = three_days_ago
-    urma_end = today
-    acis_start = one_week_ago
-    acis_end = today
-    prism_start = one_week_ago
-    prism_end = three_days_ago
-    populate_climate_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end)
+    if import_qc_data:
+        # populates various climate variables in the climate agdds mysql db
+        urma_start = three_days_ago
+        urma_end = today
+        acis_start = one_week_ago
+        acis_end = today
+        prism_start = one_week_ago
+        prism_end = three_days_ago
+        populate_climate_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end)
 
     t1 = time.time()
     logging.info('*****************************************************************************')

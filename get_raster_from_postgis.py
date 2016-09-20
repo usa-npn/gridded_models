@@ -5,6 +5,7 @@ import datetime as dt
 from datetime import date
 
 
+# This is a utility script used to extract geotiffs from the postgis database. It's only used for debugging purposes.
 def main():
     # year, plant, phenophase
     # get_six_raster('2014', 'lilac', 'leaf')

@@ -48,6 +48,26 @@ Fill out the config file specifying database connection params and the various p
 vi config.yml
 ```
 
+Import historic [PRISM](http://prism.oregonstate.edu/) daily tmin and tmax data from 1980 through the current year.
+
+```
+python3 populate_prism.py
+```
+
+Import historic spring index layers from 1980 through the current year.
+
+```
+python3 populate_six.py
+```
+
+Create 30 year average maps for both accumulated growing degree days and spring index.
+
+```
+python3 populate_30yr_averages.py
+```
+
+While you only need to do run the above scripts once. The below scripts need to be ran nightly to keep everything up to date.
+
 Import some climate data - the following script will create daily tmin/tmax geotiffs through querying various climate web services ([NDFD](http://www.nws.noaa.gov/ndfd/), [RTMA](http://www.nco.ncep.noaa.gov/pmb/products/rtma/), [URMA](http://www.nco.ncep.noaa.gov/pmb/products/rtma/#URMA), and [PRISM](http://prism.oregonstate.edu/)).
 
 ```

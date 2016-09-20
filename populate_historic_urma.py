@@ -8,8 +8,8 @@ import time
 from qc.gdd_checker import populate_climate_qc
 
 
-# this script grabs historic urma data and populates npn databases/geoserver
-
+# This script grabs historic urma data and populates npn databases/geoserver.
+# It isn't ran nightly, but only in cases where you want to grab data from further back in time.
 def main():
     # logging.basicConfig(filename='D:\populate_historic_urma.log',
     logging.basicConfig(filename='/usr/local/scripts/gridded_models/populate_historic_urma.log',

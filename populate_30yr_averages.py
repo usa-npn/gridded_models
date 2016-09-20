@@ -4,6 +4,9 @@ import time
 import logging
 
 
+# This script is used to generate historic 30year average spring index and agdd maps. It is not ran nightly.
+# Before running this script populate_prism.py must be ran for the years you want to average over.
+# Before running this script populate_six.py must be ran for the years you want to average over.
 def main():
     # logging.basicConfig(filename='D:\Python Projects\gridded_models\populate_30yr_averages.log',
     logging.basicConfig(filename='/usr/local/scripts/gridded_models/populate_30yr_averages.log',
@@ -20,18 +23,19 @@ def main():
     # calculate doy spring index prism raster averaged over 3 species
     # this function was written to fix averaging error over 3 species bloom
     # without having to rerun the spring index over each year
-    populate_yearly_six_prism_species_averages('bloom')
+    # populate_yearly_six_prism_species_averages('bloom')
 
 
     # populate 30 year average for each day of year's spring index based on prism data
-    # populate_six_30yr_average('average', 'leaf')
+    populate_six_30yr_average('average', 'leaf')
     populate_six_30yr_average('average', 'bloom')
-    #
+
+
     # populate 30 year average for each day of year's agdd based on prism data
-    # base = 32
-    # import_average_agdd(1981, 2011, base)
-    # base = 50
-    # import_average_agdd(1981, 2011, base)
+    base = 32
+    import_average_agdd(1981, 2011, base)
+    base = 50
+    import_average_agdd(1981, 2011, base)
 
     t1 = time.time()
     logging.info('*****************************************************************************')

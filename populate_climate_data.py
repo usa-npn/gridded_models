@@ -8,8 +8,8 @@ from util.log_manager import get_error_log
 import time
 
 
-# this script grabs climate data from various data sources and populates npn databases/geoserver
-
+# This script is ran nightly before gridded_models_nightly_update.py and grabs climate data from
+# various data sources, uses it to generate geotiffs and imports it into a postgis database.
 def main():
     t0 = time.time()
 

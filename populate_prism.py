@@ -7,6 +7,8 @@ import time
 
 def main():
     # This script downloads climate data available from January 1981 through yesterday at a 4k resolution.
+    # This script doesn't run nightly but is used to download historical blocks of PRISM data.
+    # By default this script will populate years 1980 through the current year.
 
     # The data is broken into 3 categories: early, provisional, and stable.
     # early = this months data: climatologically-aided interpolation is used to fill in missing data points
@@ -39,8 +41,13 @@ def main():
 
     # Specify the climate elements you want to download as well as the date range to download those elements for:
     request_params = ['tmax', 'tmin']
-    start = date(2015, 1, 1)
-    end = date(2016, 12, 31)
+
+    today = date.today()
+    current_year = today.year
+    end_of_this_year = date(current_year, 12, 31)
+
+    start = date(1980, 1, 1)
+    end = end_of_this_year
 
     get_prism_data(start, end, request_params)
 
