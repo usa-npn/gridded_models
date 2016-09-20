@@ -1,6 +1,16 @@
 # USA-NPN gridded models platform
 
-This repository contains the python code used to generate the [USA-NPN phenology maps.](https://www.usanpn.org/data/phenology_maps)
+This repository contains the python code used to generate the [USA-NPN phenology maps.](https://www.usanpn.org/data/phenology_maps) Scripts are ran nightly to generate the maps. At a high level everynight new climate data is pulled in, followed by the creation of various accumulated growing degree day and spring index maps. The following steps describe this process in more detail.
+
+1. Retrieve NDFD daily forecast tmin/tmax data for the next 6 days, import the data into a postgis database and create daily tmin/tmax rasters.
+2. Retrieve RTMA hourly temperature data and import it into postgis.
+3. Retrieve URMA hourly temperature data and import it into postgis.
+4. Use the RTMA and URMA hourly temperature data to create daily tmin/tmax rasters and import the raster data into postgis. When generating the tmin/tmax rasters URMA is used if available, otherwise RTMA is used.
+5. Use the daily tmin/tmax rasters to generate daily accumulated growing degree day rasters in both base 32 and base 50. Import these rasters into postgis.
+6. Generate daily accumulated growing degree anomaly rasters for both base 32 and base 50. These anomalies are calculated using a historic 30 year average set of rasters (one per day of year) generated via the populate_30yr_averages.py script. These historic averages are based on PRISM daily tmin/tmax data.
+7. Use the daily tmin/tmax rasters to generate daily spring index first leaf and first bloom rasters for three different species. Import these rasters into postgis.
+8. Use the individual species first leaf and first bloom rasters to generate averaged over species first leaf and first bloom rasters. Import these rasters into postgis.
+9. For each of the first leaf and first bloom rasters created, generated an anomaly raster calculated using a historic 30 year average set of rasters (one per day of year) generated from the populate_30yr_averages.py script. These historic averages are based on PRISM daily tmin/tmax data.
 
 ## Getting Started
 
