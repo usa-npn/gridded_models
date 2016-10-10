@@ -9,6 +9,8 @@ from psycopg2.extensions import AsIs
 import os.path
 import logging
 from util.log_manager import get_error_log
+import numpy as np
+from six.spring_index import spring_index_for_point
 
 
 error_log = get_error_log()
@@ -212,6 +214,21 @@ def get_acis_climate_data(station_ids, climate_elements, start_date, end_date):
     data = json.loads(str_response)
     return data
 
+def get_mysql_element_from_agdds(station_id, element, source_id, year):
+    cursor = mysql_conn.cursor(dictionary=True)
+    query = "SELECT * FROM climate.agdds WHERE station_id = %s AND source_id = %s AND base_temp_f = 32 AND YEAR = %s ORDER BY date;"
+    cursor.execute(query, [station_id, source_id, year])
+    rows = []
+    return_array = []
+    for row in cursor:
+        rows.append(row)
+    if len(rows) is 0:
+        return None
+    else:
+        for row in rows:
+            return_array.append(row[element])
+        return return_array
+
 
 def get_urma_climate_data(long, lat, date, climate_element):
     if climate_element is 'tmin':
@@ -220,11 +237,14 @@ def get_urma_climate_data(long, lat, date, climate_element):
         table_name = "tmax_" + date.strftime("%Y")
     curs = conn.cursor()
 
-    query = "SELECT st_value(ST_Union(rast),ST_SetSRID(ST_Point(%(long)s, %(lat)s),4269)) FROM %(table)s WHERE rast_date = %(rast_date)s AND dataset = 'urma';"
+    query = "SELECT st_value(rast,ST_SetSRID(ST_Point(%(long)s, %(lat)s),4269)) FROM %(table)s WHERE rast_date = %(rast_date)s AND dataset = 'urma' AND ST_Intersects(rast, ST_SetSRID(ST_MakePoint(%(long)s, %(lat)s),4269));"
     data = {"table": AsIs(table_name), "long": long, "lat": lat, "rast_date": date.strftime("%Y-%m-%d")}
     curs.execute(query, data)
-    result = curs.fetchone()[0]
-    return result
+    result = curs.fetchone()
+    if result is None:
+        return None
+    else:
+        return result[0]
 
 
 def get_prism_climate_data(long, lat, date, climate_element):
@@ -234,7 +254,7 @@ def get_prism_climate_data(long, lat, date, climate_element):
         table_name = "prism_tmax_" + date.strftime("%Y")
     curs = conn.cursor()
 
-    query = "SELECT st_value(ST_Union(rast),ST_SetSRID(ST_Point(%(long)s, %(lat)s),4269)) FROM %(table)s WHERE rast_date = %(rast_date)s;"
+    query = "SELECT st_value(rast,ST_SetSRID(ST_Point(%(long)s, %(lat)s),4269)) FROM %(table)s WHERE rast_date = %(rast_date)s AND ST_Intersects(rast, ST_SetSRID(ST_MakePoint(%(long)s, %(lat)s),4269));"
     data = {"table": AsIs(table_name), "long": long, "lat": lat, "rast_date": date.strftime("%Y-%m-%d")}
     curs.execute(query, data)
     result = curs.fetchone()[0]
@@ -259,6 +279,23 @@ def add_agdd_row(station_id, source_id, gdd, agdd, year, doy, date, base, missin
     else:
         query = "UPDATE climate.agdds SET tmin = %s, tmax = %s, gdd = %s, agdd = %s, missing = %s WHERE station_id = %s AND source_id = %s AND base_temp_f = %s AND date = %s;"
         cursor.execute(query, (tmin, tmax, gdd, agdd, missing, station_id, source_id, base, date))
+    mysql_conn.commit()
+    cursor.close()
+
+
+def add_six_row(station_id, source_id, leaf_lilac, leaf_arnoldred, leaf_zabelli, leaf_average, bloom_lilac, bloom_arnoldred, bloom_zabelli, bloom_average, year, missing):
+    if np.isnan(leaf_average):
+        missing = True
+        leaf_lilac, leaf_arnoldred, leaf_zabelli, leaf_average, bloom_lilac, bloom_arnoldred, bloom_zabelli, bloom_average = 0, 0, 0, 0, 0, 0, 0, 0
+    cursor = mysql_conn.cursor(buffered=True)
+    query = "SELECT * FROM climate.six WHERE station_id = %s AND source_id = %s AND year = %s ;"
+    cursor.execute(query, (station_id, source_id, year))
+    if cursor.rowcount < 1:
+        query = "INSERT INTO climate.six (station_id, source_id, leaf_lilac, leaf_arnoldred, leaf_zabelli, leaf_average, bloom_lilac, bloom_arnoldred, bloom_zabelli, bloom_average, year, missing) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"
+        cursor.execute(query, (station_id, source_id, leaf_lilac, leaf_arnoldred, leaf_zabelli, leaf_average, bloom_lilac, bloom_arnoldred, bloom_zabelli, bloom_average, year, missing))
+    else:
+        query = "UPDATE climate.six SET leaf_lilac = %s, leaf_arnoldred = %s, leaf_zabelli = %s, leaf_average = %s, bloom_lilac = %s, bloom_arnoldred = %s, bloom_zabelli = %s, bloom_average = %s, missing = %s WHERE station_id = %s AND source_id = %s AND year = %s;"
+        cursor.execute(query, (leaf_lilac, leaf_arnoldred, leaf_zabelli, leaf_average, bloom_lilac, bloom_arnoldred, bloom_zabelli, bloom_average, missing, station_id, source_id, year))
     mysql_conn.commit()
     cursor.close()
 
@@ -380,6 +417,70 @@ def populate_agdds(start_date, end_date, source, source_id, stations):
                 add_agdd_row(station['id'], source_id, gdd50, agdd50, day.year, doy, day, 50, missing_data, tmin, tmax)
 
 
+def populate_six(start_date, end_date, source, source_id, stations):
+    plants = ['lilac', 'arnoldred', 'zabelli']
+    year = start_date.year
+    num_days = (end_date - start_date).days
+    if num_days > 240:
+        num_days = 240
+
+    for station in stations:
+        tmin = np.empty(num_days)
+        tmax = np.empty(num_days)
+
+        station_id = station['id']
+        latitude = station['latitude']
+        longitude = station['longitude']
+
+        # for i in range(num_days):
+        #     day = start_date + timedelta(days=i)
+        #
+        #     if source == 'URMA':
+        #         tmin[i] = get_urma_climate_data(longitude, latitude, day, 'tmin')
+        #         tmax[i] = get_urma_climate_data(longitude, latitude, day, 'tmax')
+        #     elif source == 'PRISM':
+        #         tmin[i] = get_prism_climate_data(longitude, latitude, day, 'tmin')
+        #         tmax[i] = get_prism_climate_data(longitude, latitude, day, 'tmax')
+        #     elif source == 'ACIS':
+        #         tmin[i] = get_mysql_temps(station_id, 'tmin', source_id, year)
+        #         tmax[i] = get_mysql_temps(station_id, 'tmax', source_id, year)
+        #     if np.isnan(tmin[i]):
+        #         if i == 0:
+        #             tmin[0] = 0
+        #         else:
+        #             tmin[i] = tmin[i - 1]
+        #     else:
+        #         tmin[i] = 1.8 * tmin[i] + 32
+        #     if np.isnan(tmax[i]):
+        #         if i == 0:
+        #             tmax[i] = 0
+        #         else:
+        #             tmax[i] = tmax[i - 1]
+        #     else:
+        #         tmax[i] = 1.8 * tmax[i] + 32
+
+        tmin = get_mysql_element_from_agdds(station_id, 'tmin', source_id, year)
+        tmax = get_mysql_element_from_agdds(station_id, 'tmax', source_id, year)
+
+        tmin = np.array(tmin[:num_days])
+        tmax = np.array(tmax[:num_days])
+
+        leaf_day = {'lilac': 0, 'arnoldred': 0, 'zabelli': 0, 'average': 0}
+        bloom_day = {'lilac': 0, 'arnoldred': 0, 'zabelli': 0, 'average': 0}
+        leaf_day_sum = 0
+        bloom_day_sum = 0
+        for plant in plants:
+            leaf_day[plant] = spring_index_for_point(tmax, tmin, 31, 0, 'leaf', plant, latitude)
+            leaf_day_sum += leaf_day[plant]
+            bloom_day[plant] = spring_index_for_point(tmax, tmin, 31, leaf_day[plant], 'bloom', plant, latitude)
+            bloom_day_sum += bloom_day[plant]
+        leaf_day['average'] = leaf_day_sum / len(plants)
+        bloom_day['average'] = bloom_day_sum / len(plants)
+        add_six_row(station_id, source_id,
+                    leaf_day['lilac'], leaf_day['arnoldred'], leaf_day['zabelli'], leaf_day['average'],
+                    bloom_day['lilac'], bloom_day['arnoldred'], bloom_day['zabelli'], bloom_day['average'], year, False)
+
+
 def populate_climate_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end):
     logging.info(' ')
     logging.info('-----------------beginning climate quality check population-----------------')
@@ -416,6 +517,44 @@ def populate_climate_qc(urma_start, urma_end, acis_start, acis_end, prism_start,
     logging.info(' ')
     logging.info('-----------------populating prism qc agdds-----------------')
     populate_agdds(prism_start, prism_end, 'PRISM', prism_source_id, stations)
+
+
+def populate_six_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end):
+    logging.info(' ')
+    logging.info('-----------------beginning si-x quality check population-----------------')
+
+    # grab station ids
+    cursor = mysql_conn.cursor(dictionary=True)
+    query = "SELECT * FROM climate.stations;"
+    cursor.execute(query)
+    stations = []
+    for station in cursor:
+        stations.append(station)
+
+    # grab sources
+    sources = get_sources()
+    acis_source_id = None
+    urma_source_id = None
+    prism_source_id = None
+    for source in sources:
+        if source['name'] == 'ACIS':
+            acis_source_id = source['id']
+        elif source['name'] == 'URMA':
+            urma_source_id = source['id']
+        elif source['name'] == 'PRISM':
+            prism_source_id = source['id']
+
+    logging.info(' ')
+    logging.info('-----------------populating urma qc si-x-----------------')
+    populate_six(urma_start, urma_end, 'URMA', urma_source_id, stations)
+
+    logging.info(' ')
+    logging.info('-----------------populating acis qc si-x-----------------')
+    populate_six(acis_start, acis_end, 'ACIS', acis_source_id, stations)
+
+    logging.info(' ')
+    logging.info('-----------------populating prism qc si-x-----------------')
+    populate_six(prism_start, prism_end, 'PRISM', prism_source_id, stations)
 
 
 def load_acis_csv_to_db():

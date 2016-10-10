@@ -2,14 +2,19 @@ import six.postgis_driver as driver
 from datetime import *
 import time
 import logging
+import yaml
+import os.path
 
+with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
+    cfg = yaml.load(ymlfile)
+log_path = cfg["log_path"]
 
 # This script is used to populate the spring index for historic years. It is not ran nightly.
 # Before running this script populate_prism.py must be ran for the years you want to generate spring index maps.
 # By default this script will populate 1980 through the current year using prism data.
 def main():
 
-    logging.basicConfig(filename='/usr/local/scripts/gridded_models/populate_six.log',
+    logging.basicConfig(filename=log_path + 'populate_six.log',
                         level=logging.INFO,
                         format='%(asctime)s %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p')
@@ -24,10 +29,13 @@ def main():
     current_year = today.year
     end_of_this_year = date(current_year, 12, 31)
 
-    start_date = date(1980, 1, 1)
-    end_date = end_of_this_year
+    start_date = date(2016, 1, 1)
+    end_date = today + timedelta(days=6)
 
-    climate_data_provider = "prism"
+    # start_date = date(1980, 1, 1)
+    # end_date = end_of_this_year
+
+    climate_data_provider = 'ncep'#"prism"
     time_rez = "day"
 
     plants = ['lilac', 'arnoldred', 'zabelli']

@@ -4,6 +4,14 @@ from datetime import date
 import logging
 import time
 from datetime import timedelta
+import yaml
+import os.path
+from util.log_manager import get_error_log
+
+
+with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
+    cfg = yaml.load(ymlfile)
+log_path = cfg["log_path"]
 
 
 # This script populates climate data and agdds from urma, acis, and prism into a mysql database
@@ -28,6 +36,8 @@ def main():
     prism_start = beginning_of_this_year
     prism_end = three_days_ago
     populate_climate_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end)
+    populate_six_qc(beginning_of_this_year, urma_end, beginning_of_this_year, acis_end, beginning_of_this_year,
+                    prism_end)
 
     t1 = time.time()
     logging.info('*****************************************************************************')
@@ -36,17 +46,11 @@ def main():
 
 
 if __name__ == "__main__":
-    # logging.basicConfig(filename='D:\gridded_models_nightly_update.log',
-    logging.basicConfig(filename='/usr/local/scripts/gridded_models/populate_qc_database.log',
+    logging.basicConfig(filename=log_path + 'populate_qc_database.log',
                         level=logging.INFO,
                         format='%(asctime)s %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p')
-
-    formatter = logging.Formatter('%(asctime)s : %(message)s')
-    error_log = logging.getLogger('error_log')
-    error_log.addHandler(logging.FileHandler('/usr/local/scripts/gridded_models/error.log', mode='w'))
-    error_log.addHandler(logging.StreamHandler().setFormatter(formatter))
-    error_log.setLevel(logging.ERROR)
+    error_log = get_error_log()
 
     try:
         main()

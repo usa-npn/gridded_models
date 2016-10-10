@@ -2,17 +2,20 @@ from util.gdd import *
 from six.spring_index_util import *
 import time
 import logging
+import yaml
+import os.path
+from util.log_manager import get_error_log
+
+
+with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
+    cfg = yaml.load(ymlfile)
+log_path = cfg["log_path"]
 
 
 # This script is used to generate historic 30year average spring index and agdd maps. It is not ran nightly.
 # Before running this script populate_prism.py must be ran for the years you want to average over.
 # Before running this script populate_six.py must be ran for the years you want to average over.
 def main():
-    # logging.basicConfig(filename='D:\Python Projects\gridded_models\populate_30yr_averages.log',
-    logging.basicConfig(filename='/usr/local/scripts/gridded_models/populate_30yr_averages.log',
-                        level=logging.INFO,
-                        format='%(asctime)s %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p')
     t0 = time.time()
 
     logging.info(' ')
@@ -44,4 +47,15 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    logging.basicConfig(filename=log_path + 'populate_30yr_averages.log',
+                        level=logging.INFO,
+                        format='%(asctime)s %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p')
+    error_log = get_error_log()
+
+    try:
+        main()
+    except (SystemExit, KeyboardInterrupt):
+        raise
+    except:
+        error_log.error('populate_30yr_averages.py failed to finish: ', exc_info=True)

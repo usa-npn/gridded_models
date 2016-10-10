@@ -6,17 +6,25 @@ from datetime import timedelta
 import logging
 import time
 from qc.gdd_checker import populate_climate_qc
+from qc.gdd_checker import populate_six_qc
+import yaml
+import os.path
+from util.log_manager import get_error_log
+
+
+with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
+    cfg = yaml.load(ymlfile)
+log_path = cfg["log_path"]
 
 
 # This script grabs historic urma data and populates npn databases/geoserver.
 # It isn't ran nightly, but only in cases where you want to grab data from further back in time.
 def main():
-    # logging.basicConfig(filename='D:\populate_historic_urma.log',
-    logging.basicConfig(filename='/usr/local/scripts/gridded_models/populate_historic_urma.log',
-                        level=logging.INFO,
-                        format='%(asctime)s %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p')
     t0 = time.time()
+
+    today = date.today()
+    current_year = today.year
+    beginning_of_this_year = date(current_year, 1, 1)
 
     logging.info(' ')
     logging.info('*****************************************************************************')
@@ -51,6 +59,7 @@ def main():
     prism_start = datetime.now().date() - timedelta(days=9)
     prism_end = datetime.now().date() - timedelta(days=3)
     populate_climate_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end)
+    populate_six_qc(beginning_of_this_year, urma_end, beginning_of_this_year, acis_end, beginning_of_this_year, prism_end)
 
     t1 = time.time()
     logging.info('*****************************************************************************')
@@ -59,4 +68,15 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    logging.basicConfig(filename=log_path + 'populate_historic_urma.log',
+                        level=logging.INFO,
+                        format='%(asctime)s %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p')
+    error_log = get_error_log()
+
+    try:
+        main()
+    except (SystemExit, KeyboardInterrupt):
+        raise
+    except:
+        error_log.error('populate_historic_urma.py failed to finish: ', exc_info=True)

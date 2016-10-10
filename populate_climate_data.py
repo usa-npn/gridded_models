@@ -6,6 +6,14 @@ from datetime import timedelta
 import logging
 from util.log_manager import get_error_log
 import time
+import yaml
+import os.path
+from util.log_manager import get_error_log
+
+
+with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
+    cfg = yaml.load(ymlfile)
+log_path = cfg["log_path"]
 
 
 # This script is ran nightly before gridded_models_nightly_update.py and grabs climate data from
@@ -65,12 +73,10 @@ def main():
 
 
 if __name__ == "__main__":
-    # logging.basicConfig(filename='D:\gridded_models_nightly_update.log',
-    logging.basicConfig(filename='/usr/local/scripts/gridded_models/populate_climate_data.log',
+    logging.basicConfig(filename=log_path + 'populate_climate_data.log',
                         level=logging.INFO,
                         format='%(asctime)s %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p')
-
     error_log = get_error_log()
 
     try:

@@ -93,8 +93,8 @@ class Six:
                 if day == 0 and hour == 0:
                     Six.gdh = np.zeros((num_days, ds.RasterYSize, ds.RasterXSize))
                     # get the x and y dimensions of the input rasters, they will be used later to create the output rasters
-                    Six.xdim = Six.ydim = ds.GetGeoTransform()[1]
-
+                    Six.ydim = ds.GetGeoTransform()[5] # pixel height (note: can be negative)
+                    Six.xdim = ds.GetGeoTransform()[1] # pixel width
 
                 hour_temps = band.ReadAsArray()
 
@@ -148,7 +148,7 @@ class Six:
         for day in range(0, num_days):
             curs = Six.conn.cursor()
             current_date = start_date + td(days=day)
-
+            # print('getting ' + table_name + ' ' + current_date.strftime("%Y-%m-%d"))
             query = "SELECT ST_AsGDALRaster(ST_Union(rast), 'Gtiff') FROM %s WHERE rast_date = %s;"
             data = (AsIs(table_name), current_date.strftime("%Y-%m-%d"))
             curs.execute(query, data)
@@ -162,7 +162,8 @@ class Six:
             if day == 0:
                 Six.min_temps = np.empty((num_days, ds.RasterYSize, ds.RasterXSize))
                 # get the x and y dimensions of the input rasters, they will be used later to create the output rasters
-                Six.xdim = Six.ydim = ds.GetGeoTransform()[1]
+                Six.xdim = Six.ydim = -ds.GetGeoTransform()[5]
+                # Six.xdim = Six.ydim = ds.GetGeoTransform()[1]
             Six.min_temps[day] = band.ReadAsArray()
 
         # reshape the array to be station lat, station long, day of year, temperature

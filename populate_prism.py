@@ -3,6 +3,14 @@ from datetime import date
 from prism.importer import get_prism_data
 import logging
 import time
+import yaml
+import os.path
+from util.log_manager import get_error_log
+
+
+with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
+    cfg = yaml.load(ymlfile)
+log_path = cfg["log_path"]
 
 
 def main():
@@ -28,10 +36,6 @@ def main():
     # Look in config.yml to specify prism_path: <loc where zip files are downloaded> and database connection variables.
     # We don't delete the zip files in prism_path:
 
-    logging.basicConfig(filename='/usr/local/scripts/gridded_models/populate_prism.log',
-                        level=logging.INFO,
-                        format='%(asctime)s %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p')
     t0 = time.time()
 
     logging.info(' ')
@@ -58,4 +62,15 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    logging.basicConfig(filename=log_path + 'populate_prism.log',
+                        level=logging.INFO,
+                        format='%(asctime)s %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p')
+    error_log = get_error_log()
+
+    try:
+        main()
+    except (SystemExit, KeyboardInterrupt):
+        raise
+    except:
+        error_log.error('populate_prism.py failed to finish: ', exc_info=True)

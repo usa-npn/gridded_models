@@ -206,3 +206,60 @@ def spring_index(max_temps, min_temps, base_temp, leaf_out_days, pheno_event, pl
 
     spring_index_array[np.isnan(spring_index_array)] = -9999.0
     return spring_index_array
+
+
+def spring_index_for_point(max_temps, min_temps, base_temp, leaf_out_day, pheno_event, plant, lat):
+
+    # calculate day lengths and rounded day lengths
+    day_max = len(max_temps)
+    site_day_lengths = np.empty(day_max)
+    for day in range(0, day_max):
+        if lat < 40:
+            dll = 12.14 + 3.34 * np.tan(lat * np.pi / 180) * np.cos(0.0172 * solar_declination[day] - 1.95)
+        else:
+            dll = 12.25 + (1.6164 + 1.7643 * (np.tan(lat * np.pi / 180)) ** 2) * np.cos(0.0172 * solar_declination[day] - 1.95)
+        site_day_lengths[day] = dll
+    site_day_lengths[site_day_lengths < 1] = 1
+    site_day_lengths[site_day_lengths > 23] = 23
+    site_day_lengths_rounded = site_day_lengths.astype(int)
+
+    # calculate temperature differences
+    min_temps[min_temps == 0] = 0.01
+    max_temps[max_temps == min_temps] += 0.01
+    temperature_differences = max_temps - min_temps
+
+    # calculate growing degree hours
+    gdh = np.empty(day_max)
+    for day in range(0, day_max):
+        temp_diff = temperature_differences[day]
+        day_length = site_day_lengths[day]
+        min_temp = min_temps[day]
+        daily_gdh = min_temp
+        daily_gdh -= base_temp
+        if daily_gdh < 0:
+            daily_gdh = 0
+        # calculate day time hourly temperatures
+        for hour in range(1, site_day_lengths_rounded[day] + 1):
+            aprox_temp_for_hour = temp_diff * np.sin(np.pi / (day_length + 4) * hour) + min_temp
+            aprox_temp_for_hour -= base_temp
+            if aprox_temp_for_hour < 0:
+                aprox_temp_for_hour = 0
+            daily_gdh += aprox_temp_for_hour
+        # calculate sunset time and temperature
+        ts1 = temp_diff * np.sin(np.pi / (day_length + 4) * day_length) + min_temp
+        if ts1 <= 0:
+            ts1 = 0.01
+        # calculate night time hourly temperatures
+        count = 0
+        for hour in range(site_day_lengths_rounded[day] + 1, 24):
+            count += 1
+            aprox_temp_for_hour = ts1 - (ts1 - min_temp) / (np.log(24 - day_length)) * np.log(count)
+            aprox_temp_for_hour -= base_temp
+            if aprox_temp_for_hour < 0:
+                aprox_temp_for_hour = 0
+            daily_gdh += aprox_temp_for_hour
+        gdh[day] = daily_gdh
+
+    start_date = leaf_out_day
+    spring_index_day = leaf(None, None, start_date, day_max, pheno_event, plant, gdh)
+    return spring_index_day
