@@ -2,6 +2,7 @@
 
 This repository contains the python code used to generate the [USA-NPN phenology maps.](https://www.usanpn.org/data/phenology_maps) 
 
+
 ## Overview
 Python scripts from this repository are ran nightly to generate the maps. At a high level each night new climate data ([NDFD](http://www.nws.noaa.gov/ndfd/), [RTMA](http://www.nco.ncep.noaa.gov/pmb/products/rtma/), [URMA](http://www.nco.ncep.noaa.gov/pmb/products/rtma/#URMA), and [PRISM](http://prism.oregonstate.edu/)) is downloaded and used to create various accumulated growing degree day and spring index maps. These maps are saved as geotiffs and their raster data is also imported into a postgis database in such a way that a Geoserver instance can serve out the maps. The following steps contained in the gridded_models_nightly_update.py script describe this process in more detail.
 
@@ -91,7 +92,7 @@ At this point if you look in the paths configured in config.yml you should have 
 
 ## Deployment
 
-The populate_climate_data.py and gridded_models_nightly_update.py scripts are ran nightly through cronjobs. This maintains the flow of incoming climate data, production of new geotiffs, and communication with the Geoserver instance that these maps are available.
+The populate_climate_data.py and gridded_models_nightly_update.py scripts are ran nightly through cronjobs. This maintains the flow of incoming climate data, production of new geotiffs, and communication with the Geoserver instance that these maps are available. The original environment for these scripts is Ubuntu 14.04.5 LTS.
 
 
 ## Versioning
