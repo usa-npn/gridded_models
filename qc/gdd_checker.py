@@ -257,8 +257,11 @@ def get_prism_climate_data(long, lat, date, climate_element):
     query = "SELECT st_value(rast,ST_SetSRID(ST_Point(%(long)s, %(lat)s),4269)) FROM %(table)s WHERE rast_date = %(rast_date)s AND ST_Intersects(rast, ST_SetSRID(ST_MakePoint(%(long)s, %(lat)s),4269));"
     data = {"table": AsIs(table_name), "long": long, "lat": lat, "rast_date": date.strftime("%Y-%m-%d")}
     curs.execute(query, data)
-    result = curs.fetchone()[0]
-    return result
+    result = curs.fetchone()
+    if result is None:
+        return None
+    else:
+        return result[0]
 
 
 def compute_gdd(tmin, tmax, base):
