@@ -12,7 +12,7 @@ with open("config.yml", 'r') as ymlfile:
 db = cfg["postgis"]
 conn = psycopg2.connect(dbname=db["db"], port=db["port"], user=db["user"],
                     password=db["password"], host=db["host"])
-save_path = cfg["postgis_raster_path"]
+save_path = cfg["temp_path"]
 
 
 def get_six_raster(year, plant, phenophase):
@@ -125,14 +125,14 @@ def get_daily_temp_raster(climate_provider, climate_var, year, month, day):
     outband.FlushCache()
 
 
-def get_rtma_hourly_temp_raster(year, month, day, hour):
+def get_hourly_temp_raster(year, month, day, hour, dataset):
     curs = conn.cursor()
     vsipath = '/vsimem/from_postgis'
-    table_name = 'rtma_' + year
+    table_name = 'hourly_temp_' + str(year)
 
     # query = "SELECT ST_AsGDALRaster(ST_Union(rast), 'Gtiff') FROM %s;"
-    query = "SELECT ST_AsGDALRaster(ST_Union(rast), 'Gtiff') FROM %s WHERE rast_date = %s AND rast_hour = %s;"
-    data = (AsIs(table_name), year + '-' + month + '-' + day, hour)
+    query = "SELECT ST_AsGDALRaster(ST_Union(rast), 'Gtiff') FROM %s WHERE rast_date = %s AND rast_hour = %s AND dataset = %s;"
+    data = (AsIs(table_name), str(year) + '-' + str(month) + '-' + str(day), hour, dataset)
     curs.execute(query, data)
 
     gdal.FileFromMemBuffer(vsipath, bytes(curs.fetchone()[0]))
@@ -151,7 +151,7 @@ def get_rtma_hourly_temp_raster(year, month, day, hour):
     rows = rast_array.shape[0]
 
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    file_name = save_path + 'rtma_' + '_' + year + '_' + month + '_' + day + '_' + hour + '.tif'
+    file_name = save_path + dataset + '_' + str(year) + '_' + str(month) + '_' + str(day) + '_' + str(hour) + '.tif'
     driver = gdal.GetDriverByName('Gtiff')
     outRaster = driver.Create(file_name, cols, rows, 1, gdal.GDT_Float32)
     outRaster.SetGeoTransform(geo_transform)

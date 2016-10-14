@@ -17,7 +17,9 @@ def main():
 
     # get_rtma_hourly_temp_raster('2014', '08', '19', '15')
 
-    get_raster_by_filename('agdd_2015', 'agdd_20150205.tif')
+    #get_raster_by_filename('agdd_2015', 'agdd_20150205.tif')
+
+    get_hourly_temp_raster(2016, 10, 3, 4, 'urma')
 
     # start_date = date(2015, 1, 16)
     # end_date = date(2015, 1, 16)
