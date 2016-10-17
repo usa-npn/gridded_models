@@ -329,15 +329,16 @@ class Six:
 
     @staticmethod
     def postgis_import(plant, phenophase, climate_source, date, time_rez):
+        date_string = date.strftime("%Y%m%d")
+        year_string = date.strftime("%Y")
         if time_rez == 'year':
-            date_string = date.strftime("%Y")
+            file_name = plant + '_' + phenophase + '_' + climate_source + '_' + year_string + '.tif'
         else:
-            date_string = date.strftime("%Y%m%d")
-            year_string = date.strftime("%Y")
+            file_name = plant + '_' + phenophase + '_' + climate_source + '_' + date_string + '.tif'
 
         conn = Six.conn
         curs = conn.cursor()
-        file_name = plant + '_' + phenophase + '_' + climate_source + '_' + date_string + '.tif'
+        #file_name = plant + '_' + phenophase + '_' + climate_source + '_' + date_string + '.tif'
         file_path = Six.save_path + 'six_' + plant + '_' + phenophase + '_' + climate_source + os.sep + file_name
         if climate_source == 'ncep' and time_rez == 'year':
             table_name = climate_source + '_spring_index_historic'
@@ -410,7 +411,10 @@ class Six:
 
         # populate image mosaic time series table if it exists
         # check if time series table exists
-        time_series_table = 'six' + '_' + plant + '_' + phenophase + '_' + climate_source
+        if climate_source == 'ncep' and time_rez == 'year':
+            time_series_table = 'six' + '_' + plant + '_' + phenophase + '_' + climate_source + '_historic'
+        else:
+            time_series_table = 'six' + '_' + plant + '_' + phenophase + '_' + climate_source
         time_series_exists = False
         query = "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = %s;"
         curs.execute(query, [time_series_table])
