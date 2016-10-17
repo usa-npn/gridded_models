@@ -40,7 +40,7 @@ def main():
 
     for layer in six_layers:
         contempory_file_dir = six_path + 'six_' + layer + os.sep
-        historic_file_dir = six_path + 'six_' + layer + '_historic'
+        historic_file_dir = six_path + 'six_' + layer + '_historic' + os.sep
 
         contempory_file_name = layer + '_' + str(year) + '1001.tif'
         historic_file_name = layer + '_' + str(year) + '.tif'
@@ -68,7 +68,7 @@ def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(filename=log_path+'gridded_testing.log',
+    logging.basicConfig(filename=log_path+'migrate_contempory_six_to_historic',
                         level=logging.INFO,
                         format='%(asctime)s %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p')
