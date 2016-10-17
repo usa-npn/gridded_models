@@ -19,17 +19,15 @@ email = cfg["email"]
 
 
 def email_log_results(log_to_email, from_address, to_address, subject):
-    fp = open(log_to_email, 'rb')
-
-    msg = MIMEText(fp.read())
-    fp.close()
+    with open(log_to_email) as fp:
+        msg = MIMEText(fp.read())
 
     msg['Subject'] = 'The contents of %s' % subject
     msg['From'] = from_address
     msg['To'] = to_address
 
     s = smtplib.SMTP('localhost')
-    s.sendmail(from_address, [to_address], msg.as_string())
+    s.sendmail(msg)
     s.quit()
 
 
