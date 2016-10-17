@@ -38,11 +38,11 @@ def main():
 
     for plant in plants:
         for phenophase in phenophases:
-            contempory_file_dir = six_path + 'six_' + plant + '_' + phenophase + 'ncep' + os.sep
-            historic_file_dir = six_path + 'six_' + plant + '_' + phenophase + 'ncep' + '_historic' + os.sep
+            contempory_file_dir = six_path + 'six_' + plant + '_' + phenophase + '_ncep' + os.sep
+            historic_file_dir = six_path + 'six_' + plant + '_' + phenophase + '_ncep' + '_historic' + os.sep
 
-            contempory_file_name = plant + '_' + phenophase + 'ncep' + '_' + str(year) + '0907.tif'
-            historic_file_name = plant + '_' + phenophase + 'ncep' + '_' + str(year) + '.tif'
+            contempory_file_name = plant + '_' + phenophase + '_ncep' + '_' + str(year) + '0907.tif'
+            historic_file_name = plant + '_' + phenophase + '_ncep' + '_' + str(year) + '.tif'
 
             contempory_file_path = contempory_file_dir + contempory_file_name
             historic_file_path = historic_file_dir + historic_file_name
