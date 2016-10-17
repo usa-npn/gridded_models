@@ -27,7 +27,7 @@ def email_log_results(log_to_email, from_address, to_address, subject):
     msg['To'] = to_address
 
     s = smtplib.SMTP('localhost')
-    s.sendmail(msg)
+    s.send_message(msg)
     s.quit()
 
 
@@ -40,6 +40,8 @@ def main():
     logging.info('*****************************************************************************')
     logging.info('***********beginning script migrate_contempory_six_to_historic.py*****************')
     logging.info('*****************************************************************************')
+
+    logging.info("\nReminder!!! - This year's NCEP SI-X layers are being copied to the historic layers.\n")
 
     plants = ['lilac', 'arnoldred', 'zabelli', 'average']
     phenophases = ['leaf', 'bloom']
@@ -75,6 +77,7 @@ def main():
             if os.path.isfile(contempory_file_path) and not os.path.isfile(historic_file_path):
                 logging.info('copying: ' + contempory_file_path + ' to: ' + historic_file_path)
                 shutil.copy(contempory_file_path, historic_file_path)
+                logging.info('importing to postgis: ' + historic_file_path)
                 driver.Six.postgis_import(plant, phenophase, 'ncep', beginning_of_this_year, "year")
 
     t1 = time.time()
