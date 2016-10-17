@@ -7,12 +7,30 @@ import os.path
 from util.log_manager import get_error_log
 import shutil
 import six.postgis_driver as driver
+import smtplib
+from email.mime.text import MIMEText
 
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 log_path = cfg["log_path"]
 six_path = cfg["six_path"]
+email = cfg["email"]
+
+
+def email_log_results(log_to_email, from_address, to_address, subject):
+    fp = open(log_to_email, 'rb')
+
+    msg = MIMEText(fp.read())
+    fp.close()
+
+    msg['Subject'] = 'The contents of %s' % subject
+    msg['From'] = from_address
+    msg['To'] = to_address
+
+    s = smtplib.SMTP('localhost')
+    s.sendmail(from_address, [to_address], msg.as_string())
+    s.quit()
 
 
 # this script migrates ncep si-x layers for day 250 (september 7th) to a historic yearly layer
@@ -47,7 +65,7 @@ def main():
             contempory_file_path = contempory_file_dir + contempory_file_name
             historic_file_path = historic_file_dir + historic_file_name
 
-            # we get yearly property files from a prism layer since it's a yearly mosaic we've already built
+            # we get yearly property files from a prism mosaic layer since it's a yearly mosaic we've already built
             prism_dir = six_path + 'six_average_leaf_prism' + os.sep
             if not os.path.exists(historic_file_dir):
                 logging.info('creating historic ncep directory: ' + historic_file_dir)
@@ -66,6 +84,9 @@ def main():
     logging.info('***********migrate_contempory_six_to_historic.py finished in %s seconds***********', t1 - t0)
     logging.info('*****************************************************************************')
 
+    email_log_results(log_path+'migrate_contempory_six_to_historic.log',
+                      email["from_address"], email["to_address"],
+                      "migrate_contempory_six_to_historic.log")
 
 if __name__ == "__main__":
     logging.basicConfig(filename=log_path+'migrate_contempory_six_to_historic.log',
