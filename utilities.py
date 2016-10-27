@@ -16,11 +16,42 @@ from util.log_manager import get_error_log
 import glob, os
 from climate.importer import rtma_import
 from netCDF4 import Dataset
+import json
+from urllib.request import urlopen
+import mysql.connector
 
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 log_path = cfg["log_path"]
+
+
+mysql_db = cfg["mysql"]
+try:
+    mysql_conn = mysql.connector.connect(database=mysql_db["db"], port=mysql_db["port"], user=mysql_db["user"],
+                        password=mysql_db["password"], host=mysql_db["host"])
+except:
+    print('database.py failed to connect to the database: ', exc_info=True)
+
+
+def get_acis_missing_climate_data():
+    start_date = '1980-01-01'
+    end_date = '2000-12-30'
+    climate_elements = 'mint,maxt'
+    # grab station ids
+    cursor = mysql_conn.cursor(dictionary=True)
+    query = "SELECT * FROM climate.stations;"
+    cursor.execute(query)
+    for station in cursor:
+        url = 'http://data.rcc-acis.org/MultiStnData?sids={station_id}&sdate={start_date}&edate={end_date}&elems={climate_elements}&output=json'\
+            .format(start_date=start_date, end_date=end_date, station_id=station['char_network_id'], climate_elements=climate_elements)
+        response = urlopen(url)
+        str_response = response.readall().decode('utf-8')
+        data = json.loads(str_response)
+        #print(data['data'])
+        print(station['char_network_id'])
+        if data and data['data'] and data['data'][0]:
+            print(data['data'][0])
 
 
 def pixel2coord(col, row):
@@ -60,11 +91,15 @@ def main():
     logging.info('***********beginning script utilities.py*****************')
     logging.info('*****************************************************************************')
 
+    get_acis_missing_climate_data()
+
+
+
     # load_geotiff_directory_into_postgis('D:\\gridded\\climate\\daily_temps\\tmax\\', 'tmax', 'urma')
 
-    daymet_file = 'D:\Daymet_V3_CFMosaics\data\daymet_v3_dayl_2015_na.nc4'
-    fh = Dataset(daymet_file, mode='r')
-    print('test')
+    # daymet_file = 'D:\Daymet_V3_CFMosaics\data\daymet_v3_dayl_2015_na.nc4'
+    # fh = Dataset(daymet_file, mode='r')
+    # print('test')
 
     t1 = time.time()
     logging.info('*****************************************************************************')
