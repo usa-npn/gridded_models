@@ -5,8 +5,6 @@ import logging
 import time
 # from datetime import timedelta
 # from geoserver.catalog import Catalog
-# from qc.gdd_checker import get_prism_climate_data
-# from qc.gdd_checker import get_urma_climate_data
 # from six.spring_index import spring_index_for_point
 # import numpy as np
 from osgeo import gdal
@@ -17,41 +15,14 @@ import glob, os
 from climate.importer import rtma_import
 from netCDF4 import Dataset
 import json
-from urllib.request import urlopen
-import mysql.connector
+from time import sleep
+from qc.six_checker import *
+from qc.gdd_checker import *
 
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 log_path = cfg["log_path"]
-
-
-mysql_db = cfg["mysql"]
-try:
-    mysql_conn = mysql.connector.connect(database=mysql_db["db"], port=mysql_db["port"], user=mysql_db["user"],
-                        password=mysql_db["password"], host=mysql_db["host"])
-except:
-    print('database.py failed to connect to the database: ', exc_info=True)
-
-
-def get_acis_missing_climate_data():
-    start_date = '1980-01-01'
-    end_date = '2000-12-30'
-    climate_elements = 'mint,maxt'
-    # grab station ids
-    cursor = mysql_conn.cursor(dictionary=True)
-    query = "SELECT * FROM climate.stations;"
-    cursor.execute(query)
-    for station in cursor:
-        url = 'http://data.rcc-acis.org/MultiStnData?sids={station_id}&sdate={start_date}&edate={end_date}&elems={climate_elements}&output=json'\
-            .format(start_date=start_date, end_date=end_date, station_id=station['char_network_id'], climate_elements=climate_elements)
-        response = urlopen(url)
-        str_response = response.readall().decode('utf-8')
-        data = json.loads(str_response)
-        #print(data['data'])
-        print(station['char_network_id'])
-        if data and data['data'] and data['data'][0]:
-            print(data['data'][0])
 
 
 def pixel2coord(col, row):
@@ -91,7 +62,33 @@ def main():
     logging.info('***********beginning script utilities.py*****************')
     logging.info('*****************************************************************************')
 
-    get_acis_missing_climate_data()
+    #get_acis_missing_climate_data()
+
+    for year in range(2003, 2016):
+        populate_historic_six_points(year)
+
+
+    # root_group = Dataset("D:\\gridded\\best\\Complete_TMIN_Daily_LatLong1_2010.nc", "r", format="NETCDF4")
+    # root_dims = root_group.dimensions
+    #
+    # lats = root_group.variables['latitude'][:]
+    # lons = root_group.variables['longitude'][:]
+    # years = root_group.variables['year'][:]
+    # months = root_group.variables['month'][:]
+    # days = root_group.variables['day'][:]
+    #
+    # days_dim = root_group.variables['day'].dimensions
+    #
+    # climatology = root_group.variables['climatology']
+    # climatoloy_dim = climatology.dimensions
+    #
+    # min_temps = climatology[:]
+    #
+    # mint = climatology[364,:,:]
+    #
+    # date_number = root_group['date_number'][:]
+    # temperature = root_group['temperature'][:]
+    # print("test")
 
 
 
@@ -120,4 +117,4 @@ if __name__ == "__main__":
     except (SystemExit, KeyboardInterrupt):
         raise
     except:
-        error_log.error('migrate_contempory_six_to_historic.py failed to finish: ', exc_info=True)
+        error_log.error('utilities.py failed to finish: ', exc_info=True)

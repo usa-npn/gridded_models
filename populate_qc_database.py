@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 from qc.gdd_checker import *
+from qc.six_checker import *
 from datetime import date
 import logging
 import time
@@ -14,9 +15,15 @@ with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml'))
 log_path = cfg["log_path"]
 
 
-# This script populates climate data and agdds from urma, acis, and prism into a mysql database
-# It's then used by tableau for uncertainty checks: https://www.usanpn.org/agdd_uncertainty
+def populate_historic_six_qc(year_start=2003, year_end=2016):
+    """Inserts/updates qc rows in the mysql climate.six table for PRISM and ACIS for the year range specified."""
+    for year in range(year_start, year_end):
+        populate_historic_six_points(year)
+
+
 def main():
+    """Inserts/updates qc rows in the mysql climate.six and aggd tables for URMA, PRISM and ACIS.
+    Used by tableau for uncertainty checks: https://www.usanpn.org/agdd_uncertainty"""
     t0 = time.time()
 
     today = date.today()
@@ -35,7 +42,7 @@ def main():
     acis_end = today
     prism_start = beginning_of_this_year
     prism_end = three_days_ago
-    populate_climate_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end)
+    populate_agdd_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end)
     populate_six_qc(beginning_of_this_year, urma_end, beginning_of_this_year, acis_end, beginning_of_this_year,
                     prism_end)
 

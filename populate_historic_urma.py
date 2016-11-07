@@ -5,7 +5,7 @@ from datetime import date
 from datetime import timedelta
 import logging
 import time
-from qc.gdd_checker import populate_climate_qc
+from qc.gdd_checker import populate_agdd_qc
 from qc.gdd_checker import populate_six_qc
 import yaml
 import os.path
@@ -58,7 +58,7 @@ def main():
     acis_end = datetime.now().date()
     prism_start = datetime.now().date() - timedelta(days=9)
     prism_end = datetime.now().date() - timedelta(days=3)
-    populate_climate_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end)
+    populate_agdd_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end)
     populate_six_qc(beginning_of_this_year, urma_end, beginning_of_this_year, acis_end, beginning_of_this_year, prism_end)
 
     t1 = time.time()

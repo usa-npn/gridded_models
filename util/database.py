@@ -5,8 +5,7 @@ import os.path
 import subprocess
 from util.log_manager import get_error_log
 from osgeo import gdal
-import numpy as np
-
+import mysql.connector
 
 error_log = get_error_log()
 
@@ -18,6 +17,14 @@ db = cfg["postgis"]
 try:
     conn = psycopg2.connect(dbname=db["db"], port=db["port"], user=db["user"],
                         password=db["password"], host=db["host"])
+except:
+    error_log.error('database.py failed to connect to the database: ', exc_info=True)
+
+
+mysql_db = cfg["mysql"]
+try:
+    mysql_conn = mysql.connector.connect(database=mysql_db["db"], port=mysql_db["port"], user=mysql_db["user"],
+                        password=mysql_db["password"], host=mysql_db["host"])
 except:
     error_log.error('database.py failed to connect to the database: ', exc_info=True)
 

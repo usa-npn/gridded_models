@@ -4,6 +4,7 @@ from six.spring_index_util import *
 from climate.importer import *
 from util.gdd import *
 from qc.gdd_checker import *
+from qc.six_checker import *
 from datetime import date
 from datetime import datetime
 import logging
@@ -185,7 +186,7 @@ def main():
         acis_end = today
         prism_start = one_week_ago
         prism_end = three_days_ago
-        populate_climate_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end)
+        populate_agdd_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end)
         populate_six_qc(beginning_of_this_year, urma_end, beginning_of_this_year, acis_end, beginning_of_this_year, prism_end)
 
     t1 = time.time()
