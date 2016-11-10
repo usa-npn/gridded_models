@@ -2,24 +2,27 @@ import logging
 import numpy as np
 from six.spring_index import spring_index_for_point
 from qc.utils import *
+from qc.mysql_queries import *
 
 
-def add_six_row(station_id, source_id, leaf_lilac, leaf_arnoldred, leaf_zabelli, leaf_average, bloom_lilac, bloom_arnoldred, bloom_zabelli, bloom_average, year, missing):
+def add_six_row(station_id, source_id, leaf_lilac, leaf_arnoldred, leaf_zabelli, leaf_average,
+                bloom_lilac, bloom_arnoldred, bloom_zabelli, bloom_average, year, missing):
     if np.isnan(leaf_average):
         missing = True
-        leaf_lilac, leaf_arnoldred, leaf_zabelli, leaf_average, bloom_lilac, bloom_arnoldred, bloom_zabelli, bloom_average = 0, 0, 0, 0, 0, 0, 0, 0
+        leaf_lilac, leaf_arnoldred, leaf_zabelli, leaf_average = 0, 0, 0, 0
+        bloom_lilac, bloom_arnoldred, bloom_zabelli, bloom_average = 0, 0, 0, 0
     if np.isnan(bloom_average):
         missing = True
         bloom_lilac, bloom_arnoldred, bloom_zabelli, bloom_average = 0, 0, 0, 0
     cursor = mysql_conn.cursor(buffered=True)
-    query = "SELECT * FROM climate.six WHERE station_id = %s AND source_id = %s AND year = %s ;"
-    cursor.execute(query, (station_id, source_id, year))
+    cursor.execute(select_station_six_rows_for_year, (station_id, source_id, year))
     if cursor.rowcount < 1:
-        query = "INSERT INTO climate.six (station_id, source_id, leaf_lilac, leaf_arnoldred, leaf_zabelli, leaf_average, bloom_lilac, bloom_arnoldred, bloom_zabelli, bloom_average, year, missing) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"
-        cursor.execute(query, (station_id, source_id, leaf_lilac, leaf_arnoldred, leaf_zabelli, leaf_average, bloom_lilac, bloom_arnoldred, bloom_zabelli, bloom_average, year, missing))
+        cursor.execute(insert_six_row, (station_id, source_id, leaf_lilac, leaf_arnoldred, leaf_zabelli, leaf_average,
+                                        bloom_lilac, bloom_arnoldred, bloom_zabelli, bloom_average, year, missing))
     else:
-        query = "UPDATE climate.six SET leaf_lilac = %s, leaf_arnoldred = %s, leaf_zabelli = %s, leaf_average = %s, bloom_lilac = %s, bloom_arnoldred = %s, bloom_zabelli = %s, bloom_average = %s, missing = %s WHERE station_id = %s AND source_id = %s AND year = %s;"
-        cursor.execute(query, (leaf_lilac, leaf_arnoldred, leaf_zabelli, leaf_average, bloom_lilac, bloom_arnoldred, bloom_zabelli, bloom_average, missing, station_id, source_id, year))
+        cursor.execute(update_six_row, (leaf_lilac, leaf_arnoldred, leaf_zabelli, leaf_average,
+                                        bloom_lilac, bloom_arnoldred, bloom_zabelli, bloom_average,
+                                        missing, station_id, source_id, year))
     mysql_conn.commit()
     cursor.close()
 
@@ -49,16 +52,11 @@ def populate_six_using_temps_from_qc_table(start_date, end_date, source_id, stat
         num_days = 240
 
     for station in stations:
-        station_id = station['id']
-        latitude = station['latitude']
-
-        tmin = get_temps_for_year_from_qc_table(station_id, 'tmin', source_id, year)
-        tmax = get_temps_for_year_from_qc_table(station_id, 'tmax', source_id, year)
-
+        tmin = get_temps_for_year_from_qc_table(station['id'], 'tmin', source_id, year)
+        tmax = get_temps_for_year_from_qc_table(station['id'], 'tmax', source_id, year)
         tmin = np.array(tmin[:num_days])
         tmax = np.array(tmax[:num_days])
-
-        populate_six_in_qc_table(tmax, tmin, latitude, station_id, source_id, year)
+        populate_six_in_qc_table(tmax, tmin, station['latitude'], station['id'], source_id, year)
 
 
 def populate_six_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end):
@@ -67,7 +65,6 @@ def populate_six_qc(urma_start, urma_end, acis_start, acis_end, prism_start, pri
     logging.info('-----------------beginning si-x quality check population-----------------')
 
     stations = get_stations()
-
     sources = get_sources()
     acis_source_id = None
     urma_source_id = None
@@ -96,7 +93,7 @@ def populate_six_qc(urma_start, urma_end, acis_start, acis_end, prism_start, pri
 def populate_historic_six_points(year):
     """Populates the six table using acis, and prism data for qc purposes."""
     num_days = 240
-    line = '-------------------------------------------------------------------------------------------------------------------------------------------------------------------'
+    line = '-----------------------------------------------------------------------------------------------------------'
     logging.info(line)
     logging.info('CRN Temps For Year: {year}'.format(year=year))
     print('CRN Temps For Year: {year}'.format(year=year))
@@ -113,13 +110,10 @@ def populate_historic_six_points(year):
 
     sources = get_sources()
     acis_source_id = None
-    urma_source_id = None
     prism_source_id = None
     for source in sources:
         if source['name'] == 'ACIS':
             acis_source_id = source['id']
-        elif source['name'] == 'URMA':
-            urma_source_id = source['id']
         elif source['name'] == 'PRISM':
             prism_source_id = source['id']
 
@@ -148,7 +142,8 @@ def populate_historic_six_points(year):
             acis_tmax.append(station_data[doy][1])
             if acis_tmin[doy] == 'M' or acis_tmax[doy] == 'M':
                 missing = True
-                logging.info('Missing data on day of year {doy}... here is the data up to the missing day'.format(doy=doy+1))
+                logging.info('Missing data on day of year {doy}... here is the data up to the missing day'
+                             .format(doy=doy+1))
                 break
 
         prism_tmin = []
@@ -175,20 +170,24 @@ def populate_historic_six_points(year):
                 prev_tmax = t_max
                 prism_tmin.append(float(t_min))
                 prism_tmax.append(float(t_max))
-            #min_diffs = np.array(acis_tmin[:num_days]) - np.array(prism_tmin[:num_days])
-            #max_diffs = np.array(acis_tmax[:num_days]) - np.array(prism_tmax[:num_days])
-            populate_six_in_qc_table(np.array(acis_tmax[:num_days]), np.array(acis_tmin[:num_days]), latitude, station_id, acis_source_id, year)
-            populate_six_in_qc_table(np.array(prism_tmax[:num_days]), np.array(prism_tmin[:num_days]), latitude, station_id, prism_source_id, year)
+            # min_diffs = np.array(acis_tmin[:num_days]) - np.array(prism_tmin[:num_days])
+            # max_diffs = np.array(acis_tmax[:num_days]) - np.array(prism_tmax[:num_days])
+            populate_six_in_qc_table(np.array(acis_tmax[:num_days]), np.array(acis_tmin[:num_days]),
+                                     latitude, station_id, acis_source_id, year)
+            populate_six_in_qc_table(np.array(prism_tmax[:num_days]), np.array(prism_tmin[:num_days]),
+                                     latitude, station_id, prism_source_id, year)
 
         logging.info('acis_tmin: {tmin}'.format(tmin=acis_tmin))
         logging.info('prism_tmin: {tmin}'.format(tmin=prism_tmin))
         logging.info('acis_tmax: {tmax}'.format(tmax=acis_tmax))
         logging.info('prism_tmax: {tmax}'.format(tmax=prism_tmax))
-    logging.info('####Year: {year} had {complete_stations} stations with no missing data'.format(year=year,complete_stations=complete_stations))
-    print('####Year: {year} had {complete_stations} stations with no missing data'.format(year=year,complete_stations=complete_stations))
+    logging.info('####Year: {year} had {complete_stations} stations with no missing data'
+                 .format(year=year, complete_stations=complete_stations))
+    print('####Year: {year} had {complete_stations} stations with no missing data'
+          .format(year=year, complete_stations=complete_stations))
 
 
 if __name__ == "__main__":
     print('nothing yet')
-    #load_acis_csv_to_db()
+    # load_acis_csv_to_db()
     # populate_agdd_qc()

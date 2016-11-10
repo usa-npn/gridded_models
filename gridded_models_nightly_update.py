@@ -19,6 +19,7 @@ with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml'))
     cfg = yaml.load(ymlfile)
 log_path = cfg["log_path"]
 
+
 # This is the main gridded models script. It runs nightly to both pull climate data and generate various rasters which
 # are also imported into a postgis database
 def main():

@@ -1,14 +1,10 @@
 import logging
 from qc.utils import *
+from qc.mysql_queries import *
 
 
 def compute_gdd(tmin, tmax, base):
-    """Computes growing degree days for one day.
-    :param tmin: day's minimum temperature
-    :param tmax: day's maximum temperature
-    :param base: base temperature
-    :return: growing degree days
-    """
+    """Computes growing degree days for one day."""
     gdd = (tmin + tmax) / 2 - base
     if gdd < 0:
         return 0
@@ -19,14 +15,11 @@ def compute_gdd(tmin, tmax, base):
 def add_agdd_row(station_id, source_id, gdd, agdd, year, doy, date, base, missing, tmin, tmax):
     """Inserts or updates a row in the agdds table."""
     cursor = mysql_conn.cursor(buffered=True)
-    query = "SELECT * FROM climate.agdds WHERE station_id = %s AND source_id = %s AND date = %s AND base_temp_f = %s ;"
-    cursor.execute(query, (station_id, source_id, date, base))
+    cursor.execute(search_for_agdd_row, (station_id, source_id, date, base))
     if cursor.rowcount < 1:
-        query = "INSERT INTO climate.agdds (station_id, source_id, gdd, agdd, year, doy, date, base_temp_f, missing, tmin, tmax) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"
-        cursor.execute(query, (station_id, source_id, gdd, agdd, year, doy, date, base, missing, tmin, tmax))
+        cursor.execute(insert_agdd_row, (station_id, source_id, gdd, agdd, year, doy, date, base, missing, tmin, tmax))
     else:
-        query = "UPDATE climate.agdds SET tmin = %s, tmax = %s, gdd = %s, agdd = %s, missing = %s WHERE station_id = %s AND source_id = %s AND base_temp_f = %s AND date = %s;"
-        cursor.execute(query, (tmin, tmax, gdd, agdd, missing, station_id, source_id, base, date))
+        cursor.execute(update_agdd_row, (tmin, tmax, gdd, agdd, missing, station_id, source_id, base, date))
     mysql_conn.commit()
     cursor.close()
 
