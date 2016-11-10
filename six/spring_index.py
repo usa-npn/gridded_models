@@ -124,7 +124,7 @@ def spring_index_hourly(max_temps, gdh, base_temp, leaf_out_days, pheno_event, p
 
 
 # compute spring index using daily tmin / tmax temps to create hourly temperature approximations
-def spring_index(max_temps, min_temps, base_temp, leaf_out_days, pheno_event, plant, upper_left_y, ydim):
+def spring_index(max_temps, min_temps, base_temp, leaf_out_days, pheno_event, plant, site_latitudes):
     num_lats = max_temps.shape[0]
     num_longs = max_temps.shape[1]
     day_max = max_temps.shape[2]
@@ -135,18 +135,18 @@ def spring_index(max_temps, min_temps, base_temp, leaf_out_days, pheno_event, pl
         max_temps[:, :, day] = np.maximum(max_temps[:, :, day], min_temps[:, :, day - 1])
         min_temps[:, :, day] = np.minimum(min_temps[:, :, day], max_temps[:, :, day - 1])
 
-    # calculate latitudes
-    site_latitudes = np.arange(num_lats, dtype=float)
-    site_latitudes *= -ydim
-    site_latitudes += upper_left_y
-
     # calculate day lengths and rounded day lengths
     site_day_lengths = np.empty((day_max, num_lats))
     for day in range(0, day_max):
         temp_lats = np.copy(site_latitudes)
-        temp_lats[temp_lats < 40] = 12.14 + 3.34 * np.tan(site_latitudes[site_latitudes < 40] * np.pi / 180) * np.cos(0.0172 * solar_declination[day] - 1.95)
-        temp_lats[temp_lats >= 40] = 12.25 + (1.6164 + 1.7643 * (
-        np.tan(site_latitudes[site_latitudes >= 40] * np.pi / 180)) ** 2) * np.cos(0.0172 * solar_declination[day] - 1.95)
+        for i, temp_lat in enumerate(temp_lats):
+            if temp_lat < 40:
+                temp_lats[i] = 12.14 + 3.34 * np.tan(temp_lat * np.pi / 180) * np.cos(0.0172 * solar_declination[day] - 1.95)
+            else:
+                temp_lats[i] = 12.25 + (1.6164 + 1.7643 * (np.tan(temp_lat * np.pi / 180)) ** 2) * np.cos(0.0172 * solar_declination[day] - 1.95)
+        # temp_lats[temp_lats < 40] = 12.14 + 3.34 * np.tan(site_latitudes[site_latitudes < 40] * np.pi / 180) * np.cos(0.0172 * solar_declination[day] - 1.95)
+        # temp_lats[temp_lats >= 40] = 12.25 + (1.6164 + 1.7643 * (
+        # np.tan(site_latitudes[site_latitudes >= 40] * np.pi / 180)) ** 2) * np.cos(0.0172 * solar_declination[day] - 1.95)
         site_day_lengths[day, :] = temp_lats
     site_day_lengths[site_day_lengths < 1] = 1
     site_day_lengths[site_day_lengths > 23] = 23

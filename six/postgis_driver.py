@@ -228,8 +228,15 @@ class Six:
     @staticmethod
     def compute_daily_index(plant, phenophase):
         (upper_left_x, x_size, x_rotation, upper_left_y, y_rotation, y_size) = Six.geo_transform
+
+        # calculate latitudes
+        num_lats = Six.max_temps.shape[0]
+        site_latitudes = np.arange(num_lats, dtype=float)
+        site_latitudes *= -Six.ydim
+        site_latitudes += upper_left_y
+
         if phenophase == 'leaf':
-            Six.leaf_array = spring_index(Six.max_temps, Six.min_temps, Six.base_temp, Six.leaf_array, phenophase, plant, upper_left_y, Six.ydim)
+            Six.leaf_array = spring_index(Six.max_temps, Six.min_temps, Six.base_temp, Six.leaf_array, phenophase, plant, site_latitudes)
             leaf_copy = np.copy(Six.leaf_array)
             leaf_copy[leaf_copy < 0] = np.nan
             if Six.leaf_average_array == None:
@@ -237,7 +244,7 @@ class Six:
             else:
                 Six.leaf_average_array = Six.leaf_average_array + leaf_copy
         elif phenophase == 'bloom':
-            Six.bloom_array = spring_index(Six.max_temps, Six.min_temps, Six.base_temp, Six.leaf_array, phenophase, plant, upper_left_y, Six.ydim)
+            Six.bloom_array = spring_index(Six.max_temps, Six.min_temps, Six.base_temp, Six.leaf_array, phenophase, plant, site_latitudes)
             bloom_copy = np.copy(Six.bloom_array)
             bloom_copy[bloom_copy < 0] = np.nan
             if Six.bloom_average_array == None:
