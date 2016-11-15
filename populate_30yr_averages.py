@@ -1,5 +1,5 @@
 from util.gdd import *
-from six.spring_index_util import *
+from spring_index.spring_index_util import *
 import time
 import logging
 import yaml
