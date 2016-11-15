@@ -1,4 +1,4 @@
-import six.postgis_driver as driver
+import spring_index.postgis_driver as driver
 from datetime import *
 import time
 import logging
@@ -8,6 +8,7 @@ import os.path
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 log_path = cfg["log_path"]
+
 
 # This script is used to populate the spring index for historic years. It is not ran nightly.
 # Before running this script populate_prism.py must be ran for the years you want to generate spring index maps.

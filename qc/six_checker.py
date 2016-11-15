@@ -1,6 +1,6 @@
 import logging
 import numpy as np
-from six.spring_index import spring_index_for_point
+from spring_index.spring_index import spring_index_for_point
 from qc.utils import *
 
 

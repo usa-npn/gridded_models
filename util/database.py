@@ -63,9 +63,13 @@ def agdd_row_exists(table_name, scale, base, date):
     return result
 
 
-def save_raster_to_postgis(raster_path, table_name, srid):
+def save_raster_to_postgis(raster_path, table_name, srid, tile=True):
     curs = conn.cursor()
     new_table = not table_exists(table_name)
+    if tile:
+        tile_arg = "-t auto "
+    else:
+        tile_arg = ""
 
     # remove old entry if already exists
     if not new_table:
@@ -77,18 +81,18 @@ def save_raster_to_postgis(raster_path, table_name, srid):
     # insert the raster (either create a new table or append to previously created table)
     if new_table:
         if srid:
-            import_command = "raster2pgsql -s {srid} -c -R -I -C -F -t auto {file} public.{table}"\
-                .format(file=raster_path, table=table_name, srid=srid)
+            import_command = "raster2pgsql -s {srid} -c -R -I -C -F {tile_arg}{file} public.{table}"\
+                .format(file=raster_path, table=table_name, srid=srid, tile_arg=tile_arg)
         else:
-            import_command = "raster2pgsql -c -R -I -C -F -t auto {file} public.{table}"\
-                .format(file=raster_path, table=table_name)
+            import_command = "raster2pgsql -c -R -I -C -F {tile_arg}{file} public.{table}"\
+                .format(file=raster_path, table=table_name, tile_arg=tile_arg)
     else:
         if srid:
-            import_command = "raster2pgsql -s {srid} -a -R -F -t auto {file} public.{table}"\
-                .format(file=raster_path, table=table_name, srid=srid)
+            import_command = "raster2pgsql -s {srid} -a -R -F {tile_arg}{file} public.{table}"\
+                .format(file=raster_path, table=table_name, srid=srid, tile_arg=tile_arg)
         else:
-            import_command = "raster2pgsql -a -R -F -t auto {file} public.{table}"\
-                .format(file=raster_path, table=table_name)
+            import_command = "raster2pgsql -a -R -F {tile_arg}{file} public.{table}"\
+                .format(file=raster_path, table=table_name, tile_arg=tile_arg)
     import_command2 = "psql -h {host} -p {port} -d {database} -U {user} --no-password"\
         .format(host=db["host"], port=db["port"], database=db["db"], user=db["user"])
 

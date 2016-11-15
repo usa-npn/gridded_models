@@ -1,6 +1,6 @@
 #!/usr/bin/python3
-import six.postgis_driver as driver
-from six.spring_index_util import *
+import spring_index.postgis_driver as driver
+from spring_index.spring_index_util import *
 from climate.importer import *
 from util.gdd import *
 from qc.gdd_checker import *

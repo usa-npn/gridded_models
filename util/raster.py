@@ -27,6 +27,30 @@ def write_int16_raster(file_path, rast_array, no_data_value, rast_cols, rast_row
     band.FlushCache()
 
 
+def write_best_raster(file_path, array, min_lon, max_lon, num_lons, min_lat, max_lat, num_lats):
+    driver = gdal.GetDriverByName('Gtiff')
+    no_data_value = -9999
+
+    srs = osr.SpatialReference()
+    srs.ImportFromEPSG(4269)
+
+    xmin, ymin, xmax, ymax = [min_lon, min_lat, max_lon, max_lat]
+    nrows = num_lats
+    ncols = num_lons
+    xres = (xmax - xmin) / float(ncols)
+    yres = (ymax - ymin) / float(nrows)
+    geotransform = (xmin, xres, 0, ymax, 0, -yres)
+
+    raster = driver.Create(file_path, num_lons, num_lats, 1, gdal.GDT_Float32)
+    band = raster.GetRasterBand(1)
+    band.SetNoDataValue(no_data_value)
+    band.WriteArray(array)
+
+    raster.SetGeoTransform(geotransform)
+    raster.SetProjection(srs.ExportToWkt())
+    band.FlushCache()
+
+
 def apply_usa_mask(rast_array):
     mask = gdal.Open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'usa_mask.tif')))
     mask_band = mask.GetRasterBand(1)

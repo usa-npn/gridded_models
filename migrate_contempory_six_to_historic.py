@@ -6,7 +6,7 @@ import yaml
 import os.path
 from util.log_manager import get_error_log
 import shutil
-import six.postgis_driver as driver
+import spring_index.postgis_driver as driver
 import smtplib
 from email.mime.text import MIMEText
 
