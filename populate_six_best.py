@@ -36,6 +36,7 @@ def compute_best_six_layers():
                                   .format(decade=decade), "r", format="NETCDF4")
 
         lats = tmin_root_group.variables['latitude'][90:]
+        lats = np.flipud(lats)
         lons = tmin_root_group.variables['longitude'][:180]
         years = tmin_root_group.variables['year'][:]
         # months = tmin_root_group.variables['month'][:]

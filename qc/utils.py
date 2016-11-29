@@ -59,6 +59,22 @@ def get_prism_climate_data(long, lat, date, climate_element):
         return result[0]
 
 
+def get_six_data(long, lat, date, phenophase, climate_provider):
+    if climate_provider == 'best':
+        table_name = "best_spring_index"
+    else:
+        table_name = "prism_spring_index"
+    curs = conn.cursor()
+    data = {"table": AsIs(table_name), "long": long, "lat": lat, "rast_date": date.strftime("%Y-%m-%d"),
+            "phenophase": phenophase}
+    curs.execute(select_best_six_by_date, data)
+    result = curs.fetchone()
+    if result is None:
+        return None
+    else:
+        return result[0]
+
+
 def get_temps_for_year_from_qc_table(station_id, element, source_id, year):
     cursor = mysql_conn.cursor(dictionary=True)
     cursor.execute(select_agdd_temps_for_year, [station_id, source_id, year])

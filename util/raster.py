@@ -34,7 +34,9 @@ def write_best_raster(file_path, array, min_lon, max_lon, num_lons, min_lat, max
     srs = osr.SpatialReference()
     srs.ImportFromEPSG(4269)
 
-    xmin, ymin, xmax, ymax = [min_lon, min_lat, max_lon, max_lat]
+    # the below .5s are because we want the outer edges of the min/max lat/lon squares not the center,
+    # and each best grid cell has a height/width of 1
+    xmin, ymin, xmax, ymax = [min_lon - .5, min_lat - .5, max_lon + .5, max_lat + .5]
     nrows = num_lats
     ncols = num_lons
     xres = (xmax - xmin) / float(ncols)

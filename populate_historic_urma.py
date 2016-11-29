@@ -6,7 +6,7 @@ from datetime import timedelta
 import logging
 import time
 from qc.gdd_checker import populate_agdd_qc
-from qc.gdd_checker import populate_six_qc
+from qc.six_checker import populate_six_qc
 import yaml
 import os.path
 from util.log_manager import get_error_log
