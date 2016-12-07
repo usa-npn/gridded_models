@@ -2,3 +2,4 @@ Name,Description
 URMA, URMA raster data exported from the USA-NPN Postgres database.
 ACIS, The Applied Climate Information System (ACIS) was developed and is maintained by the NOAA Regional Climate Centers (RCCs).
 PRISM, PRISM raster data exported from the USA-NPN Postgres database.
+BEST, BEST raster data exported from the USA-NPN Postgres database.

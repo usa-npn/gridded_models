@@ -7,11 +7,11 @@ from qc.mysql_queries import *
 
 def add_six_row(station_id, source_id, leaf_lilac, leaf_arnoldred, leaf_zabelli, leaf_average,
                 bloom_lilac, bloom_arnoldred, bloom_zabelli, bloom_average, year, missing):
-    if np.isnan(leaf_average):
+    if not leaf_average or np.isnan(leaf_average):
         missing = True
         leaf_lilac, leaf_arnoldred, leaf_zabelli, leaf_average = 0, 0, 0, 0
         bloom_lilac, bloom_arnoldred, bloom_zabelli, bloom_average = 0, 0, 0, 0
-    if np.isnan(bloom_average):
+    if not bloom_average or np.isnan(bloom_average):
         missing = True
         bloom_lilac, bloom_arnoldred, bloom_zabelli, bloom_average = 0, 0, 0, 0
     cursor = mysql_conn.cursor(buffered=True)
@@ -88,6 +88,25 @@ def populate_six_qc(urma_start, urma_end, acis_start, acis_end, prism_start, pri
     logging.info(' ')
     logging.info('-----------------populating prism qc si-x-----------------')
     populate_six_using_temps_from_qc_table(prism_start, prism_end, prism_source_id, stations)
+
+
+def populate_historic_best_six_points(year):
+    """Populates the six table using best data for qc purposes."""
+
+    logging.info('Populating best si-x for year: {year}'.format(year=year))
+    print('Populating best si-x for year: {year}'.format(year=year))
+
+    year_as_date = date(year, 1, 1)
+    stations = get_stations()
+    sources = get_sources()
+    best_source_id = None
+    for source in sources:
+        if source['name'] == 'BEST':
+            best_source_id = source['id']
+    for station in stations:
+        leaf_day = get_six_data(station['longitude'], station['latitude'], year_as_date, "leaf", "best")
+        bloom_day = get_six_data(station['longitude'], station['latitude'], year_as_date, "bloom", "best")
+        add_six_row(station['id'], best_source_id, 0, 0, 0, leaf_day, 0, 0, 0, bloom_day, year, False)
 
 
 def populate_historic_six_points(year):

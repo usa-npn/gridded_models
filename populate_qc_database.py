@@ -20,6 +20,11 @@ def populate_historic_six_qc(year_start=2003, year_end=2016):
     for year in range(year_start, year_end):
         populate_historic_six_points(year)
 
+def populate_historic_best_qc(year_start=1880, year_end=2014):
+    """Inserts/updates qc rows in the mysql climate.six table for BEST for the year range specified."""
+    for year in range(year_start, year_end):
+        populate_historic_best_six_points(year)
+
 
 def main():
     """Inserts/updates qc rows in the mysql climate.six and aggd tables for URMA, PRISM and ACIS.
@@ -45,6 +50,8 @@ def main():
     populate_agdd_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end)
     populate_six_qc(beginning_of_this_year, urma_end, beginning_of_this_year, acis_end, beginning_of_this_year,
                     prism_end)
+
+    # populate_historic_best_qc(2013, 2014)
 
     t1 = time.time()
     logging.info('*****************************************************************************')
