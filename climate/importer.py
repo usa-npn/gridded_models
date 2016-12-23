@@ -10,10 +10,31 @@ from datetime import *
 import re
 import logging
 import numpy as np
+from time import sleep
 
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
+
+
+def retrieve_from_url(url_to_get, path_to_save):
+    logging.info('downloading %s to %s', url_to_get, path_to_save)
+    retry_count = 0
+    while retry_count < 25:
+        try:
+            urlretrieve(url_to_get, path_to_save)
+        except urllib.error.URLError as e:
+            logging.warning('error retrieving file (retrying in 5 seconds): %s', str(e))
+            sleep(5)
+            retry_count += 1
+        except urllib.error.ContentTooShortError as e:
+            logging.warning('error retrieving file (retrying in 5 seconds): %s', str(e))
+            sleep(5)
+            retry_count += 1
+        else:
+            return True
+    logging.warning('error retrieving file (giving up)')
+    return False
 
 
 def download_forecast():
@@ -53,8 +74,10 @@ def download_forecast():
     for forecast in forecasts:
         # grab the multiband raster
         file_name = forecast['file_name']
-        logging.info('downloading %s to %s', forecast['url'], working_path + file_name)
-        urlretrieve(forecast['url'], working_path + file_name)
+        retrieved = retrieve_from_url(forecast['url'], working_path + file_name)
+
+        if not retrieved:
+            continue
 
         # each band is a different day
         forecast_data = gdal.Open(working_path + file_name)
@@ -138,18 +161,11 @@ def download_hourly_temps(dataset):
         # download the file (we keep retrying if there are network issues)
         # DS.TEMP.BIN   =   TEMPERATURE ANALYSIS
         url = base_url_temp + 'RT.' + zero_padded_hour + '/ds.temp.bin'
-        retrieved = False
         file_name = dataset + '_' + zero_padded_hour + '.bin'
-        logging.info('downloading %s to %s', url, working_path + file_name)
-        while not retrieved:
-            try:
-                urlretrieve(url, working_path + file_name)
-            except urllib.error.URLError as e:
-                logging.warning('error retrieving file (retrying): %s', str(e))
-            except urllib.error.ContentTooShortError as e:
-                logging.warning('error retrieving file (retrying): %s', str(e))
-            else:
-                retrieved = True
+        retrieved = retrieve_from_url(url, working_path + file_name)
+
+        if not retrieved:
+            continue
 
         # warp to match prism extent, projection, and size
         warp_to_prism(working_path + file_name)
@@ -203,18 +219,11 @@ def download_hourly_temp_uncertainty(dataset):
         # download the file (we keep retrying if there are network issues)
         # DS.UTEMP.BIN  =  TEMPERATURE ANALYSIS UNCERTAINTY
         url = base_url_temp + 'RT.' + zero_padded_hour + '/ds.utemp.bin'
-        retrieved = False
         file_name = dataset + '_' + zero_padded_hour + '.bin'
-        logging.info('downloading %s to %s', url, working_path + file_name)
-        while not retrieved:
-            try:
-                urlretrieve(url, working_path + file_name)
-            except urllib.error.URLError as e:
-                logging.warning('error retrieving file (retrying): %s', str(e))
-            except urllib.error.ContentTooShortError as e:
-                logging.warning('error retrieving file (retrying): %s', str(e))
-            else:
-                retrieved = True
+        retrieved = retrieve_from_url(url, working_path + file_name)
+
+        if not retrieved:
+            continue
 
         # warp to match prism extent, projection, and size
         warp_to_prism(working_path + file_name)
