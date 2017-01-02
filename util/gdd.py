@@ -141,6 +141,14 @@ def import_agdd(agdd_date, base, climate_data_provider):
     else:
         logging.error('invalid climate data provider: %s', climate_data_provider)
 
+    if not table_exists(tmin_table_name):
+        logging.info('cannot compute agdd tmin table doesnt yet exist: %s ', tmin_table_name)
+        return
+
+    if not table_exists(tmax_table_name):
+        logging.info('cannot compute agdd tmax table doesnt yet exist: %s ', tmax_table_name)
+        return
+
     # table to save agdd data to
     if climate_data_provider == 'ncep':
         agdd_table_name = 'agdd_' + agdd_date.strftime("%Y")
