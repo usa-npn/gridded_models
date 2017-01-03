@@ -54,9 +54,10 @@ def populate_six_using_temps_from_qc_table(start_date, end_date, source_id, stat
     for station in stations:
         tmin = get_temps_for_year_from_qc_table(station['id'], 'tmin', source_id, year)
         tmax = get_temps_for_year_from_qc_table(station['id'], 'tmax', source_id, year)
-        tmin = np.array(tmin[:num_days])
-        tmax = np.array(tmax[:num_days])
-        populate_six_in_qc_table(tmax, tmin, station['latitude'], station['id'], source_id, year)
+        if tmin is not None and tmax is not None:
+            tmin = np.array(tmin[:num_days])
+            tmax = np.array(tmax[:num_days])
+            populate_six_in_qc_table(tmax, tmin, station['latitude'], station['id'], source_id, year)
 
 
 def populate_six_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end):
