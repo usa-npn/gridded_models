@@ -42,6 +42,11 @@ def populate_agdds(start_date, end_date, source, source_id, stations):
             prev_tmax = get_element_from_qc_table(station['id'], source_id, day_before_start_date, 32, 'tmax')
             agdd32 = get_element_from_qc_table(station['id'], source_id, day_before_start_date, 32, 'agdd')
             agdd50 = get_element_from_qc_table(station['id'], source_id, day_before_start_date, 50, 'agdd')
+        else:
+            prev_tmin = None
+            prev_tmax = None
+            agdd32 = None
+            agdd50 = None
 
         if prev_tmin is None or prev_tmin == 'M':
             prev_tmin = 0
