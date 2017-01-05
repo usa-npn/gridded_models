@@ -35,11 +35,13 @@ def main():
     # overwrites all files previously downloaded files
     download_hourly_temps('urma', 'conus')
 
+    # TODO for historic alaska data check https://nomads.ncdc.noaa.gov/data/ndgd/201701/
+
     # download and import urma data for the date range that was missed for any reason
     # won't overwrite any previously downloaded files
     days_ago = date.today() - timedelta(days=9)
     end = date(2016, 12, 31)
-    download_historical_urma(days_ago, end)
+    download_urma_from_ncep_ftp(days_ago, end, 'conus')
 
     # compute daily tmin/tmax based on hourly data
     # computation is based on mixture of rtma and urma data; rtma is only used when urma isn't available
