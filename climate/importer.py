@@ -588,7 +588,7 @@ def download_urma_from_ncep_ftp(start_date, end_date, region):
                     urlretrieve(url, working_path + file_name)
                 except urllib.error.URLError as e:
                     if "550 Failed to change directory" in str(e):
-                        # the day your looking for isn't posted
+                        logging.warning("That day is currently not available, moving onto next day.", str(e))
                         day_unavailable = True
                         file_not_found = True
                     elif str(e) == "HTTP Error 404: Not Found":
