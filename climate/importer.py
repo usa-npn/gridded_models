@@ -134,23 +134,35 @@ def download_forecast():
     cleanup(working_path)
 
 
-def download_hourly_temps(dataset):
+def download_hourly_temps(dataset, region):
     working_path = cfg["temp_path"]
-    save_path = cfg["hourly_temp_path"]
+    if region == 'conus':
+        save_path = cfg["hourly_temp_path"]
+    elif region == 'alaska':
+        save_path = cfg["hourly_temp_alaska_path"]
     os.makedirs(working_path, exist_ok=True)
     os.makedirs(save_path, exist_ok=True)
     cleanup(working_path)
 
-    if dataset == 'rtma':
+    # alaska archive
+    # https://nomads.ncdc.noaa.gov/data/ndgd/201701/
+
+    if dataset == 'rtma' and region == 'conus':
         logging.info(' ')
-        logging.info('-----------------populating past 24 hours of rtma-----------------')
+        logging.info('-----------------populating past 24 hours of conus rtma-----------------')
         base_url_temp = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndgd/GT.rtma/AR.conus/'
-        # base_url_temp = 'http://weather.noaa.gov/pub/SL.us008001/ST.opnl/DF.gr2/DC.ndgd/GT.rtma/AR.conus/'
-    elif dataset == 'urma':
+    elif dataset == 'urma' and region == 'conus':
         logging.info(' ')
-        logging.info('-----------------populating past 24 hours of urma-----------------')
+        logging.info('-----------------populating past 24 hours of conus urma-----------------')
         base_url_temp = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndgd/GT.urma/AR.conus/'
-        # base_url_temp = 'http://weather.noaa.gov/pub/SL.us008001/ST.opnl/DF.gr2/DC.ndgd/GT.urma/AR.conus/'
+    elif dataset == 'rtma' and region == 'alaska':
+        logging.info(' ')
+        logging.info('-----------------populating past 24 hours of alaska rtma-----------------')
+        base_url_temp = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndgd/GT.rtma/AR.alaska/'
+    elif dataset == 'urma' and region == 'alaska':
+        logging.info(' ')
+        logging.info('-----------------populating past 24 hours of alaska urma-----------------')
+        base_url_temp = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndgd/GT.urma/AR.alaska/'
     else:
         logging.warning('invalid dataset: %s', dataset)
 
@@ -168,7 +180,10 @@ def download_hourly_temps(dataset):
             continue
 
         # warp to match prism extent, projection, and size
-        warp_to_prism(working_path + file_name)
+        if region == 'conus':
+            warp_to_prism(working_path + file_name)
+        elif region == 'alaska':
+            warp_to_4269(working_path + file_name)
 
         src_ds = gdal.Open(working_path + file_name)
         rast_band = src_ds.GetRasterBand(1)
@@ -177,13 +192,23 @@ def download_hourly_temps(dataset):
         band_meta_data = rast_band.GetMetadata()
         rast_utc = int(re.findall('\d+', band_meta_data["GRIB_VALID_TIME"])[0])
         rast_date = datetime.fromtimestamp(rast_utc, timezone.utc)
-        table_name = "hourly_temp_" + str(rast_date.year)
+        if region == 'alaska':
+            table_name = "hourly_temp_alaska_" + str(rast_date.year)
+        else:
+            table_name = "hourly_temp_" + str(rast_date.year)
 
         # create new raster with non land areas masked out
         rast_array = rast_band.ReadAsArray()
-        apply_usa_mask(rast_array)
         masked_file_path = save_path + dataset + '_' + rast_date.strftime("%Y%m%d") + zero_padded_hour + '.tif'
-        write_raster(masked_file_path, rast_array, -9999, src_ds.RasterXSize, src_ds.RasterYSize, src_ds.GetProjection(), src_ds.GetGeoTransform())
+        if region == 'conus':
+            apply_usa_mask(rast_array)
+            write_raster(masked_file_path, rast_array, -9999, src_ds.RasterXSize,
+                         src_ds.RasterYSize, src_ds.GetProjection(), src_ds.GetGeoTransform())
+        elif region == 'alaska':
+            temp_file_path = save_path + dataset + '_' + rast_date.strftime("%Y%m%d") + zero_padded_hour + '_maskme.tif'
+            write_raster(temp_file_path, rast_array, -9999, src_ds.RasterXSize, src_ds.RasterYSize,
+                         src_ds.GetProjection(), src_ds.GetGeoTransform())
+            apply_alaska_mask(temp_file_path, masked_file_path)
 
         # import raster to db
         rtma_import(masked_file_path, table_name, True, rast_date, rast_date.hour, dataset)
@@ -705,6 +730,20 @@ def warp_to_prism(bin_file):
     extent = "-125.0208333 24.0625000 -66.4791667 49.9375000"
     warp_command = "gdalwarp -of ENVI -srcnodata 9999 -dstnodata -9999 -t_srs EPSG:4269 -ts 2606 1228 -te {extent} {source_file} {dest_file}"\
         .format(extent=extent, source_file=temp_file, dest_file=bin_file)
+    ps = subprocess.Popen(warp_command, stdout=subprocess.PIPE, shell=True)
+    ps.wait()
+    os.remove(temp_file)
+
+
+def warp_to_4269(bin_file):
+    if '.bin' in bin_file:
+        temp_file = str.replace(bin_file, ".bin", "_warpme.bin")
+    else:
+        temp_file = bin_file + "_warpme.bin"
+    os.rename(bin_file, temp_file)
+
+    warp_command = "gdalwarp -of ENVI -srcnodata 9999 -dstnodata -9999 -t_srs EPSG:4269 {source_file} {dest_file}"\
+        .format(source_file=temp_file, dest_file=bin_file)
     ps = subprocess.Popen(warp_command, stdout=subprocess.PIPE, shell=True)
     ps.wait()
     os.remove(temp_file)

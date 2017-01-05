@@ -33,7 +33,7 @@ def main():
 
     # downloads hourly urma temps into our postgis db for the past 24 hours (each hour represents GMT)
     # overwrites all files previously downloaded files
-    download_hourly_temps('urma')
+    download_hourly_temps('urma', 'conus')
 
     # download and import urma data for the date range that was missed for any reason
     # won't overwrite any previously downloaded files

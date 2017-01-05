@@ -50,8 +50,11 @@ def main():
 
     # downloads hourly rtma/urma temps into our postgis db for the past 24 hours (each hour represents GMT)
     # overwrites all files previously downloaded files
-    download_hourly_temps('rtma')
-    download_hourly_temps('urma')
+    download_hourly_temps('rtma', 'conus')
+    download_hourly_temps('urma', 'conus')
+
+    download_hourly_temps('rtma', 'alaska')
+    download_hourly_temps('urma', 'alaska')
 
     # downloads hourly rtma/urma uncertainty into our postgis db for the past 24 hours (each hour represents GMT)
     # overwrites all files previously downloaded files

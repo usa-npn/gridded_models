@@ -62,6 +62,16 @@ def apply_usa_mask(rast_array):
     rast_array[rast_array == 0] = -9999
 
 
+def apply_alaska_mask(source_file, dest_file):
+    mask_shape_file = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.join('alaska_shapefile', 'alaska.shp')))
+    # extent = "-180 40 -140 75"
+    warp_command = "gdalwarp -cutline {mask_file} -crop_to_cutline -dstalpha {source_file} {dest_file}"\
+        .format(mask_file=mask_shape_file, source_file=source_file, dest_file=dest_file)
+    ps = subprocess.Popen(warp_command, stdout=subprocess.PIPE, shell=True)
+    ps.wait()
+    os.remove(source_file)
+
+
 def warp_to_rtma_resolution(source_file, dest_file):
     warp_command = "gdalwarp -r bilinear -ts 2606 1228 -srcnodata -9999 -dstnodata -9999 {source_file} {dest_file}"\
         .format(source_file=source_file, dest_file=dest_file)

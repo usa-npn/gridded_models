@@ -1,0 +1,1 @@
+http://geoserver.usanpn.org:80/geoserver/climate/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=climate:states&featureID=states.1&maxFeatures=50&outputFormat=SHAPE-ZIP
