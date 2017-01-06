@@ -545,15 +545,15 @@ def download_historic_climate_data(start_date, end_date, dataset, region):
                         apply_alaska_mask(temp_file_path, masked_file_path)
 
                     # import raster into database
-                    # rtma_import(masked_file_path, hourly_table_name, True, day, hour, dataset)
+                    rtma_import(masked_file_path, hourly_table_name, True, day, hour, dataset)
 
             if not day_unavailable and (not retrieved or not temp_band_found):
                 if previous_file_name == None:
                     logging.warning("the first file you tried to retrieve either doesn't exist or doesn't have a temp band. Try rerunning this script starting with an earlier date.")
                     return
                 # copy last successfully retrieved temp band in place of the missing hour
-                # copy(save_path + previous_file_name + '.tif', save_path + file_name + '.tif')
-                # rtma_import(save_path + file_name + '.tif', hourly_table_name, True, day, hour, dataset)
+                copy(save_path + previous_file_name + '.tif', save_path + file_name + '.tif')
+                rtma_import(save_path + file_name + '.tif', hourly_table_name, True, day, hour, dataset)
                 logging.info('imported %s', save_path + file_name + '.tif')
 
             previous_file_name = file_name
