@@ -65,7 +65,9 @@ def main():
     # this looks back one week,
     # another script is in place to delete rtma data older than two weeks for which we also have urma data
     # won't overwrite any previously downloaded files
-    download_historical_temps(one_week_ago, today)
+    download_historic_climate_data(one_week_ago, today, 'rtma', 'conus')
+    # alaska rtma archive doesn't exist
+    # download_historic_climate_data(one_week_ago, today, 'rtma', 'alaska')
 
     # compute daily tmin/tmax based on hourly data
     # computation is based on mixture of rtma and urma data; rtma is only used when urma isn't available
@@ -73,7 +75,8 @@ def main():
     # urma -> urma/rtma -> forecast
     # makes data match prism (prism day goes from -12 utc to +12 utc
     hour_shift = -12
-    compute_tmin_tmax(min(beginning_of_this_year, one_week_ago), one_week_into_future, hour_shift, 7)
+    compute_tmin_tmax(min(beginning_of_this_year, one_week_ago), one_week_into_future, hour_shift, 7, 'conus')
+    compute_tmin_tmax(date(current_year, 1, 4), today, hour_shift, 7, 'alaska')
 
     # #################### AGDD CALCULATIONS ####################################################
     # populate NCEP agdds and anomalies

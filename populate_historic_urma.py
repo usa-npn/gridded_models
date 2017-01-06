@@ -41,7 +41,7 @@ def main():
     # won't overwrite any previously downloaded files
     days_ago = date.today() - timedelta(days=9)
     end = date(2016, 12, 31)
-    download_urma_from_ncep_ftp(days_ago, end, 'conus')
+    download_historic_climate_data(days_ago, end, 'urma', 'conus')
 
     # compute daily tmin/tmax based on hourly data
     # computation is based on mixture of rtma and urma data; rtma is only used when urma isn't available
@@ -51,7 +51,8 @@ def main():
     end = date(2016, 12, 31)
     # makes data match prism (prism day goes from -12 utc to +12 utc
     hour_shift = -12
-    compute_tmin_tmax(start, end, hour_shift, 9)
+    compute_tmin_tmax(start, end, hour_shift, 9, 'conus')
+    compute_tmin_tmax(start, end, hour_shift, 9, 'alaska')
 
     # populates various climate variables in the climate agdds mysql db
     urma_start = datetime.now().date() - timedelta(days=9)
