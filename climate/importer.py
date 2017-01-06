@@ -378,11 +378,15 @@ def compute_tmin_tmax(start_date, end_date, shift, skip_older_than_x_days, regio
 
             # add to geoserver image mosaic
             if region == 'conus':
-                update_time_series('tmin', tmin_file_name, day)
-                update_time_series('tmax', tmax_file_name, day)
+                if table_exists('tmin'):
+                    update_time_series('tmin', tmin_file_name, day)
+                if table_exists('tmax'):
+                    update_time_series('tmax', tmax_file_name, day)
             elif region == 'alaska':
-                update_time_series('tmin_alaska', tmin_file_name, day)
-                update_time_series('tmax_alaska', tmax_file_name, day)
+                if table_exists('tmin_alaska'):
+                    update_time_series('tmin_alaska', tmin_file_name, day)
+                if table_exists('tmax_alaska'):
+                    update_time_series('tmax_alaska', tmax_file_name, day)
             logging.info('imported %s based on %s data', tmin_path, source_data_string)
             logging.info('imported %s based on %s data', tmax_path, source_data_string)
 
