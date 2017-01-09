@@ -136,11 +136,13 @@ def download_forecast():
 
 def download_hourly_temps(dataset, region):
     working_path = cfg["temp_path"]
+    alaska_save_path = cfg["alaska_save_path"]
     if region == 'conus':
         save_path = cfg["hourly_temp_path"]
     elif region == 'alaska':
         save_path = cfg["hourly_temp_alaska_path"]
     os.makedirs(working_path, exist_ok=True)
+    os.makedirs(alaska_save_path, exist_ok=True)
     os.makedirs(save_path, exist_ok=True)
     cleanup(working_path)
 
@@ -183,6 +185,9 @@ def download_hourly_temps(dataset, region):
 
         if not retrieved:
             continue
+
+        # todo eventually remove this, just here to save source alaska data while getting things right
+        copy(working_path + file_name, alaska_save_path + file_name)
 
         # warp to match prism extent, projection, and size
         gdalwarp_file(working_path + file_name, region)
@@ -400,6 +405,7 @@ def download_historic_climate_data(start_date, end_date, dataset, region):
     logging.info("-----------------populating historic {region} {dataset} data-----------------"
                  .format(region=region, dataset=dataset))
     working_path = cfg["temp_path"]
+    alaska_save_path = cfg["alaska_save_path"]
     if region == 'conus':
         save_path = cfg["hourly_temp_path"]
     else:
@@ -410,6 +416,7 @@ def download_historic_climate_data(start_date, end_date, dataset, region):
     os.makedirs(save_path, exist_ok=True)
     os.makedirs(tmin_save_path, exist_ok=True)
     os.makedirs(tmax_save_path, exist_ok=True)
+    os.makedirs(alaska_save_path, exist_ok=True)
     cleanup(working_path)
 
     if dataset == 'urma' and region == 'conus':
@@ -497,6 +504,9 @@ def download_historic_climate_data(start_date, end_date, dataset, region):
                     retrieved = False
 
             if retrieved:
+
+                # todo eventually remove this, just here to save source alaska data while getting things right
+                copy(working_path + file_name, alaska_save_path + file_name)
 
                 # warp the downloaded raster to EPSG 4269 (or to mesh with prism if conus)
                 gdalwarp_file(working_path + file_name, region)
