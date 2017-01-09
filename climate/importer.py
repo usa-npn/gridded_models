@@ -186,9 +186,7 @@ def download_hourly_temps(dataset, region):
         if not retrieved:
             continue
 
-        # todo eventually remove this, just here to save source alaska data while getting things right
-        if region == 'alaska':
-            copy(working_path + file_name, alaska_save_path + file_name)
+
 
         # warp to match prism extent, projection, and size
         gdalwarp_file(working_path + file_name, region)
@@ -200,6 +198,11 @@ def download_hourly_temps(dataset, region):
         band_meta_data = rast_band.GetMetadata()
         rast_utc = int(re.findall('\d+', band_meta_data["GRIB_VALID_TIME"])[0])
         rast_date = datetime.fromtimestamp(rast_utc, timezone.utc)
+
+        # todo eventually remove this, just here to save source alaska data while getting things right
+        if region == 'alaska':
+            copy(working_path + file_name,
+                 alaska_save_path + dataset + '_' + rast_date.strftime("%Y%m%d") + zero_padded_hour + '.bin')
 
         # mask_and_import_hourly_data(rast_band, dataset, region, working_path, save_path, rast_date, zero_padded_hour, src_ds)
         if region == 'alaska':
