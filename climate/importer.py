@@ -187,7 +187,8 @@ def download_hourly_temps(dataset, region):
             continue
 
         # todo eventually remove this, just here to save source alaska data while getting things right
-        copy(working_path + file_name, alaska_save_path + file_name)
+        if region == 'alaska':
+            copy(working_path + file_name, alaska_save_path + file_name)
 
         # warp to match prism extent, projection, and size
         gdalwarp_file(working_path + file_name, region)
@@ -506,7 +507,8 @@ def download_historic_climate_data(start_date, end_date, dataset, region):
             if retrieved:
 
                 # todo eventually remove this, just here to save source alaska data while getting things right
-                copy(working_path + file_name, alaska_save_path + file_name)
+                if region == 'alaska':
+                    copy(working_path + file_name, alaska_save_path + file_name)
 
                 # warp the downloaded raster to EPSG 4269 (or to mesh with prism if conus)
                 gdalwarp_file(working_path + file_name, region)
