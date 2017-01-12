@@ -66,7 +66,7 @@ def main():
     # hour_shift makes data match prism (prism day goes from -12 utc to +12 utc)
     hour_shift = -12
     compute_tmin_tmax(min(beginning_of_this_year, one_week_ago), one_week_into_future, hour_shift, 7, 'conus')
-    compute_tmin_tmax(date(current_year, 1, 4), today, hour_shift, 7, 'alaska')
+    compute_tmin_tmax(min(beginning_of_this_year, one_week_ago), one_week_into_future, hour_shift, 7, 'alaska')
 
     # POPULATE PRISM
     # Specify the climate elements you want to download as well as the date range to download those elements for:

@@ -69,7 +69,7 @@ def apply_alaska_mask(source_file, dest_file):
     # 1 degree = 111.325 km
     # we need to specify resolution in degrees for epsg 4269 so we convert 2976.56 meters to degrees = .02673757
     # gdalwarp -cutline alaska.shp -crop_to_cutline -srcnodata -9999 -dstnodata -9999 -tr .02673757 .02673757 -t_srs EPSG:4269 ds.temp.bin testmask.tif
-    warp_command = "gdalwarp -cutline {mask_file} -crop_to_cutline -srcnodata -9999 -dstnodata -9999 -tr .02673757 .02673757 -t_srs EPSG:4269 {source_file} {dest_file}" \
+    warp_command = "gdalwarp -cutline {mask_file} -crop_to_cutline -srcnodata 9999 -dstnodata -9999 -tr .02673757 .02673757 -t_srs EPSG:4269 {source_file} {dest_file}" \
         .format(mask_file=mask_shape_file, source_file=source_file, dest_file=dest_file)
     ps = subprocess.Popen(warp_command, stdout=subprocess.PIPE, shell=True)
     ps.wait()
