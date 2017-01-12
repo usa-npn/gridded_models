@@ -56,11 +56,6 @@ def download_forecast():
     os.makedirs(tmax_save_path, exist_ok=True)
     cleanup(working_path)
 
-    # url_tmax1 = 'http://weather.noaa.gov/pub/SL.us008001/ST.opnl/DF.gr2/DC.ndfd/AR.conus/VP.001-003/ds.maxt.bin'
-    # url_tmax2 = 'http://weather.noaa.gov/pub/SL.us008001/ST.opnl/DF.gr2/DC.ndfd/AR.conus/VP.004-007/ds.maxt.bin'
-    # url_tmin1 = 'http://weather.noaa.gov/pub/SL.us008001/ST.opnl/DF.gr2/DC.ndfd/AR.conus/VP.001-003/ds.mint.bin'
-    # url_tmin2 = 'http://weather.noaa.gov/pub/SL.us008001/ST.opnl/DF.gr2/DC.ndfd/AR.conus/VP.004-007/ds.mint.bin'
-
     url_tmax1 = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndfd/AR.conus/VP.001-003/ds.maxt.bin'
     url_tmax2 = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndfd/AR.conus/VP.004-007/ds.maxt.bin'
     url_tmin1 = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndfd/AR.conus/VP.001-003/ds.mint.bin'
@@ -136,42 +131,28 @@ def download_forecast():
 
 def download_hourly_temps(dataset, region):
     working_path = cfg["temp_path"]
-    alaska_save_path = cfg["alaska_save_path"]
     if region == 'conus':
         save_path = cfg["hourly_temp_path"]
     elif region == 'alaska':
         save_path = cfg["hourly_temp_alaska_path"]
     os.makedirs(working_path, exist_ok=True)
-    os.makedirs(alaska_save_path, exist_ok=True)
     os.makedirs(save_path, exist_ok=True)
     cleanup(working_path)
 
-    # alaska archive
-    # https://nomads.ncdc.noaa.gov/data/ndgd/201701/
+    logging.info(' ')
+    logging.info("-----------------populating past 24 hours of {region} {dataset} data-----------------"
+                 .format(region=region, dataset=dataset))
 
-    if dataset == 'rtma' and region == 'conus':
-        logging.info(' ')
-        logging.info('-----------------populating past 24 hours of conus rtma-----------------')
-        base_url_temp = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndgd/GT.rtma/AR.conus/'
-    elif dataset == 'urma' and region == 'conus':
-        logging.info(' ')
-        logging.info('-----------------populating past 24 hours of conus urma-----------------')
-        base_url_temp = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndgd/GT.urma/AR.conus/'
-    elif dataset == 'rtma' and region == 'alaska':
-        logging.info(' ')
-        logging.info('-----------------populating past 24 hours of alaska rtma-----------------')
-        base_url_temp = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndgd/GT.rtma/AR.alaska/'
-    elif dataset == 'urma' and region == 'alaska':
-        # doesn't exist :( so we have to grab from ncep ftp
-        logging.info(' ')
-        logging.info('-----------------populating past 24 hours of alaska urma-----------------')
+    if dataset == 'urma' and region == 'alaska':
+        # urma alaska doesn't exist on tgftp.nws.noaa, so we have to grab from ncep ftp
+        # ncep ftp files are larger because you have to download all bands instead of just the temperature band
         start_date = date.today() - timedelta(days=2)
         end_date = date.today()
         download_historic_climate_data(start_date, end_date, dataset, region)
         return
-        # base_url_temp = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndgd/GT.urma/AR.alaska/'
     else:
-        logging.warning('invalid dataset: %s', dataset)
+        base_url_temp = "ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndgd/GT.{dataset}/AR.{region}/" \
+            .format(dataset=dataset, region=region)
 
     # hour is UTC
     for hour in range(0, 24):
@@ -186,10 +167,14 @@ def download_hourly_temps(dataset, region):
         if not retrieved:
             continue
 
-
-
-        # warp to match prism extent, projection, and size
-        gdalwarp_file(working_path + file_name, region)
+        # warp the downloaded raster to EPSG 4269
+        # for alaska warping and masking happen at the same time, this is because by the time we got to
+        # implementing alaska we learned how to use a shapefile instead of a tif to do the masking
+        if region == 'conus':
+            gdalwarp_file(working_path + file_name)
+        elif region == 'alaska':
+            os.rename(working_path + file_name, working_path + file_name + '_maskme')
+            apply_alaska_mask(working_path + file_name + '_maskme', working_path + file_name)
 
         src_ds = gdal.Open(working_path + file_name)
         rast_band = src_ds.GetRasterBand(1)
@@ -199,12 +184,6 @@ def download_hourly_temps(dataset, region):
         rast_utc = int(re.findall('\d+', band_meta_data["GRIB_VALID_TIME"])[0])
         rast_date = datetime.fromtimestamp(rast_utc, timezone.utc)
 
-        # todo eventually remove this, just here to save source alaska data while getting things right
-        if region == 'alaska':
-            copy(working_path + file_name,
-                 alaska_save_path + dataset + '_' + rast_date.strftime("%Y%m%d") + zero_padded_hour + '.bin')
-
-        # mask_and_import_hourly_data(rast_band, dataset, region, working_path, save_path, rast_date, zero_padded_hour, src_ds)
         if region == 'alaska':
             table_name = "hourly_temp_alaska_" + str(rast_date.year)
         else:
@@ -215,14 +194,9 @@ def download_hourly_temps(dataset, region):
         masked_file_path = save_path + dataset + '_' + rast_date.strftime("%Y%m%d") + zero_padded_hour + '.tif'
         if region == 'conus':
             apply_usa_mask(rast_array)
-            write_raster(masked_file_path, rast_array, -9999, src_ds.RasterXSize,
-                         src_ds.RasterYSize, src_ds.GetProjection(), src_ds.GetGeoTransform())
-        elif region == 'alaska':
-            temp_file_path = save_path + dataset + '_' + rast_date.strftime("%Y%m%d") + zero_padded_hour + '_maskme.tif'
-            write_raster(temp_file_path, rast_array, -9999, src_ds.RasterXSize, src_ds.RasterYSize,
-                         src_ds.GetProjection(), src_ds.GetGeoTransform())
-            apply_alaska_mask(temp_file_path, masked_file_path)
-
+        # write tif to disk
+        write_raster(masked_file_path, rast_array, -9999, src_ds.RasterXSize,
+                     src_ds.RasterYSize, src_ds.GetProjection(), src_ds.GetGeoTransform())
         # import raster to db
         rtma_import(masked_file_path, table_name, True, rast_date, rast_date.hour, dataset)
         logging.info('imported %s', masked_file_path)
@@ -241,12 +215,10 @@ def download_hourly_temp_uncertainty(dataset):
         logging.info(' ')
         logging.info('-----------------populating past 24 hours of rtma uncertainty-----------------')
         base_url_temp = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndgd/GT.rtma/AR.conus/'
-        # base_url_temp = 'http://weather.noaa.gov/pub/SL.us008001/ST.opnl/DF.gr2/DC.ndgd/GT.rtma/AR.conus/'
     elif dataset == 'urma':
         logging.info(' ')
         logging.info('-----------------populating past 24 hours of urma uncertainty-----------------')
         base_url_temp = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndgd/GT.urma/AR.conus/'
-        # base_url_temp = 'http://weather.noaa.gov/pub/SL.us008001/ST.opnl/DF.gr2/DC.ndgd/GT.urma/AR.conus/'
     else:
         logging.warning('invalid dataset: %s', dataset)
 
@@ -264,7 +236,7 @@ def download_hourly_temp_uncertainty(dataset):
             continue
 
         # warp to match prism extent, projection, and size
-        gdalwarp_file(working_path + file_name, 'conus')
+        gdalwarp_file(working_path + file_name)
 
         src_ds = gdal.Open(working_path + file_name)
         rast_band = src_ds.GetRasterBand(1)
@@ -404,6 +376,58 @@ def compute_tmin_tmax(start_date, end_date, shift, skip_older_than_x_days, regio
             logging.warning('the day only had %s hourly temps recorded', str(len(temps)))
 
 
+# This function was for beginning of year 2017 when alaska code was not yet written and we needed to temporarily
+# collect urma data without processing. It is not part of the normal workflow.
+def import_missed_alaska_urma():
+    logging.info(' ')
+    logging.info("-----------------populating missed alaska urma data-----------------")
+    alaska_save_path2 = cfg["alaska_save_path"] # temp holding place for raw urma data
+    save_path = cfg["hourly_temp_alaska_path"] # path where processed imported urma data
+    os.makedirs(save_path, exist_ok=True)
+    os.makedirs(alaska_save_path2, exist_ok=True)
+
+    for file_path in glob.iglob(alaska_save_path2 + 'urma*'):
+        file_name = os.path.basename(file_path)
+        unmasked_file_path = file_path
+        masked_file_path = file_path + '_masked'
+
+        apply_alaska_mask(unmasked_file_path, masked_file_path)
+
+        year = file_name[5:9]
+        month = file_name[9:11]
+        day = file_name[11:13]
+        hour = file_name[13:15]
+
+        urma_date = datetime.strptime(year + month + day, '%Y%m%d')
+        hourly_table_name = "hourly_temp_alaska_" + year
+
+        ds = gdal.Open(masked_file_path)
+
+        temp_band_found = False
+        band3 = ds.GetRasterBand(3)
+
+        if band3 is not None:
+            mean = band3.GetStatistics(0, 1)[2]
+            if -30 < mean < 50:
+                temps_array = band3.ReadAsArray()
+                temp_band_found = True
+        if not temp_band_found:
+            logging.warning('temperature band not found!!!!')
+
+        if temp_band_found:
+            projection = ds.GetProjection()
+            transform = ds.GetGeoTransform()
+
+            masked_tif_file_path = save_path + file_name + '.tif'
+
+            write_raster(masked_tif_file_path, temps_array, -9999, temps_array.shape[1], temps_array.shape[0],
+                         projection, transform)
+
+            # import raster into database
+            rtma_import(masked_tif_file_path, hourly_table_name, True, urma_date, hour, 'urma')
+        ds = None
+
+
 def download_historic_climate_data(start_date, end_date, dataset, region):
     logging.info(' ')
     logging.info("-----------------populating historic {region} {dataset} data-----------------"
@@ -513,8 +537,15 @@ def download_historic_climate_data(start_date, end_date, dataset, region):
                 if region == 'alaska':
                     copy(working_path + file_name, alaska_save_path + file_name)
 
-                # warp the downloaded raster to EPSG 4269 (or to mesh with prism if conus)
-                gdalwarp_file(working_path + file_name, region)
+                # warp the downloaded raster to EPSG 4269
+                # for alaska warping and masking happen at the same time, this is because by the time we got to
+                # implementing alaska we learned how to use a shapefile instead of a tif to do the masking
+                if region == 'conus':
+                    gdalwarp_file(working_path + file_name)
+                elif region == 'alaska':
+                    os.rename(working_path + file_name, working_path + file_name + '_maskme')
+                    apply_alaska_mask(working_path + file_name + '_maskme', working_path + file_name)
+
                 ds = gdal.Open(working_path + file_name)
 
                 # hack to grab the temp band rather than the temp error band
@@ -552,17 +583,12 @@ def download_historic_climate_data(start_date, end_date, dataset, region):
                     transform = ds.GetGeoTransform()
 
                     masked_file_path = save_path + file_name + '.tif'
-                    # mask out non land areas
+                    # mask out non land areas for conus (it's already done for alaska at this point)
                     if region == 'conus':
                         apply_usa_mask(temps_array)
-                        write_raster(masked_file_path, temps_array, -9999, temps_array.shape[1], temps_array.shape[0],
-                                     projection, transform)
-                    elif region == 'alaska':
-                        temp_file_path = save_path + file_name + '_maskme.tif'
-                        write_raster(temp_file_path, temps_array, -9999, temps_array.shape[1], temps_array.shape[0],
-                                     projection, transform)
-                        apply_alaska_mask(temp_file_path, masked_file_path)
-
+                    # write the tif file to disk
+                    write_raster(masked_file_path, temps_array, -9999, temps_array.shape[1], temps_array.shape[0],
+                                 projection, transform)
                     # import raster into database
                     rtma_import(masked_file_path, hourly_table_name, True, day, hour, dataset)
 
@@ -698,20 +724,17 @@ def get_climate_data(table_name, date, hour, data_set):
         return None
 
 
-def gdalwarp_file(bin_file, region):
+def gdalwarp_file(bin_file):
     if '.bin' in bin_file:
         temp_file = str.replace(bin_file, ".bin", "_warpme.bin")
     else:
         temp_file = bin_file + "_warpme.bin"
     os.rename(bin_file, temp_file)
 
-    if region == 'conus':
-        extent = "-125.0208333 24.0625000 -66.4791667 49.9375000"
-        warp_command = "gdalwarp -of ENVI -srcnodata 9999 -dstnodata -9999 -t_srs EPSG:4269 -ts 2606 1228 -te {extent} {source_file} {dest_file}"\
-            .format(extent=extent, source_file=temp_file, dest_file=bin_file)
-    elif region == 'alaska':
-        warp_command = "gdalwarp -of ENVI -srcnodata 9999 -dstnodata -9999 -t_srs EPSG:4269 {source_file} {dest_file}" \
-            .format(source_file=temp_file, dest_file=bin_file)
+    extent = "-125.0208333 24.0625000 -66.4791667 49.9375000"
+    warp_command = "gdalwarp -of ENVI -srcnodata 9999 -dstnodata -9999 -t_srs EPSG:4269 -ts 2606 1228 -te {extent} {source_file} {dest_file}"\
+        .format(extent=extent, source_file=temp_file, dest_file=bin_file)
+
     ps = subprocess.Popen(warp_command, stdout=subprocess.PIPE, shell=True)
     ps.wait()
     os.remove(temp_file)

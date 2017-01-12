@@ -64,8 +64,12 @@ def apply_usa_mask(rast_array):
 
 def apply_alaska_mask(source_file, dest_file):
     mask_shape_file = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.join('alaska_shapefile', 'alaska.shp')))
-    # extent = "-180 40 -140 75"
-    warp_command = "gdalwarp -cutline {mask_file} -crop_to_cutline -srcnodata -9999 -dstnodata -9999 {source_file} {dest_file}"\
+
+    # rtma/urma alaska file has 2976.56 meter pixelsize (ncep advertises as 3km rez, but use gdalinfo for exact rez) and is 1649 x 1105 pixels
+    # 1 degree = 111.325 km
+    # we need to specify resolution in degrees for epsg 4269 so we convert 2976.56 meters to degrees = .02673757
+    # gdalwarp -cutline alaska.shp -crop_to_cutline -srcnodata -9999 -dstnodata -9999 -tr .02673757 .02673757 -t_srs EPSG:4269 ds.temp.bin testmask.tif
+    warp_command = "gdalwarp -cutline {mask_file} -crop_to_cutline -srcnodata -9999 -dstnodata -9999 -tr .02673757 .02673757 -t_srs EPSG:4269 {source_file} {dest_file}" \
         .format(mask_file=mask_shape_file, source_file=source_file, dest_file=dest_file)
     ps = subprocess.Popen(warp_command, stdout=subprocess.PIPE, shell=True)
     ps.wait()

@@ -22,6 +22,8 @@ from spring_index.spring_index import spring_index
 from osgeo import osr
 from util.database import *
 from util.raster import write_best_raster
+from qc.utils import get_acis_missing_climate_data
+from climate.importer import import_missed_alaska_urma
 
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
@@ -78,8 +80,12 @@ def main():
     logging.info('***********beginning script utilities.py*****************')
     logging.info('*****************************************************************************')
 
-    for year in range(1880, 2014):
-        extract_tif_from_toby_netcdf(year)
+    # for year in range(1880, 2014):
+    #     extract_tif_from_toby_netcdf(year)
+
+    #get_acis_missing_climate_data()
+
+    import_missed_alaska_urma()
 
     print("test")
 

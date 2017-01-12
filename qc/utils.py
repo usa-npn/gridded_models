@@ -164,75 +164,112 @@ def load_station_states():
             if csv_station['ID'] == station['char_network_id']:
                 cursor.execute(insert_station_attribute, (station['id'], state_attribute_id, None, csv_station['State'], None))
                 mysql_conn.commit()
-                break;
+                break
     cursor.close()
 
-    def get_acis_missing_climate_data():
-        start_date = '1940-01-01'
-        end_date = '1940-12-31'
-        climate_elements = 'mint,maxt'
-        # grab station ids
-        # cursor = mysql_conn.cursor(dictionary=True)
-        # query = "SELECT * FROM climate.stations;"
-        # cursor.execute(query)
 
-        crn_stations = ["USW00025379",
-                        "USW00025380",
-                        "USW00025381",
-                        "USW00025522",
-                        "USW00025630",
-                        "USW00025711",
-                        "USW00026494",
-                        "USW00026562",
-                        "USW00026563",
-                        "USW00026564",
-                        "USW00026565",
-                        "USW00026655",
-                        "USW00027516",
-                        "USW00056401",
-                        "USW00096404",
-                        "USW00096406",
-                        "USW00096407",
-                        "USW00096408"]
+def get_acis_missing_climate_data():
+    # start_date = '1940-01-01'
+    # end_date = '1940-12-31'
+    start_date = '2017-01-01'
+    end_date = '2017-01-09'
+    climate_elements = 'mint,maxt'
+    # grab station ids
+    # cursor = mysql_conn.cursor(dictionary=True)
+    # query = "SELECT * FROM climate.stations;"
+    # cursor.execute(query)
 
-        gsn_stations = ["USW00025308",
-                        "USW00025339",
-                        "USW00025503",
-                        "USW00025507",
-                        "USW00025624",
-                        "USW00025713",
-                        "USW00026411",
-                        "USW00026510",
-                        "USW00026528",
-                        "USW00026615",
-                        "USW00026616",
-                        "USW00026617",
-                        "USW00027401",
-                        "USW00027502"]
+    crn_stations = ["USW00025379",
+                    "USW00025380",
+                    "USW00025381",
+                    "USW00025522",
+                    "USW00025630",
+                    "USW00025711",
+                    "USW00026494",
+                    "USW00026562",
+                    "USW00026563",
+                    "USW00026564",
+                    "USW00026565",
+                    "USW00026655",
+                    "USW00027516",
+                    "USW00056401",
+                    "USW00096404",
+                    "USW00096406",
+                    "USW00096407",
+                    "USW00096408"]
 
-        for station in gsn_stations:
-            try:
-                url = 'http://data.rcc-acis.org/MultiStnData?sids={station_id}&sdate={start_date}&edate={end_date}&elems={climate_elements}&output=json' \
-                    .format(start_date=start_date, end_date=end_date, station_id=station,
-                            climate_elements=climate_elements)
-                response = urlopen(url)
-            except HTTPError as err:
-                if err.code == 404:
-                    print("Page not found!")
-                elif err.code == 403:
-                    print("Access denied!")
-                else:
-                    print("Something happened! Error code: {code}".format(code=err.code))
-            except URLError as err:
-                print("Some other error happened: {reason}".format(reason=err.reason))
+    gsn_stations = ["USW00025308",
+                    "USW00025339",
+                    "USW00025503",
+                    "USW00025507",
+                    "USW00025624",
+                    "USW00025713",
+                    "USW00026411",
+                    "USW00026510",
+                    "USW00026528",
+                    "USW00026615",
+                    "USW00026616",
+                    "USW00026617",
+                    "USW00027401",
+                    "USW00027502"]
 
-            str_response = response.readall().decode('utf-8')
-            data = json.loads(str_response)
-            # print(data['data'])
+    alaska_crn_stations = [ "USW00027516",
+                            "USW00026565",
+                            "USW00026494",
+                            "USW00056401",
+                            "USW00025380",
+                            "USW00026564",
+                            "USW00026563",
+                            "USW00025522",
+                            "USW00025381",
+                            "USW00026562",
+                            "USW00026655",
+                            "USW00096406",
+                            "USW00025630",
+                            "USW00025379",
+                            "USW00025711",
+                            "USW00096404"]
 
-            if data and data['data'] and data['data'][0]:
-                # print(station)
-                print(data['data'][0])
+    alaska_gsn_stations = [ "USW00025308",
+                            "USW00025339",
+                            "USW00025503",
+                            "USW00025507",
+                            "USW00025624",
+                            "USW00025713",
+                            "USW00026411",
+                            "USW00026510",
+                            "USW00026528",
+                            "USW00026615",
+                            "USW00026616",
+                            "USW00026617",
+                            "USW00027401",
+                            "USW00027502"]
+
+    for station in alaska_gsn_stations:
+        try:
+            url = 'http://data.rcc-acis.org/MultiStnData?sids={station_id}&sdate={start_date}&edate={end_date}&elems={climate_elements}&output=json' \
+                .format(start_date=start_date, end_date=end_date, station_id=station,
+                        climate_elements=climate_elements)
+            response = urlopen(url)
+        except HTTPError as err:
+            if err.code == 404:
+                print("Page not found!")
+            elif err.code == 403:
+                print("Access denied!")
+            else:
+                print("Something happened! Error code: {code}".format(code=err.code))
+        except URLError as err:
+            print("Some other error happened: {reason}".format(reason=err.reason))
+
+        str_response = response.readall().decode('utf-8')
+        data = json.loads(str_response)
+        # print(data['data'])
+
+        if data and data['data'] and data['data'][0]:
+            # print(station)
+            print(data['data'][0])
+        # else:
+        #     print('no data')
 
 
 # # list of stations in station csv list that ACIS doesn't respond to
