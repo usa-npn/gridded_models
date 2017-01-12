@@ -46,7 +46,8 @@ def main():
     # #################### CLIMATE DATA CALCULATIONS ####################################################
     # download and import ndfd forecast temps for the next week
     # overwrites all files previously downloaded files
-    download_forecast()
+    download_forecast('conus')
+    download_forecast('alaska')
 
     # downloads hourly rtma/urma temps into our postgis db for the past 24 hours (each hour represents GMT)
     # overwrites all files previously downloaded files

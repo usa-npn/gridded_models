@@ -37,9 +37,10 @@ def retrieve_from_url(url_to_get, path_to_save):
     return False
 
 
-def download_forecast():
+def download_forecast(region):
     logging.info(' ')
-    logging.info('-----------------populating ndfd forecast data-----------------')
+    logging.info("-----------------populating ndfd forecast {region} data-----------------"
+                 .format(region=region))
     # download next 7 days of min and max temp predictions starting with tomorrow
     # two files are provided with 3 bands in the first and 4 bands in the second
     # each band represents a day
@@ -49,17 +50,25 @@ def download_forecast():
     # For more details on ndfd spacial reference see: http://graphical.weather.gov/docs/ndfdSRS.htm
 
     working_path = cfg["temp_path"]
-    tmin_save_path = cfg["daily_tmin_path"]
-    tmax_save_path = cfg["daily_tmax_path"]
+    if region == 'conus':
+        tmin_save_path = cfg["daily_tmin_path"]
+        tmax_save_path = cfg["daily_tmax_path"]
+    elif region == 'alaska':
+        tmin_save_path = cfg["daily_tmin_alaska_path"]
+        tmax_save_path = cfg["daily_tmax_alaska_path"]
     os.makedirs(working_path, exist_ok=True)
     os.makedirs(tmin_save_path, exist_ok=True)
     os.makedirs(tmax_save_path, exist_ok=True)
     cleanup(working_path)
 
-    url_tmax1 = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndfd/AR.conus/VP.001-003/ds.maxt.bin'
-    url_tmax2 = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndfd/AR.conus/VP.004-007/ds.maxt.bin'
-    url_tmin1 = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndfd/AR.conus/VP.001-003/ds.mint.bin'
-    url_tmin2 = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndfd/AR.conus/VP.004-007/ds.mint.bin'
+    url_tmax1 = "ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndfd/AR.{region}/VP.001-003/ds.maxt.bin"\
+        .format(region=region)
+    url_tmax2 = "ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndfd/AR.{region}/VP.004-007/ds.maxt.bin"\
+        .format(region=region)
+    url_tmin1 = "ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndfd/AR.{region}/VP.001-003/ds.mint.bin"\
+        .format(region=region)
+    url_tmin2 = "ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndfd/AR.{region}/VP.004-007/ds.mint.bin"\
+        .format(region=region)
 
     forecasts = ({'url': url_tmax1, 'file_name': 'maxt1-3.bin'},
                  {'url': url_tmax2, 'file_name': 'maxt4-7.bin'},
@@ -90,13 +99,21 @@ def download_forecast():
             if element == 'MinT':
                 dest_file = 'tmin_' + rast_date.strftime("%Y%m%d") + '.tif'
                 dest_path = tmin_save_path + dest_file
-                table_name = "tmin_" + str(rast_date.year)
-                time_series_table = 'tmin'
+                if region == 'conus':
+                    table_name = "tmin_" + str(rast_date.year)
+                    time_series_table = 'tmin'
+                elif region == 'alaska':
+                    table_name = "tmin_alaska_" + str(rast_date.year)
+                    time_series_table = 'tmin_alaska'
             elif element == 'MaxT':
                 dest_file = 'tmax_' + rast_date.strftime("%Y%m%d") + '.tif'
                 dest_path = tmax_save_path + dest_file
-                table_name = "tmax_" + str(rast_date.year)
-                time_series_table = 'tmax'
+                if region == 'conus':
+                    table_name = "tmax_" + str(rast_date.year)
+                    time_series_table = 'tmax'
+                elif region == 'alaska':
+                    table_name = "tmax_alaska_" + str(rast_date.year)
+                    time_series_table = 'tmax_alaska'
             else:
                 logging.warning('invalid element: %s', element)
                 continue
@@ -106,14 +123,19 @@ def download_forecast():
             ps.wait()
 
             # warp to match prism extent, projection, and size
-            gdalwarp_file(file, 'conus')
+            if region == 'conus':
+                gdalwarp_file(file)
+            elif region == 'alaska':
+                os.rename(file, file + '_maskme')
+                apply_alaska_mask(file + '_maskme', file)
 
             src_ds = gdal.Open(file)
             rast_band = src_ds.GetRasterBand(1)
 
             # create new raster with non land areas masked out
             rast_array = rast_band.ReadAsArray()
-            apply_usa_mask(rast_array)
+            if region == 'conus':
+                apply_usa_mask(rast_array)
 
             write_raster(dest_path, rast_array, -9999, src_ds.RasterXSize, src_ds.RasterYSize, src_ds.GetProjection(), src_ds.GetGeoTransform())
 
