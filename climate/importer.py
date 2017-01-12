@@ -396,7 +396,7 @@ def import_missed_alaska_urma():
         year = file_name[5:9]
         month = file_name[9:11]
         day = file_name[11:13]
-        hour = file_name[13:15]
+        hour = int(file_name[13:15])
 
         urma_date = datetime.strptime(year + month + day, '%Y%m%d')
         hourly_table_name = "hourly_temp_alaska_" + year
