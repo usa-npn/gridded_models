@@ -143,7 +143,8 @@ def download_forecast(region):
             rtma_import(dest_path, table_name, False, rast_date, rast_date.hour, 'ndfd')
 
             # add to geoserver image mosaic
-            update_time_series(time_series_table, dest_file, rast_date)
+            if table_exists(time_series_table):
+                update_time_series(time_series_table, dest_file, rast_date)
             logging.info('imported %s', dest_path)
 
             src_ds = None
