@@ -245,7 +245,7 @@ def get_acis_missing_climate_data():
                             "USW00027401",
                             "USW00027502"]
 
-    for station in alaska_gsn_stations:
+    for station in alaska_crn_stations:
         try:
             url = 'http://data.rcc-acis.org/MultiStnData?sids={station_id}&sdate={start_date}&edate={end_date}&elems={climate_elements}&output=json' \
                 .format(start_date=start_date, end_date=end_date, station_id=station,

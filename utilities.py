@@ -83,9 +83,9 @@ def main():
     # for year in range(1880, 2014):
     #     extract_tif_from_toby_netcdf(year)
 
-    #get_acis_missing_climate_data()
+    get_acis_missing_climate_data()
 
-    import_missed_alaska_urma()
+    # import_missed_alaska_urma()
 
     print("test")
 

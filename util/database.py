@@ -198,6 +198,22 @@ def set_doy_column(table_name, doy, new_table):
     conn.commit()
 
 
+def remove_from_time_series(time_series_table, file_name):
+    curs = conn.cursor()
+    query = "DELETE FROM %(table)s WHERE location = %(filename)s;"
+    data = {"table": AsIs(time_series_table), "filename": file_name}
+    curs.execute(query, data)
+    conn.commit()
+
+
+def remove_from_daily_six(table_name, date_string, plant, phenophase):
+    curs = conn.cursor()
+    query = "DELETE FROM %(table)s WHERE rast_date = to_date(%(rast_date)s, 'YYYYMMDD') AND plant = %(plant)s AND phenophase = %(phenophase)s;"
+    data = {"table": AsIs(table_name), "rast_date": date_string, "plant": plant, "phenophase": phenophase}
+    curs.execute(query, data)
+    conn.commit()
+
+
 def update_time_series(time_series_table, file_name, rast_date):
     curs = conn.cursor()
 

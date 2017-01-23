@@ -50,9 +50,10 @@ def main():
                       'indexer.properties',
                       'timeregex.properties']
 
-    today = date.today()
-    year = today.year
-    beginning_of_this_year = date(year, 1, 1)
+    # todo can make year not hard coded only when we know if this script will run at end of year or beginning of year
+    # today = date.today()
+    year = 2016
+    beginning_of_the_year = date(year, 1, 1)
 
     for plant in plants:
         for phenophase in phenophases:
@@ -78,7 +79,7 @@ def main():
                 logging.info('copying: ' + contempory_file_path + ' to: ' + historic_file_path)
                 shutil.copy(contempory_file_path, historic_file_path)
                 logging.info('importing to postgis: ' + historic_file_path)
-                driver.Six.postgis_import(plant, phenophase, 'ncep', beginning_of_this_year, "year")
+                driver.Six.postgis_import(plant, phenophase, 'ncep', beginning_of_the_year, "year")
 
     t1 = time.time()
     logging.info('*****************************************************************************')
