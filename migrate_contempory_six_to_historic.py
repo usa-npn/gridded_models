@@ -95,7 +95,7 @@ def main():
         six_anomaly_table_name = 'six_anomaly_historic'
 
         contempory_file_dir = six_anomaly_path + 'six_' + phenophase + '_anomaly' + os.sep
-        historic_file_dir = six_path + 'six_' + phenophase + '_anomaly' + '_historic' + os.sep
+        historic_file_dir = six_anomaly_path + 'six_' + phenophase + '_anomaly' + '_historic' + os.sep
 
         contempory_file_name = 'six_' + phenophase + '_anomaly' + '_' + str(year) + '0907.tif'
         historic_file_name = 'six_' + phenophase + '_anomaly' + '_' + str(year) + '.tif'
