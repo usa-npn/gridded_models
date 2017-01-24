@@ -34,8 +34,9 @@ def email_log_results(log_to_email, from_address, to_address, subject):
     s.quit()
 
 
-def remove_daily_six_data_for_year(year, plant, phenophase):
-    logging.info('***********removing daily data for year*****************')
+def archive_daily_six_data_for_year(year, plant, phenophase):
+    logging.info("-----------------archiving {plant} {phenophase} daily data for year {year}-----------------"
+                 .format(plant=plant, phenophase=phenophase, year=year))
     contempory_file_dir = six_path + 'six_' + plant + '_' + phenophase + '_ncep' + os.sep
     archive_file_dir = archive_six_path + 'six_' + plant + '_' + phenophase + '_ncep' + os.sep
 
@@ -57,16 +58,16 @@ def remove_daily_six_data_for_year(year, plant, phenophase):
         # mv file to storage drive
         shutil.copy(contempory_file_path, archive_file_path)
 
-        # # delete from timeseries
-        # time_series_table = 'six' + '_' + plant + '_' + phenophase + '_ncep'
-        # remove_from_time_series(time_series_table, contempory_file_name)
-        #
-        # # delete from postgis database
-        # table_name = 'ncep_spring_index_' + year_string
-        # remove_from_daily_six(table_name, day.strftime("%Y%m%d"), plant, phenophase)
-        #
-        # # delete file from disk
-        # os.remove(contempory_file_path)
+        # delete from timeseries
+        time_series_table = 'six' + '_' + plant + '_' + phenophase + '_ncep'
+        remove_from_time_series(time_series_table, contempory_file_name)
+
+        # delete from postgis database
+        table_name = 'ncep_spring_index_' + year_string
+        remove_from_daily_six(table_name, day.strftime("%Y%m%d"), plant, phenophase)
+
+        # delete file from disk
+        os.remove(contempory_file_path)
 
 
 
@@ -92,7 +93,7 @@ def main():
 
     for plant in plants:
         for phenophase in phenophases:
-            remove_daily_six_data_for_year(year, plant, phenophase)
+            archive_daily_six_data_for_year(year, plant, phenophase)
 
     t1 = time.time()
     logging.info('*****************************************************************************')

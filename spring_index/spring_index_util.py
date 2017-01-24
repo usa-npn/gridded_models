@@ -9,6 +9,19 @@ import shutil
 # import urllib
 
 
+def import_six_postgis(file_path, file_name, six_anomaly_table_name, time_series_table_name, plant, phenophase, day):
+
+    new_table = not table_exists(six_anomaly_table_name)
+    new_time_series = not table_exists(time_series_table_name)
+
+    save_raster_to_postgis(file_path, six_anomaly_table_name, 4269)
+    set_date_column(six_anomaly_table_name, day, new_table)
+    set_plant_column(six_anomaly_table_name, plant, new_table)
+    set_phenophase_column(six_anomaly_table_name, phenophase, new_table)
+    if not new_time_series:
+        update_time_series(time_series_table_name, file_name, day)
+
+
 def populate_six_30yr_average(plant, phenophase):
     logging.info(' ')
     logging.info('------------populating spring index 30yr average for %s-----------------', phenophase)
@@ -92,12 +105,7 @@ def copy_spring_index_anomaly_raster(phenophase, from_date, to_date):
 
     if os.path.isfile(source_file_path) and not os.path.isfile(dest_file_path):
         shutil.copyfile(source_file_path, dest_file_path)
-
-        save_raster_to_postgis(dest_file_path, six_anomaly_table_name, 4269)
-        set_date_column(six_anomaly_table_name, to_date, new_table)
-        set_plant_column(six_anomaly_table_name, plant, new_table)
-        set_phenophase_column(six_anomaly_table_name, phenophase, new_table)
-        update_time_series(time_series_table_name, dest_file_name, to_date)
+        import_six_postgis(dest_file_path, dest_file_name, six_anomaly_table_name, time_series_table_name, plant, phenophase, to_date)
         logging.info('copied six %s anomaly for %s - doy %s from doy 240', phenophase,
                      to_date.strftime("%Y-%m-%d"), str(day_of_year))
 
@@ -106,15 +114,8 @@ def import_six_anomalies(anomaly_date, phenophase):
     logging.info(' ')
     logging.info('-----------------populating spring index %s anomalies-----------------', phenophase)
 
-    if phenophase is 'leaf':
-        time_series_table_name = 'six_leaf_anomaly'
-        save_path = cfg["six_anomaly_path"] + 'six_leaf_anomaly' + os.sep
-    elif phenophase is 'bloom':
-        time_series_table_name = 'six_bloom_anomaly'
-        save_path = cfg["six_anomaly_path"] + 'six_bloom_anomaly' + os.sep
-    else:
-        logging.error('unsupported phenophase: %s', phenophase)
-        return
+    time_series_table_name = 'six_' + phenophase + '_anomaly'
+    save_path = cfg["six_anomaly_path"] + 'six_' + phenophase + '_anomaly' + os.sep
 
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
@@ -128,7 +129,6 @@ def import_six_anomalies(anomaly_date, phenophase):
     six_anomaly_table_name = 'six_anomaly'
 
     new_table = not table_exists(six_anomaly_table_name)
-    new_time_series = not table_exists(time_series_table_name)
 
     (rast_cols, rast_rows, transform, projection, no_data_value) = get_raster_info(six_table_name, first_day_of_year)
 
@@ -189,12 +189,10 @@ def import_six_anomalies(anomaly_date, phenophase):
             file_name = 'six_leaf_anomaly_' + day.strftime("%Y%m%d") + '.tif'
         file_path = save_path + file_name
         write_raster(file_path, diff_six, -9999, rast_cols, rast_rows, projection, transform)
-        save_raster_to_postgis(file_path, six_anomaly_table_name, 4269)
-        set_date_column(six_anomaly_table_name, day, new_table)
-        set_plant_column(six_anomaly_table_name, plant, new_table)
-        set_phenophase_column(six_anomaly_table_name, phenophase, new_table)
-        if not new_time_series:
-            update_time_series(time_series_table_name, file_name, day)
+
+        import_six_postgis(file_path, file_name, six_anomaly_table_name, time_series_table_name, plant, phenophase,
+                           day)
+
         new_table = False
         logging.info('populated six %s anomaly for %s based on historical six average for doy %s', phenophase, day.strftime("%Y-%m-%d"), str(day_of_year))
 

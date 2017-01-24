@@ -343,10 +343,8 @@ class Six:
         else:
             file_name = plant + '_' + phenophase + '_' + climate_source + '_' + date_string + '.tif'
 
-        conn = Six.conn
-        curs = conn.cursor()
-        #file_name = plant + '_' + phenophase + '_' + climate_source + '_' + date_string + '.tif'
         file_path = Six.save_path + 'six_' + plant + '_' + phenophase + '_' + climate_source + os.sep + file_name
+
         if climate_source == 'ncep' and time_rez == 'year':
             table_name = climate_source + '_spring_index_historic'
             file_path = Six.save_path + 'six_' + plant + '_' + phenophase + '_' + climate_source + "_historic" + os.sep + file_name
@@ -357,6 +355,9 @@ class Six:
             table_name = climate_source + '_spring_index'
         else:
             table_name = climate_source + '_spring_index'
+
+        conn = Six.conn
+        curs = conn.cursor()
 
         # check if we need to create a new table
         new_table = True
