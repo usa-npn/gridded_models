@@ -214,6 +214,14 @@ def remove_from_daily_six(table_name, date_string, plant, phenophase):
     conn.commit()
 
 
+def remove_from_daily_six_anomaly(table_name, date_string, phenophase):
+    curs = conn.cursor()
+    query = "DELETE FROM %(table)s WHERE rast_date = to_date(%(rast_date)s, 'YYYYMMDD') AND phenophase = %(phenophase)s;"
+    data = {"table": AsIs(table_name), "rast_date": date_string, "phenophase": phenophase}
+    curs.execute(query, data)
+    conn.commit()
+
+
 def update_time_series(time_series_table, file_name, rast_date):
     curs = conn.cursor()
 
