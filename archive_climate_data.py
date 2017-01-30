@@ -42,24 +42,24 @@ def archive_and_delete_hourly_data(dataset):
             if dataset == "urma":
                 logging.info("moving {file_path} to {archive_file_path}"
                              .format(file_path=file_path, archive_file_path=archive_file_path))
-                #shutil.move(file_path, archive_file_path)
+                shutil.move(file_path, archive_file_path)
                 logging.info("reimporting {archive_file_path} to {table_name}"
                              .format(archive_file_path=archive_file_path, table_name=table_name))
-                #rtma_import(archive_file_path, table_name, True, hourly_data_date, hour, dataset)
+                rtma_import(archive_file_path, table_name, True, hourly_data_date, hour, dataset)
             elif dataset == "rtma":
                 if os.path.exists(hourly_temp_path + file_name.replace("rtma", "urma")):
                     logging.info("urma exists - deleting {file_name}".format(file_name=file_name))
-                    #os.remove(file_path)
+                    os.remove(file_path)
                     logging.info("removing {file_path} from {table_name}"
                                  .format(file_path=file_path, table_name=table_name))
-                    #remove_from_table_by_filename(file_path, table_name)
+                    remove_from_table_by_filename(file_path, table_name)
                 else:
                     logging.info("moving {file_path} to {archive_file_path}"
                                  .format(file_path=file_path, archive_file_path=archive_file_path))
-                    #shutil.move(file_path, archive_file_path)
+                    shutil.move(file_path, archive_file_path)
                     logging.info("reimporting {archive_file_path} to {table_name}"
                                  .format(archive_file_path=archive_file_path, table_name=table_name))
-                    #rtma_import(archive_file_path, table_name, True, date, hour, dataset)
+                    rtma_import(archive_file_path, table_name, True, date, hour, dataset)
         else:
             logging.info("skipping since {file_name} is not older than thirty days".format(file_name=file_name))
 
