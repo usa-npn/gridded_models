@@ -21,9 +21,11 @@ hourly_temp_archive_path = cfg["hourly_temp_archive_path"]
 
 
 def archive_and_delete_hourly_data(dataset):
+    logging.info("archiving {dataset} hourly temps".format(dataset=dataset))
+
     thirty_days_ago = datetime.now() - timedelta(days=30)
 
-    for file_path in glob.iglob(hourly_temp_path + '*'):
+    for file_path in glob.iglob(hourly_temp_path + dataset+ '*'):
         file_name = os.path.basename(file_path)
         archive_file_path = hourly_temp_archive_path + file_name
 
@@ -58,6 +60,8 @@ def archive_and_delete_hourly_data(dataset):
                     logging.info("reimporting {archive_file_path} to {table_name}"
                                  .format(archive_file_path=archive_file_path, table_name=table_name))
                     #rtma_import(archive_file_path, table_name, True, date, hour, dataset)
+        else:
+            logging.info("skipping since {file_name} is not older than thirty days".format(file_name=file_name))
 
 
 def archive_and_delete_prism_data():
