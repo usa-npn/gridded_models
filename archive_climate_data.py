@@ -17,24 +17,41 @@ with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml'))
 log_path = cfg["log_path"]
 
 hourly_temp_path = cfg["hourly_temp_path"]
+hourly_utemp_path = cfg["hourly_utemp_path"]
 hourly_temp_archive_path = cfg["hourly_temp_archive_path"]
+hourly_utemp_archive_path = cfg["hourly_utemp_archive_path"]
 
 
-def archive_and_delete_hourly_data(dataset):
-    logging.info("archiving {dataset} hourly temps".format(dataset=dataset))
+def archive_and_delete_hourly_data(dataset, uncertainty):
+    if uncertainty:
+        logging.info("archiving {dataset} hourly temps".format(dataset=dataset))
+    else:
+        logging.info("archiving {dataset} hourly temps uncertainty".format(dataset=dataset))
 
     thirty_days_ago = datetime.now() - timedelta(days=30)
 
-    for file_path in glob.iglob(hourly_temp_path + dataset + '*'):
+    if uncertainty:
+        path_to_search = hourly_utemp_path + dataset + '*'
+    else:
+        path_to_search = hourly_temp_path + dataset + '*'
+
+    for file_path in glob.iglob(path_to_search):
         file_name = os.path.basename(file_path)
-        archive_file_path = hourly_temp_archive_path + file_name
+
+        if uncertainty:
+            archive_file_path = hourly_temp_archive_path + file_name
+        else:
+            archive_file_path = hourly_utemp_archive_path + file_name
 
         year = file_name[5:9]
         month = file_name[9:11]
         day = file_name[11:13]
         hour = int(file_name[13:15])
 
-        table_name = 'hourly_temp_' + year
+        if uncertainty:
+            table_name = 'hourly_temp_uncertainty_' + year
+        else:
+            table_name = 'hourly_temp_' + year
 
         hourly_data_date = datetime.strptime(year + month + day, '%Y%m%d')
 
@@ -68,7 +85,7 @@ def archive_and_delete_prism_data():
     print("todo")
 
 
-# this archives old climate data: specifically ncep hourly temps and prism data
+# this archives old climate data: specifically ncep hourly temps, ncep hourly uncertainty, and prism daily data
 # redmine enhancement #622
 def main():
     t0 = time.time()
@@ -80,12 +97,16 @@ def main():
 
     if not os.path.exists(hourly_temp_archive_path):
         os.makedirs(hourly_temp_archive_path)
+    if not os.path.exists(hourly_utemp_archive_path):
+        os.makedirs(hourly_utemp_archive_path)
 
     # note order is important here, archive the rtma before archiving the urma
     # this is because when we archive rtma, we need to check if there is a corresponding urma file and we won't
     # find it if it was already archived
-    archive_and_delete_hourly_data("rtma")
-    archive_and_delete_hourly_data("urma")
+    archive_and_delete_hourly_data("rtma", False)
+    archive_and_delete_hourly_data("urma", False)
+    archive_and_delete_hourly_data("rtma", True)
+    archive_and_delete_hourly_data("urma", True)
     archive_and_delete_prism_data()
 
     t1 = time.time()
