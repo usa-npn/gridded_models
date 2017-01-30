@@ -52,7 +52,7 @@ def archive_and_delete_hourly_data(dataset):
                     #remove_from_table_by_filename(file_path, table_name)
                 else:
                     logging.info("moving {file_path} to {archive_file_path}"
-                                 .format(file_name=file_path, archive_file_path=archive_file_path))
+                                 .format(file_path=file_path, archive_file_path=archive_file_path))
                     #shutil.move(file_path, archive_file_path)
                     logging.info("reimporting {archive_file_path} to {table_name}"
                                  .format(archive_file_path=archive_file_path, table_name=table_name))
