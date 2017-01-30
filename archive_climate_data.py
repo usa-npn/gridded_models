@@ -25,7 +25,7 @@ def archive_and_delete_hourly_data(dataset):
 
     thirty_days_ago = datetime.now() - timedelta(days=30)
 
-    for file_path in glob.iglob(hourly_temp_path + dataset+ '*'):
+    for file_path in glob.iglob(hourly_temp_path + dataset + '*'):
         file_name = os.path.basename(file_path)
         archive_file_path = hourly_temp_archive_path + file_name
 
@@ -47,7 +47,7 @@ def archive_and_delete_hourly_data(dataset):
                              .format(archive_file_path=archive_file_path, table_name=table_name))
                 #rtma_import(archive_file_path, table_name, True, hourly_data_date, hour, dataset)
             elif dataset == "rtma":
-                if os.path.exists(hourly_temp_path + os.sep + file_name.replace("rtma", "urma")):
+                if os.path.exists(hourly_temp_path + file_name.replace("rtma", "urma")):
                     logging.info("urma exists - deleting {file_name}".format(file_name=file_name))
                     #os.remove(file_path)
                     logging.info("removing {file_path} from {table_name}"
