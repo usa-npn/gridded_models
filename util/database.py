@@ -63,6 +63,14 @@ def agdd_row_exists(table_name, scale, base, date):
     return result
 
 
+def remove_from_table_by_filename(raster_path, table_name):
+    curs = conn.cursor()
+    query = "DELETE FROM %(table)s WHERE filename = %(filename)s;"
+    data = {"table": AsIs(table_name), "filename": os.path.basename(raster_path)}
+    curs.execute(query, data)
+    conn.commit()
+
+
 def save_raster_to_postgis(raster_path, table_name, srid, tile=True):
     curs = conn.cursor()
     new_table = not table_exists(table_name)
@@ -79,6 +87,8 @@ def save_raster_to_postgis(raster_path, table_name, srid, tile=True):
         conn.commit()
 
     # insert the raster (either create a new table or append to previously created table)
+    # note the -R option means: Register the raster as a filesystem (out-db) raster.
+    # Only the metadata of the raster and path location to the raster is stored in the database (not the pixels).
     if new_table:
         if srid:
             import_command = "raster2pgsql -s {srid} -c -R -I -C -F {tile_arg}{file} public.{table}"\
