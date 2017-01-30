@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import logging
-import time
+from time import time
 import yaml
 import os.path
 from util.log_manager import get_error_log
@@ -66,7 +66,7 @@ def archive_and_delete_prism_data():
 # this archives old climate data: specifically ncep hourly temps and prism data
 # redmine enhancement #622
 def main():
-    t0 = time.time()
+    t0 = time()
 
     logging.info(' ')
     logging.info('*****************************************************************************')
@@ -83,7 +83,7 @@ def main():
     archive_and_delete_hourly_data("urma")
     archive_and_delete_prism_data()
 
-    t1 = time.time()
+    t1 = time()
     logging.info('*****************************************************************************')
     logging.info('***********archive_climate_data.py finished in %s seconds***********', t1 - t0)
     logging.info('*****************************************************************************')
