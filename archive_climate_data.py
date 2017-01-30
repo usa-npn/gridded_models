@@ -59,7 +59,7 @@ def archive_and_delete_hourly_data(dataset):
                     shutil.move(file_path, archive_file_path)
                     logging.info("reimporting {archive_file_path} to {table_name}"
                                  .format(archive_file_path=archive_file_path, table_name=table_name))
-                    rtma_import(archive_file_path, table_name, True, date, hour, dataset)
+                    rtma_import(archive_file_path, table_name, True, hourly_data_date, hour, dataset)
         else:
             logging.info("skipping since {file_name} is not older than thirty days".format(file_name=file_name))
 
