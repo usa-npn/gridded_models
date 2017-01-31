@@ -89,7 +89,7 @@ def archive_and_delete_prism_data(climate_type):
     path_to_search = prism_path + 'zipped' + os.sep + climate_type + os.sep + "PRISM_{climate_type}_stable_4kmD1_*"\
         .format(climate_type=climate_type)
 
-    one_year_ago = datetime.now() - timedelta(days=366)
+    six_months_ago = datetime.now() - timedelta(days=6*31)
 
     archive_path = prism_archive_path + 'zipped' + os.sep + climate_type + os.sep
     if not os.path.exists(archive_path):
@@ -104,7 +104,7 @@ def archive_and_delete_prism_data(climate_type):
         date_string = re.search(r'\d\d\d\d\d\d\d\d', file_name).group()
         prism_file_date = datetime.strptime(date_string, '%Y%m%d')
 
-        if prism_file_date < one_year_ago:
+        if prism_file_date < six_months_ago:
             logging.info("moving {file_path} to {archive_file_path}"
                          .format(file_path=file_path, archive_file_path=archive_file_path))
             shutil.move(file_path, archive_file_path)
