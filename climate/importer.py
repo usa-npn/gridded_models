@@ -428,7 +428,7 @@ def import_missed_alaska_urma(year, month, day):
             hour = re.search(r'\d\d', file_name).group()
 
         # urma_date = datetime.strptime(year + month + day, '%Y%m%d')
-        urma_date = datetime.date(year, month, day)
+        urma_date = dt.date(year, month, day)
         hourly_table_name = "hourly_temp_alaska_" + year
 
         ds = gdal.Open(masked_file_path)
