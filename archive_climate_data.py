@@ -85,16 +85,20 @@ def archive_and_delete_hourly_data(dataset, uncertainty):
 
 
 def archive_and_delete_prism_data(climate_type):
-    logging.info("archiving PRISM {climate_type} temps".format(climate_type=climate_type))
+    logging.info("archiving PRISM {climate_type} temp zip files".format(climate_type=climate_type))
     path_to_search = prism_path + 'zipped' + os.sep + climate_type + os.sep + "PRISM_{climate_type}_stable_4kmD1_*"\
         .format(climate_type=climate_type)
 
-    one_year_ago = datetime.now() - timedelta(days=365)
+    one_year_ago = datetime.now() - timedelta(days=366)
+
+    archive_path = prism_archive_path + 'zipped' + os.sep + climate_type + os.sep
+    if not os.path.exists(archive_path):
+        os.makedirs(archive_path)
 
     for file_path in glob.iglob(path_to_search):
         file_name = os.path.basename(file_path)
 
-        archive_file_path = prism_archive_path + file_name
+        archive_file_path = archive_path + file_name
 
         # file name example: PRISM_tmax_stable_4kmD1_19930707_bil.zip
         date_string = re.search(r'\d\d\d\d\d\d\d\d', file_name).group()
@@ -103,7 +107,7 @@ def archive_and_delete_prism_data(climate_type):
         if prism_file_date < one_year_ago:
             logging.info("moving {file_path} to {archive_file_path}"
                          .format(file_path=file_path, archive_file_path=archive_file_path))
-            shutil.move(file_path, archive_file_path)
+            # shutil.move(file_path, archive_file_path)
 
 
 # this archives old climate data: specifically ncep hourly temps, ncep hourly uncertainty, and prism daily data
@@ -124,12 +128,12 @@ def main():
     # note order is important here, archive the rtma before archiving the urma
     # this is because when we archive rtma, we need to check if there is a corresponding urma file and we won't
     # find it if it was already archived
-    archive_and_delete_hourly_data("rtma", False)
-    archive_and_delete_hourly_data("urma", False)
-    archive_and_delete_hourly_data("rtma", True)
-    archive_and_delete_hourly_data("urma", True)
-    # archive_and_delete_prism_data("tmin")
-    # archive_and_delete_prism_data("tmax")
+    # archive_and_delete_hourly_data("rtma", False)
+    # archive_and_delete_hourly_data("urma", False)
+    # archive_and_delete_hourly_data("rtma", True)
+    # archive_and_delete_hourly_data("urma", True)
+    archive_and_delete_prism_data("tmin")
+    archive_and_delete_prism_data("tmax")
 
     t1 = time.time()
     logging.info('*****************************************************************************')
