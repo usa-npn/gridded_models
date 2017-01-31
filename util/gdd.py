@@ -106,10 +106,10 @@ def import_agdd_anomalies(anomaly_date, base):
         day += delta
 
 
-def import_agdd(agdd_date, base, climate_data_provider):
+def import_agdd(agdd_date, base, climate_data_provider, region):
     logging.info(' ')
-    logging.info('-----------------populating %s agdds (base %s)-----------------', climate_data_provider, base)
-
+    logging.info("-----------------populating {region} {climate_data_provider} agdds (base {base})-----------------"
+                 .format(region=region, climate_data_provider=climate_data_provider, base=base))
     # set up path to save geotiffs to along with geoserver layer table
     scale = 'fahrenheit'
     if base == 32:
@@ -117,15 +117,23 @@ def import_agdd(agdd_date, base, climate_data_provider):
             save_path = cfg["prism_agdd_path"]
             time_series_table_name = 'prism_agdd'
         else:
-            save_path = cfg["agdd_path"]
-            time_series_table_name = 'agdd'
+            if region == 'alaska':
+                save_path = cfg["agdd_alaska_path"]
+                time_series_table_name = 'agdd_alaska'
+            else:
+                save_path = cfg["agdd_path"]
+                time_series_table_name = 'agdd'
     elif base == 50:
         if climate_data_provider == 'prism':
             save_path = cfg["prism_agdd_50f_path"]
             time_series_table_name = 'prism_agdd_50f'
         else:
-            save_path = cfg["agdd_50f_path"]
-            time_series_table_name = 'agdd_50f'
+            if region == 'alaska':
+                save_path = cfg["agdd_alaska_50f_path"]
+                time_series_table_name = 'agdd_alaska_50f'
+            else:
+                save_path = cfg["agdd_50f_path"]
+                time_series_table_name = 'agdd_50f'
     else:
         logging.error('unsupported base: %s', base)
         return
@@ -133,8 +141,12 @@ def import_agdd(agdd_date, base, climate_data_provider):
 
     # tables used to get climate data
     if climate_data_provider == 'ncep':
-        tmin_table_name = 'tmin_' + agdd_date.strftime("%Y")
-        tmax_table_name = 'tmax_' + agdd_date.strftime("%Y")
+        if region == 'alaska':
+            tmin_table_name = 'tmin_alaska_' + agdd_date.strftime("%Y")
+            tmax_table_name = 'tmax_alaska_' + agdd_date.strftime("%Y")
+        else:
+            tmin_table_name = 'tmin_' + agdd_date.strftime("%Y")
+            tmax_table_name = 'tmax_' + agdd_date.strftime("%Y")
     elif climate_data_provider == 'prism':
         tmin_table_name = 'prism_tmin_' + agdd_date.strftime("%Y")
         tmax_table_name = 'prism_tmax_' + agdd_date.strftime("%Y")
@@ -151,7 +163,10 @@ def import_agdd(agdd_date, base, climate_data_provider):
 
     # table to save agdd data to
     if climate_data_provider == 'ncep':
-        agdd_table_name = 'agdd_' + agdd_date.strftime("%Y")
+        if region == 'alaska':
+            agdd_table_name = 'agdd_alaska_' + agdd_date.strftime("%Y")
+        else:
+            agdd_table_name = 'agdd_' + agdd_date.strftime("%Y")
     elif climate_data_provider == 'prism':
         agdd_table_name = 'prism_agdd_' + agdd_date.strftime("%Y")
     else:
