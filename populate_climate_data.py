@@ -33,31 +33,31 @@ def main():
     logging.info('***********beginning script populate_climate_data.py*****************')
     logging.info('*****************************************************************************')
 
-    # # download and import ndfd forecast temps for the next week
-    # # overwrites all files previously downloaded files
-    # download_forecast('conus')
-    # download_forecast('alaska')
-    #
-    # # downloads hourly rtma/urma temps into our postgis db for the past 24 hours (each hour represents GMT)
-    # # overwrites all files previously downloaded files
-    # download_hourly_temps('rtma', 'conus')
-    # download_hourly_temps('urma', 'conus')
-    #
-    # download_hourly_temps('rtma', 'alaska')
-    # download_hourly_temps('urma', 'alaska')
-    #
-    # # downloads hourly rtma/urma uncertainty into our postgis db for the past 24 hours (each hour represents GMT)
-    # # overwrites all files previously downloaded files
-    # download_hourly_temp_uncertainty('rtma')
-    # download_hourly_temp_uncertainty('urma')
-    #
-    # # download and import rtma data for the date range that was missed for any reason
-    # # this looks back one week,
-    # # another script is in place to delete rtma data older than two weeks for which we also have urma data
-    # # won't overwrite any previously downloaded files
-    # download_historic_climate_data(one_week_ago, today, 'rtma', 'conus')
-    # # alaska historic rtma temps don't exist in the archive
-    # # download_historic_climate_data(one_week_ago, today, 'rtma', 'alaska')
+    # download and import ndfd forecast temps for the next week
+    # overwrites all files previously downloaded files
+    download_forecast('conus')
+    download_forecast('alaska')
+
+    # downloads hourly rtma/urma temps into our postgis db for the past 24 hours (each hour represents GMT)
+    # overwrites all files previously downloaded files
+    download_hourly_temps('rtma', 'conus')
+    download_hourly_temps('urma', 'conus')
+
+    download_hourly_temps('rtma', 'alaska')
+    download_hourly_temps('urma', 'alaska')
+
+    # downloads hourly rtma/urma uncertainty into our postgis db for the past 24 hours (each hour represents GMT)
+    # overwrites all files previously downloaded files
+    download_hourly_temp_uncertainty('rtma')
+    download_hourly_temp_uncertainty('urma')
+
+    # download and import rtma data for the date range that was missed for any reason
+    # this looks back one week,
+    # another script is in place to delete rtma data older than two weeks for which we also have urma data
+    # won't overwrite any previously downloaded files
+    download_historic_climate_data(one_week_ago, today, 'rtma', 'conus')
+    # alaska historic rtma temps don't exist in the archive
+    # download_historic_climate_data(one_week_ago, today, 'rtma', 'alaska')
 
     # compute daily tmin/tmax based on hourly data
     # computation is based on mixture of rtma and urma data; rtma is only used when urma isn't available
@@ -65,13 +65,13 @@ def main():
     # urma -> urma/rtma -> forecast
     # hour_shift makes data match prism (prism day goes from -12 utc to +12 utc)
     hour_shift = -12
-    # compute_tmin_tmax(min(beginning_of_this_year, one_week_ago), one_week_into_future, hour_shift, 7, 'conus')
+    compute_tmin_tmax(min(beginning_of_this_year, one_week_ago), one_week_into_future, hour_shift, 7, 'conus')
     compute_tmin_tmax(min(beginning_of_this_year, one_week_ago), one_week_into_future, hour_shift, 7, 'alaska')
 
-    # # POPULATE PRISM
-    # # Specify the climate elements you want to download as well as the date range to download those elements for:
-    # request_params = ['tmax', 'tmin']
-    # get_prism_data(one_year_ago, today, request_params)
+    # POPULATE PRISM
+    # Specify the climate elements you want to download as well as the date range to download those elements for:
+    request_params = ['tmax', 'tmin']
+    get_prism_data(one_year_ago, today, request_params)
 
     t1 = time.time()
     logging.info('*****************************************************************************')
