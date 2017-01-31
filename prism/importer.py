@@ -18,6 +18,7 @@ with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir
     cfg = yaml.load(yml_file)
 db = cfg["postgis"]
 prism_path = cfg["prism_path"]
+prism_archive_path = cfg["prism_archive_path"]
 
 conn = psycopg2.connect(dbname=db["db"], port=db["port"], user=db["user"],
                         password=db["password"], host=db["host"])
@@ -102,6 +103,7 @@ def get_prism_data(start_date, end_date, climate_variables):
     delta = end_date - start_date
     for climate_variable in climate_variables:
         zipped_files_path = prism_path + "zipped" + os.sep + climate_variable + os.sep
+        zipped_files_archive_path = prism_archive_path + "zipped" + os.sep + climate_variable + os.sep
         for i in range(delta.days + 1):
             downloaded = False
             while not downloaded:
@@ -113,7 +115,8 @@ def get_prism_data(start_date, end_date, climate_variables):
                     continue
 
                 # only download file if we don't already have the stable version
-                if not os.path.isfile(zipped_files_path + 'PRISM_' + climate_variable + '_stable_4kmD1_' + day.strftime("%Y%m%d") + '_bil.zip'):
+                if not os.path.isfile(zipped_files_path + 'PRISM_' + climate_variable + '_stable_4kmD1_' + day.strftime("%Y%m%d") + '_bil.zip')\
+                        and not os.path.isfile(zipped_files_archive_path + 'PRISM_' + climate_variable + '_stable_4kmD1_' + day.strftime("%Y%m%d") + '_bil.zip'):
                     request_url = "http://services.nacse.org/prism/data/public/4km/{climate_var}/{date}"\
                         .format(climate_var=climate_variable, date=day.strftime("%Y%m%d"))
                     try:
