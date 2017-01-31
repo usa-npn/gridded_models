@@ -107,7 +107,7 @@ def archive_and_delete_prism_data(climate_type):
         if prism_file_date < one_year_ago:
             logging.info("moving {file_path} to {archive_file_path}"
                          .format(file_path=file_path, archive_file_path=archive_file_path))
-            # shutil.move(file_path, archive_file_path)
+            shutil.move(file_path, archive_file_path)
 
 
 # this archives old climate data: specifically ncep hourly temps, ncep hourly uncertainty, and prism daily data
