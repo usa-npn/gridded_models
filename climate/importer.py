@@ -406,7 +406,7 @@ def import_missed_alaska_urma(year, month, day):
     logging.info("-----------------populating missed alaska urma data-----------------")
     alaska_save_path2 = cfg["alaska_save_path"] # temp holding place for raw urma data
     if year:
-        alaska_save_path2 += "{year}0{month}0{day}\\".format(year=year, month=month, day=day)
+        alaska_save_path2 += "{year}0{month}0{day}/".format(year=year, month=month, day=day)
     save_path = cfg["hourly_temp_alaska_path"] # path where processed imported urma data
     os.makedirs(save_path, exist_ok=True)
     os.makedirs(alaska_save_path2, exist_ok=True)
