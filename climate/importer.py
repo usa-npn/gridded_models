@@ -449,7 +449,7 @@ def import_missed_alaska_urma(year, month, day):
             transform = ds.GetGeoTransform()
 
             #masked_tif_file_path = save_path + file_name + '.tif'
-            masked_tif_file_path = save_path + 'urma_' + str(year) + str(month) + str(day) + str(hour) + '.tif'
+            masked_tif_file_path = save_path + 'urma_' + str(year) + "{0:0=2d}".format(month) + "{0:0=2d}".format(day) + "{0:0=2d}".format(hour) + '.tif'
 
             write_raster(masked_tif_file_path, temps_array, -9999, temps_array.shape[1], temps_array.shape[0],
                          projection, transform)
