@@ -144,6 +144,21 @@ def get_prism_data(start_date, end_date, climate_variables):
                     unzipped_files_path = unzip_path + "*.*"
                     for unzipped_file in glob.glob(unzipped_files_path):
                         os.remove(unzipped_file)
+
+                    # delete early and provisional zip files if needed
+                    if 'provisional' in filename:
+                        # we have provisional so we don't need the early anymore
+                        file_to_delete = zipped_files_path + filename.replace('provisional', 'early')
+                        if os.path.isfile(file_to_delete):
+                            os.remove(file_to_delete)
+                    if 'stable' in filename:
+                        # we have stable so we don't need the early or provisional anymore
+                        file_to_delete = zipped_files_path + filename.replace('stable', 'early')
+                        if os.path.isfile(file_to_delete):
+                            os.remove(file_to_delete)
+                        file_to_delete = zipped_files_path + filename.replace('stable', 'provisional')
+                        if os.path.isfile(file_to_delete):
+                            os.remove(file_to_delete)
                 else:
                     downloaded = True
                     logging.info('already have stable file for ' + day.strftime("%Y%m%d"))
