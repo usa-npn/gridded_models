@@ -71,7 +71,7 @@ def extract_tif_from_toby_netcdf(year):
     lons = toby_best_root_group.variables['lon'][:180]
     write_best_raster(leaf_save_path, leaf, lons.min(), lons.max(), len(lons), lats.min(), lats.max(), len(lats))
 
-
+# this is just a scratchpad used for throw away scripts that come up overtime
 def main():
     t0 = time.time()
 
@@ -85,14 +85,14 @@ def main():
 
     # get_acis_missing_climate_data()
 
-    # import_missed_alaska_urma(2016, 12, 31)
-    import_missed_alaska_urma(2017, 1, 1)
-    import_missed_alaska_urma(2017, 1, 2)
-    import_missed_alaska_urma(2017, 1, 3)
-    import_missed_alaska_urma(2017, 1, 4)
-    import_missed_alaska_urma(2017, 1, 5)
-    import_missed_alaska_urma(2017, 1, 6)
-    import_missed_alaska_urma(2017, 1, 7)
+    import_missed_alaska_urma(2016, 12, 31)
+    # import_missed_alaska_urma(2017, 1, 1)
+    # import_missed_alaska_urma(2017, 1, 2)
+    # import_missed_alaska_urma(2017, 1, 3)
+    # import_missed_alaska_urma(2017, 1, 4)
+    # import_missed_alaska_urma(2017, 1, 5)
+    # import_missed_alaska_urma(2017, 1, 6)
+    # import_missed_alaska_urma(2017, 1, 7)
 
     t1 = time.time()
     logging.info('*****************************************************************************')

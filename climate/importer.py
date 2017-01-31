@@ -404,15 +404,17 @@ def compute_tmin_tmax(start_date, end_date, shift, skip_older_than_x_days, regio
 def import_missed_alaska_urma(year, month, day):
     logging.info(' ')
     logging.info("-----------------populating missed alaska urma data-----------------")
-    alaska_save_path2 = cfg["alaska_save_path"] # temp holding place for raw urma data
+    # temp holding place for raw urma data
+    alaska_save_path = cfg["alaska_save_path"]
     if year:
-        alaska_save_path2 += "{year}0{month}0{day}/".format(year=year, month=month, day=day)
-    save_path = cfg["hourly_temp_alaska_path"] # path where processed imported urma data
+        alaska_save_path += (str(year) + "{0:0=2d}".format(month) + "{0:0=2d}/".format(day))
+    # path where processed imported urma data
+    save_path = cfg["hourly_temp_alaska_path"]
     os.makedirs(save_path, exist_ok=True)
-    os.makedirs(alaska_save_path2, exist_ok=True)
-    logging.info("searching for files in: " + alaska_save_path2 + 'akurma*z.2dvaranl_ndfd_3p0.grb2')
+    os.makedirs(alaska_save_path, exist_ok=True)
+    logging.info("searching for files in: " + alaska_save_path + 'akurma*z.2dvaranl_ndfd_3p0.grb2')
 
-    for file_path in glob.iglob(alaska_save_path2 + 'akurma*z.2dvaranl_ndfd_3p0.grb2'):
+    for file_path in glob.iglob(alaska_save_path + 'akurma*z.2dvaranl_ndfd_3p0.grb2'):
         file_name = os.path.basename(file_path)
         unmasked_file_path = file_path
         masked_file_path = file_path + '_masked'
