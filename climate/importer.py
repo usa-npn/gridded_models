@@ -455,7 +455,7 @@ def import_missed_alaska_urma(year, month, day):
                          projection, transform)
 
             # import raster into database
-            rtma_import(masked_tif_file_path, hourly_table_name, True, urma_date, hour, 'urma')
+            rtma_import(masked_tif_file_path, hourly_table_name, True, urma_date, int(hour), 'urma')
         ds = None
 
 
