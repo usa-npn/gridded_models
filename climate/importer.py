@@ -409,7 +409,8 @@ def import_missed_alaska_urma(year, month, day):
         alaska_save_path2 += "{year}0{month}0{day}\\".format(year=year, month=month, day=day)
     save_path = cfg["hourly_temp_alaska_path"] # path where processed imported urma data
     os.makedirs(save_path, exist_ok=True)
-    # os.makedirs(alaska_save_path2, exist_ok=True)
+    os.makedirs(alaska_save_path2, exist_ok=True)
+    logging.info("searching for files in: " + alaska_save_path2 + 'akurma*z.2dvaranl_ndfd_3p0.grb2')
 
     for file_path in glob.iglob(alaska_save_path2 + 'akurma*z.2dvaranl_ndfd_3p0.grb2'):
         file_name = os.path.basename(file_path)
