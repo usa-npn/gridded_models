@@ -401,25 +401,30 @@ def compute_tmin_tmax(start_date, end_date, shift, skip_older_than_x_days, regio
 
 # This function was for beginning of year 2017 when alaska code was not yet written and we needed to temporarily
 # collect urma data without processing. It is not part of the normal workflow.
-def import_missed_alaska_urma():
+def import_missed_alaska_urma(year, month, day):
     logging.info(' ')
     logging.info("-----------------populating missed alaska urma data-----------------")
     alaska_save_path2 = cfg["alaska_save_path"] # temp holding place for raw urma data
+    if year:
+        alaska_save_path2 += "{year}0{month}0{day}\\".format(year=year, month=month, day=day)
     save_path = cfg["hourly_temp_alaska_path"] # path where processed imported urma data
     os.makedirs(save_path, exist_ok=True)
-    os.makedirs(alaska_save_path2, exist_ok=True)
+    # os.makedirs(alaska_save_path2, exist_ok=True)
 
-    for file_path in glob.iglob(alaska_save_path2 + 'urma*'):
+    for file_path in glob.iglob(alaska_save_path2 + 'akurma*z.2dvaranl_ndfd_3p0.grb2'):
         file_name = os.path.basename(file_path)
         unmasked_file_path = file_path
         masked_file_path = file_path + '_masked'
 
         apply_alaska_mask(unmasked_file_path, masked_file_path)
 
-        year = file_name[5:9]
-        month = file_name[9:11]
-        day = file_name[11:13]
-        hour = int(file_name[13:15])
+        if not year:
+            year = file_name[5:9]
+            month = file_name[9:11]
+            day = file_name[11:13]
+            hour = int(file_name[13:15])
+        else:
+            hour = re.search(r'\d\d', file_name).group()
 
         urma_date = datetime.strptime(year + month + day, '%Y%m%d')
         hourly_table_name = "hourly_temp_alaska_" + year
@@ -441,7 +446,8 @@ def import_missed_alaska_urma():
             projection = ds.GetProjection()
             transform = ds.GetGeoTransform()
 
-            masked_tif_file_path = save_path + file_name + '.tif'
+            #masked_tif_file_path = save_path + file_name + '.tif'
+            masked_tif_file_path = save_path + 'urma_' + str(year) + str(month) + str(day) + str(hour) + '.tif'
 
             write_raster(masked_tif_file_path, temps_array, -9999, temps_array.shape[1], temps_array.shape[0],
                          projection, transform)
