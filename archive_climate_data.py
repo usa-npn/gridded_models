@@ -128,10 +128,14 @@ def main():
     # note order is important here, archive the rtma before archiving the urma
     # this is because when we archive rtma, we need to check if there is a corresponding urma file and we won't
     # find it if it was already archived
+
+    # delete RTMA older than 1 month if matching URMA exists, otherwise archive
+    # archive URMA older than 1 month
     archive_and_delete_hourly_data("rtma", False)
     archive_and_delete_hourly_data("urma", False)
     archive_and_delete_hourly_data("rtma", True)
     archive_and_delete_hourly_data("urma", True)
+    # archive PRISM older than 6 Months
     archive_and_delete_prism_data("tmin")
     archive_and_delete_prism_data("tmax")
 
