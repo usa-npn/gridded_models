@@ -86,7 +86,7 @@ def main():
                 logging.info('copying: ' + contempory_file_path + ' to: ' + historic_file_path)
                 shutil.copy(contempory_file_path, historic_file_path)
                 logging.info('importing to postgis: ' + historic_file_path)
-                driver.Six.postgis_import(plant, phenophase, 'ncep', beginning_of_the_year, "year")
+                driver.Six.postgis_import(plant, phenophase, 'ncep', 'conus', beginning_of_the_year, "year")
 
     # migrate 2 six anomaly layers
     for phenophase in phenophases:

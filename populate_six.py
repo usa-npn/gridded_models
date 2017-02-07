@@ -51,7 +51,7 @@ def main():
             for i in range(delta.days + 1):
                 day = start_date + timedelta(days=i)
                 driver.Six.create_raster(plant, phenophase, climate_data_provider, 'conus', day, time_rez)
-                driver.Six.postgis_import(plant, phenophase, climate_data_provider, day, time_rez)
+                driver.Six.postgis_import(plant, phenophase, climate_data_provider, 'conus', day, time_rez)
                 logging.info('calculated spring index for plant: %s phenophase: %s on day: %s', plant, phenophase, day)
     # compute averages
     driver.Six.leaf_average_array /= len(plants)
@@ -61,7 +61,7 @@ def main():
         for i in range(delta.days + 1):
             day = start_date + timedelta(days=i)
             driver.Six.create_raster("average", phenophase, climate_data_provider, 'conus', day, time_rez)
-            driver.Six.postgis_import("average", phenophase, climate_data_provider, day, time_rez)
+            driver.Six.postgis_import("average", phenophase, climate_data_provider, 'conus', day, time_rez)
             logging.info('calculated average spring index for phenophase: %s on day: %s', phenophase, day)
     driver.Six.cleanup()
 

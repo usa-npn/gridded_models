@@ -302,8 +302,12 @@ class Six:
         # set up path
         if climate_source == 'prism' and time_rez == 'day':
             folder_name = "six_" + plant + "_" + phenophase + "_" + climate_source + "_" + year_string + os.sep
-        elif climate_source == 'ncep' and time_rez == 'year':
+        elif climate_source == 'ncep' and time_rez == 'year' and region == 'conus':
             folder_name = "six_" + plant + "_" + phenophase + "_" + climate_source + "_historic" + os.sep
+        elif climate_source == 'ncep' and time_rez == 'year' and region == 'alaska':
+            folder_name = "six_" + plant + "_" + phenophase + "_" + climate_source + "_alaska_historic" + os.sep
+        elif climate_source == 'ncep' and time_rez == 'day' and region == 'alaska':
+            folder_name = "six_" + plant + "_" + phenophase + "_" + climate_source + "_alaska" + os.sep
         else:
             folder_name = "six_" + plant + "_" + phenophase + "_" + climate_source + os.sep
         file_name = plant + '_' + phenophase + '_' + climate_source + '_' + date_string + '.tif'
@@ -339,7 +343,7 @@ class Six:
 
 
     @staticmethod
-    def postgis_import(plant, phenophase, climate_source, date, time_rez):
+    def postgis_import(plant, phenophase, climate_source, region, date, time_rez):
         date_string = date.strftime("%Y%m%d")
         year_string = date.strftime("%Y")
         if time_rez == 'year':
@@ -349,9 +353,18 @@ class Six:
 
         file_path = Six.save_path + 'six_' + plant + '_' + phenophase + '_' + climate_source + os.sep + file_name
 
-        if climate_source == 'ncep' and time_rez == 'year':
+        if climate_source == 'ncep' and time_rez == 'year' and region == 'conus':
             table_name = climate_source + '_spring_index_historic'
             file_path = Six.save_path + 'six_' + plant + '_' + phenophase + '_' + climate_source + "_historic" + os.sep + file_name
+        elif climate_source == 'ncep' and time_rez == 'year' and region == 'alaska':
+            table_name = climate_source + '_spring_index_alaska_historic'
+            file_path = Six.save_path + 'six_' + plant + '_' + phenophase + '_' + climate_source + "_alaska_historic" + os.sep + file_name
+        elif climate_source == 'ncep' and time_rez == 'day' and region == 'conus':
+            table_name = climate_source + '_spring_index'
+            file_path = Six.save_path + 'six_' + plant + '_' + phenophase + '_' + climate_source + os.sep + file_name
+        elif climate_source == 'ncep' and time_rez == 'day' and region == 'alaska':
+            table_name = climate_source + '_spring_index_alaska'
+            file_path = Six.save_path + 'six_' + plant + '_' + phenophase + '_' + climate_source + "_alaska" + os.sep + file_name
         elif climate_source == 'prism' and time_rez == 'day':
             table_name = climate_source + '_spring_index_' + year_string
             file_path = Six.save_path + 'six_' + plant + '_' + phenophase + '_' + climate_source + "_" + year_string + os.sep + file_name
@@ -423,8 +436,12 @@ class Six:
 
         # populate image mosaic time series table if it exists
         # check if time series table exists
-        if climate_source == 'ncep' and time_rez == 'year':
+        if climate_source == 'ncep' and time_rez == 'year' and region == 'conus':
             time_series_table = 'six' + '_' + plant + '_' + phenophase + '_' + climate_source + '_historic'
+        elif climate_source == 'ncep' and time_rez == 'year' and region == 'alaska':
+            time_series_table = 'six' + '_' + plant + '_' + phenophase + '_' + climate_source + '_alaska_historic'
+        elif climate_source == 'ncep' and time_rez == 'day' and region == 'alaska':
+            time_series_table = 'six' + '_' + plant + '_' + phenophase + '_' + climate_source + '_alaska'
         else:
             time_series_table = 'six' + '_' + plant + '_' + phenophase + '_' + climate_source
         time_series_exists = False
