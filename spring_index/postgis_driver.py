@@ -133,7 +133,7 @@ class Six:
 
 
     @staticmethod
-    def load_daily_climate_data(start_date, end_date, climate_data_provider):
+    def load_daily_climate_data(start_date, end_date, climate_data_provider, region):
         year = start_date.year
         num_days = (end_date - start_date).days + 1
         if num_days > 240:
@@ -143,6 +143,8 @@ class Six:
         vsipath = '/vsimem/from_postgis'
         if climate_data_provider == 'prism':
             table_name = "prism_tmin_" + str(year)
+        elif region == 'alaska':
+            table_name = "tmin_alaska_" + str(year)
         else:
             table_name = "tmin_" + str(year)
         for day in range(0, num_days):
@@ -172,6 +174,8 @@ class Six:
 
         if climate_data_provider == 'prism':
             table_name = "prism_tmax_" + str(year)
+        elif region == 'alaska':
+            table_name = "tmax_alaska_" + str(year)
         else:
             table_name = "tmax_" + str(year)
         for day in range(0, num_days):
@@ -288,7 +292,7 @@ class Six:
 
 
     @staticmethod
-    def create_raster(plant, phenophase, climate_source, date, time_rez):
+    def create_raster(plant, phenophase, climate_source, region, date, time_rez):
         if time_rez == 'year':
             date_string = date.strftime("%Y")
         else:

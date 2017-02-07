@@ -43,14 +43,14 @@ def main():
     phenophases = ['leaf', 'bloom']
 
     # compute individual plants
-    driver.Six.load_daily_climate_data(start_date, end_date, climate_data_provider)
+    driver.Six.load_daily_climate_data(start_date, end_date, climate_data_provider, 'conus')
     for plant in plants:
         for phenophase in phenophases:
             driver.Six.compute_daily_index(plant, phenophase)
             delta = end_date - start_date
             for i in range(delta.days + 1):
                 day = start_date + timedelta(days=i)
-                driver.Six.create_raster(plant, phenophase, climate_data_provider, day, time_rez)
+                driver.Six.create_raster(plant, phenophase, climate_data_provider, 'conus', day, time_rez)
                 driver.Six.postgis_import(plant, phenophase, climate_data_provider, day, time_rez)
                 logging.info('calculated spring index for plant: %s phenophase: %s on day: %s', plant, phenophase, day)
     # compute averages
@@ -60,7 +60,7 @@ def main():
         delta = end_date - start_date
         for i in range(delta.days + 1):
             day = start_date + timedelta(days=i)
-            driver.Six.create_raster("average", phenophase, climate_data_provider, day, time_rez)
+            driver.Six.create_raster("average", phenophase, climate_data_provider, 'conus', day, time_rez)
             driver.Six.postgis_import("average", phenophase, climate_data_provider, day, time_rez)
             logging.info('calculated average spring index for phenophase: %s on day: %s', phenophase, day)
     driver.Six.cleanup()

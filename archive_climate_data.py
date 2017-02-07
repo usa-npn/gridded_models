@@ -21,15 +21,19 @@ hourly_temp_path = cfg["hourly_temp_path"]
 hourly_utemp_path = cfg["hourly_utemp_path"]
 hourly_temp_archive_path = cfg["hourly_temp_archive_path"]
 hourly_utemp_archive_path = cfg["hourly_utemp_archive_path"]
+
+hourly_temp_alaska_path = cfg["hourly_temp_alaska_path"]
+hourly_temp_alaska_archive_path = cfg["hourly_temp_archive_path"]
+
 prism_path = cfg["prism_path"]
 prism_archive_path = cfg["prism_archive_path"]
 
 
-def archive_and_delete_hourly_data(dataset, uncertainty):
+def archive_and_delete_hourly_data(dataset, region, uncertainty):
     if uncertainty:
-        logging.info("archiving {dataset} hourly temps".format(dataset=dataset))
+        logging.info("archiving {region} {dataset} hourly temps".format(region=region, dataset=dataset))
     else:
-        logging.info("archiving {dataset} hourly temps uncertainty".format(dataset=dataset))
+        logging.info("archiving {region} {dataset} hourly temps uncertainty".format(region=region, dataset=dataset))
 
     thirty_days_ago = datetime.now() - timedelta(days=30)
 
@@ -131,10 +135,12 @@ def main():
 
     # delete RTMA older than 1 month if matching URMA exists, otherwise archive
     # archive URMA older than 1 month
-    archive_and_delete_hourly_data("rtma", False)
-    archive_and_delete_hourly_data("urma", False)
-    archive_and_delete_hourly_data("rtma", True)
-    archive_and_delete_hourly_data("urma", True)
+    archive_and_delete_hourly_data("rtma", "conus", False)
+    archive_and_delete_hourly_data("urma", "conus", False)
+    # archive_and_delete_hourly_data("rtma", "alaska", False)
+    # archive_and_delete_hourly_data("urma", "alaska", False)
+    archive_and_delete_hourly_data("rtma", "conus", True)
+    archive_and_delete_hourly_data("urma", "conus", True)
     # archive PRISM older than 6 Months
     archive_and_delete_prism_data("tmin")
     archive_and_delete_prism_data("tmax")
