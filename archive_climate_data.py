@@ -46,9 +46,9 @@ def archive_and_delete_hourly_data(dataset, region, uncertainty):
         file_name = os.path.basename(file_path)
 
         if uncertainty:
-            archive_file_path = hourly_temp_archive_path + file_name
-        else:
             archive_file_path = hourly_utemp_archive_path + file_name
+        else:
+            archive_file_path = hourly_temp_archive_path + file_name
 
         year = file_name[5:9]
         month = file_name[9:11]
