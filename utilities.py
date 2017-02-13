@@ -24,6 +24,7 @@ from util.database import *
 from util.raster import write_best_raster
 from qc.utils import get_acis_missing_climate_data
 from climate.importer import import_missed_alaska_urma
+from qc.utils import load_stations_and_station_attributes
 
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:

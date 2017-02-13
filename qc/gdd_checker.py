@@ -102,8 +102,12 @@ def populate_agdds(start_date, end_date, source, source_id, stations):
             # don't already have tmin and tmax locally so grab from URMA postgis db or ACIS data
             if not already_retrieved:
                 if source == 'URMA':
-                    tmin = get_urma_climate_data(station['longitude'], station['latitude'], day, 'tmin')
-                    tmax = get_urma_climate_data(station['longitude'], station['latitude'], day, 'tmax')
+                    if station['char_value'] == 'AK':
+                        tmin = get_urma_climate_data(station['longitude'], station['latitude'], day, 'tmin', 'alaska')
+                        tmax = get_urma_climate_data(station['longitude'], station['latitude'], day, 'tmax', 'alaska')
+                    else:
+                        tmin = get_urma_climate_data(station['longitude'], station['latitude'], day, 'tmin', 'conus')
+                        tmax = get_urma_climate_data(station['longitude'], station['latitude'], day, 'tmax', 'conus')
                     # URMA and PRISM are in celsius in our postgis db everything else is Fer so convert here
                     if tmin is not None:
                         tmin = tmin * 1.8 + 32

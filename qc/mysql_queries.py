@@ -37,7 +37,7 @@ insert_station = ("INSERT INTO climate.stations (latitude, longitude, elevation,
                   "char_network_id, type) "
                   "VALUES (%s, %s, %s, %s, %s, %s, %s);")
 
-select_stations = "SELECT * FROM climate.stations;"
+select_stations = "SELECT * FROM climate.stations s LEFT JOIN climate.station_attributes sa ON s.id = sa.station_id and sa.attribute_id = 1;"
 
 insert_station_attribute = ("INSERT INTO climate.station_attributes (station_id, attribute_id, int_value, char_value, "
                             "float_value) "

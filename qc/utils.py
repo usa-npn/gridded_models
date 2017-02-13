@@ -29,11 +29,15 @@ def get_acis_climate_data(station_ids, climate_elements, start_date, end_date):
         error_log.log("ACIS request failed: {reason}".format(reason=err.reason))
 
 
-def get_urma_climate_data(long, lat, date, climate_element):
-    if climate_element is 'tmin':
+def get_urma_climate_data(long, lat, date, climate_element, region):
+    if climate_element is 'tmin' and region == 'conus':
         table_name = "tmin_" + date.strftime("%Y")
-    else:
+    elif climate_element is 'tmax' and region == 'conus':
         table_name = "tmax_" + date.strftime("%Y")
+    elif climate_element is 'tmin' and region == 'alaska':
+        table_name = "tmin_alaska_" + date.strftime("%Y")
+    else:
+        table_name = "tmax_alaska_" + date.strftime("%Y")
     curs = conn.cursor()
     data = {"table": AsIs(table_name), "long": long, "lat": lat, "rast_date": date.strftime("%Y-%m-%d")}
     curs.execute(select_urma_by_date, data)
@@ -122,9 +126,17 @@ def load_sources():
     cursor.close()
 
 
-def load_stations_csv_to_db():
+def load_stations_and_station_attributes(region):
+    load_stations_csv_to_db(region)
+    load_station_states(region)
+
+
+def load_stations_csv_to_db(region):
     cursor = mysql_conn.cursor()
-    csv_reader = csv.DictReader(open('crn-stations-v2.csv'))
+    if region == 'alaska':
+        csv_reader = csv.DictReader(open('crn-stations-alaska.csv'))
+    else:
+        csv_reader = csv.DictReader(open('crn-stations-v2.csv'))
     for station in csv_reader:
         if station['WMO ID'].isdigit():
             station_id = int(station['WMO ID'])
@@ -147,7 +159,7 @@ def get_stations():
     return stations
 
 
-def load_station_states():
+def load_station_states(region):
     stations = get_stations()
 
     cursor = mysql_conn.cursor(dictionary=True)
@@ -158,8 +170,11 @@ def load_station_states():
         if attribute['name'] == 'state':
             state_attribute_id = attribute['id']
 
-    csv_reader = csv.DictReader(open('crn-stations-v2.csv'))
     for station in stations:
+        if region == 'alaska':
+            csv_reader = csv.DictReader(open('crn-stations-alaska.csv'))
+        else:
+            csv_reader = csv.DictReader(open('crn-stations-v2.csv'))
         for csv_station in csv_reader:
             if csv_station['ID'] == station['char_network_id']:
                 cursor.execute(insert_station_attribute, (station['id'], state_attribute_id, None, csv_station['State'], None))
@@ -342,3 +357,6 @@ def get_acis_missing_climate_data():
 # ,'USW00094097'
 # ,'USW00094098'
 # ,'USW00096406']
+
+if __name__ == "__main__":
+    load_stations_and_station_attributes('alaska')
