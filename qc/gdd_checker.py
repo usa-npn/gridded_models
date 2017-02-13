@@ -38,10 +38,10 @@ def populate_agdds(start_date, end_date, source, source_id, stations):
         # grab previous days tmin, tmax, and agdd for both bases from mysql agdds table and start over at year breaks
         day_before_start_date = start_date - timedelta(days=1)
         if day_before_start_date.year == start_date.year:
-            prev_tmin = get_element_from_qc_table(station['id'], source_id, day_before_start_date, 32, 'tmin')
-            prev_tmax = get_element_from_qc_table(station['id'], source_id, day_before_start_date, 32, 'tmax')
-            agdd32 = get_element_from_qc_table(station['id'], source_id, day_before_start_date, 32, 'agdd')
-            agdd50 = get_element_from_qc_table(station['id'], source_id, day_before_start_date, 50, 'agdd')
+            prev_tmin = get_element_from_qc_table(station['station_id'], source_id, day_before_start_date, 32, 'tmin')
+            prev_tmax = get_element_from_qc_table(station['station_id'], source_id, day_before_start_date, 32, 'tmax')
+            agdd32 = get_element_from_qc_table(station['station_id'], source_id, day_before_start_date, 32, 'agdd')
+            agdd50 = get_element_from_qc_table(station['station_id'], source_id, day_before_start_date, 50, 'agdd')
         else:
             prev_tmin = None
             prev_tmax = None
@@ -92,8 +92,8 @@ def populate_agdds(start_date, end_date, source, source_id, stations):
             # see if we already have tmin and tmax from local db
             # tmin = None
             # tmax = None
-            tmin = get_element_from_qc_table(station['id'], source_id, day, 32, 'tmin')
-            tmax = get_element_from_qc_table(station['id'], source_id, day, 32, 'tmax')
+            tmin = get_element_from_qc_table(station['station_id'], source_id, day, 32, 'tmin')
+            tmax = get_element_from_qc_table(station['station_id'], source_id, day, 32, 'tmax')
 
             already_retrieved = False
             if tmin is not None and tmin != 'M' and tmax is not None and tmax != 'M' and source != 'PRISM':
@@ -147,8 +147,8 @@ def populate_agdds(start_date, end_date, source, source_id, stations):
 
             if not already_retrieved:
                 # do an insert or update
-                add_agdd_row(station['id'], source_id, gdd32, agdd32, day.year, doy, day, 32, missing_data, tmin, tmax)
-                add_agdd_row(station['id'], source_id, gdd50, agdd50, day.year, doy, day, 50, missing_data, tmin, tmax)
+                add_agdd_row(station['station_id'], source_id, gdd32, agdd32, day.year, doy, day, 32, missing_data, tmin, tmax)
+                add_agdd_row(station['station_id'], source_id, gdd50, agdd50, day.year, doy, day, 50, missing_data, tmin, tmax)
 
 
 def populate_agdd_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end):
