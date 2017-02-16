@@ -37,7 +37,9 @@ def archive_and_delete_hourly_data(dataset, region, uncertainty):
 
     thirty_days_ago = datetime.now() - timedelta(days=30)
 
-    if uncertainty:
+    if region == 'alaska':
+        path_to_search = hourly_temp_alaska_path + dataset + '*'
+    elif uncertainty:
         path_to_search = hourly_utemp_path + dataset + '*'
     else:
         path_to_search = hourly_temp_path + dataset + '*'
@@ -45,7 +47,9 @@ def archive_and_delete_hourly_data(dataset, region, uncertainty):
     for file_path in glob.iglob(path_to_search):
         file_name = os.path.basename(file_path)
 
-        if uncertainty:
+        if region == 'alaska':
+            archive_file_path = hourly_temp_alaska_archive_path + file_name
+        elif uncertainty:
             archive_file_path = hourly_utemp_archive_path + file_name
         else:
             archive_file_path = hourly_temp_archive_path + file_name
@@ -55,7 +59,9 @@ def archive_and_delete_hourly_data(dataset, region, uncertainty):
         day = file_name[11:13]
         hour = int(file_name[13:15])
 
-        if uncertainty:
+        if region == 'alaska':
+            table_name = 'hourly_temp_alaska_' + year
+        elif uncertainty:
             table_name = 'hourly_temp_uncertainty_' + year
         else:
             table_name = 'hourly_temp_' + year
@@ -84,8 +90,8 @@ def archive_and_delete_hourly_data(dataset, region, uncertainty):
                     logging.info("reimporting {archive_file_path} to {table_name}"
                                  .format(archive_file_path=archive_file_path, table_name=table_name))
                     rtma_import(archive_file_path, table_name, True, hourly_data_date, hour, dataset)
-        else:
-            logging.info("skipping since {file_name} is not older than thirty days".format(file_name=file_name))
+        # else:
+        #     logging.info("skipping since {file_name} is not older than thirty days".format(file_name=file_name))
 
 
 def archive_and_delete_prism_data(climate_type):
@@ -128,6 +134,8 @@ def main():
         os.makedirs(hourly_temp_archive_path)
     if not os.path.exists(hourly_utemp_archive_path):
         os.makedirs(hourly_utemp_archive_path)
+    if not os.path.exists(hourly_temp_alaska_archive_path):
+        os.makedirs(hourly_temp_alaska_archive_path)
 
     # note order is important here, archive the rtma before archiving the urma
     # this is because when we archive rtma, we need to check if there is a corresponding urma file and we won't
@@ -137,8 +145,8 @@ def main():
     # archive URMA older than 1 month
     archive_and_delete_hourly_data("rtma", "conus", False)
     archive_and_delete_hourly_data("urma", "conus", False)
-    # archive_and_delete_hourly_data("rtma", "alaska", False)
-    # archive_and_delete_hourly_data("urma", "alaska", False)
+    archive_and_delete_hourly_data("rtma", "alaska", False)
+    archive_and_delete_hourly_data("urma", "alaska", False)
     archive_and_delete_hourly_data("rtma", "conus", True)
     archive_and_delete_hourly_data("urma", "conus", True)
     # archive PRISM older than 6 Months
