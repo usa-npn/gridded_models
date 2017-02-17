@@ -23,7 +23,7 @@ hourly_temp_archive_path = cfg["hourly_temp_archive_path"]
 hourly_utemp_archive_path = cfg["hourly_utemp_archive_path"]
 
 hourly_temp_alaska_path = cfg["hourly_temp_alaska_path"]
-hourly_temp_alaska_archive_path = cfg["hourly_temp_archive_path"]
+hourly_temp_alaska_archive_path = cfg["hourly_temp_alaska_archive_path"]
 
 prism_path = cfg["prism_path"]
 prism_archive_path = cfg["prism_archive_path"]
@@ -31,9 +31,9 @@ prism_archive_path = cfg["prism_archive_path"]
 
 def archive_and_delete_hourly_data(dataset, region, uncertainty):
     if uncertainty:
-        logging.info("archiving {region} {dataset} hourly temps".format(region=region, dataset=dataset))
-    else:
         logging.info("archiving {region} {dataset} hourly temps uncertainty".format(region=region, dataset=dataset))
+    else:
+        logging.info("archiving {region} {dataset} hourly temps".format(region=region, dataset=dataset))
 
     thirty_days_ago = datetime.now() - timedelta(days=30)
 
