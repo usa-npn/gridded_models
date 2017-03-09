@@ -308,7 +308,7 @@ class Six:
             folder_name = "six_" + plant + "_" + phenophase + "_" + climate_source + "_alaska_historic" + os.sep
         elif climate_source == 'ncep' and time_rez == 'day' and region == 'alaska':
             folder_name = "six_" + plant + "_" + phenophase + "_" + climate_source + "_alaska" + os.sep
-        else:
+        else: # prism yearly goes here
             folder_name = "six_" + plant + "_" + phenophase + "_" + climate_source + os.sep
         file_name = plant + '_' + phenophase + '_' + climate_source + '_' + date_string + '.tif'
         os.makedirs(os.path.dirname(Six.save_path + folder_name), exist_ok=True)
@@ -330,7 +330,10 @@ class Six:
             return
 
         # remove days beyond day's doy from outarray
-        day_of_year = date.timetuple().tm_yday
+        if climate_source == 'prism' and time_rez == 'year':
+            day_of_year = 240
+        else:
+            day_of_year = date.timetuple().tm_yday
         out_array[out_array > day_of_year] = -9999
         out_array[np.isnan(out_array)] = -9999
         # out_array[out_array == 0] = -9999
@@ -368,7 +371,7 @@ class Six:
         elif climate_source == 'prism' and time_rez == 'day':
             table_name = climate_source + '_spring_index_' + year_string
             file_path = Six.save_path + 'six_' + plant + '_' + phenophase + '_' + climate_source + "_" + year_string + os.sep + file_name
-        elif time_rez == 'year':
+        elif time_rez == 'year': # prism yearly goes here
             table_name = climate_source + '_spring_index'
         else:
             table_name = climate_source + '_spring_index'
