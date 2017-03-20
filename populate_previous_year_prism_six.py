@@ -4,10 +4,26 @@ import time
 import logging
 import yaml
 import os.path
+import smtplib
+from email.mime.text import MIMEText
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 log_path = cfg["log_path"]
+email = cfg["email"]
+
+
+def email_log_results(log_to_email, from_address, to_address, subject):
+    with open(log_to_email) as fp:
+        msg = MIMEText(fp.read())
+
+    msg['Subject'] = 'The contents of %s' % subject
+    msg['From'] = from_address
+    msg['To'] = to_address
+
+    s = smtplib.SMTP('localhost')
+    s.send_message(msg)
+    s.quit()
 
 
 def populate_yearly_prism_six(year):
@@ -46,7 +62,7 @@ def populate_yearly_prism_six(year):
 # Unless the prism climate data has been populated somewhere else.
 def main():
 
-    logging.basicConfig(filename=log_path + 'populate_six.log',
+    logging.basicConfig(filename=log_path + 'populate_previous_year_prism_six.log',
                         level=logging.INFO,
                         format='%(asctime)s %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p')
@@ -54,8 +70,9 @@ def main():
 
     logging.info(' ')
     logging.info('*****************************************************************************')
-    logging.info('***********beginning script populate_six.py*****************')
+    logging.info('***********beginning script populate_previous_year_prism_six.py*****************')
     logging.info('*****************************************************************************')
+    logging.info("Please verify that last year's prism temperatures are stable through day 240.")
 
     today = date.today()
     current_year = today.year
@@ -65,8 +82,12 @@ def main():
 
     t1 = time.time()
     logging.info('*****************************************************************************')
-    logging.info('***********populate_six.py finished in %s seconds***********', t1-t0)
+    logging.info('***********populate_previous_year_prism_six.py finished in %s seconds***********', t1-t0)
     logging.info('*****************************************************************************')
+
+    email_log_results(log_path + 'populate_previous_year_prism_six.log',
+                      email["from_address"], email["to_address"],
+                      "populate_previous_year_prism_six.log")
 
 if __name__ == "__main__":
     main()
