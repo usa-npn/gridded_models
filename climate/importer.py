@@ -466,7 +466,7 @@ def download_historic_climate_data(start_date, end_date, dataset, region):
     logging.info("-----------------populating historic {region} {dataset} data-----------------"
                  .format(region=region, dataset=dataset))
     working_path = cfg["temp_path"]
-    alaska_save_path = cfg["alaska_save_path"]
+    # alaska_save_path = cfg["alaska_save_path"]
     if region == 'conus':
         save_path = cfg["hourly_temp_path"]
     else:
@@ -477,7 +477,7 @@ def download_historic_climate_data(start_date, end_date, dataset, region):
     os.makedirs(save_path, exist_ok=True)
     os.makedirs(tmin_save_path, exist_ok=True)
     os.makedirs(tmax_save_path, exist_ok=True)
-    os.makedirs(alaska_save_path, exist_ok=True)
+    # os.makedirs(alaska_save_path, exist_ok=True)
     cleanup(working_path)
 
     if dataset == 'urma' and region == 'conus':
@@ -567,8 +567,8 @@ def download_historic_climate_data(start_date, end_date, dataset, region):
             if retrieved:
 
                 # todo eventually remove this, just here to save source alaska data while getting things right
-                if region == 'alaska':
-                    copy(working_path + file_name, alaska_save_path + file_name)
+                # if region == 'alaska':
+                #     copy(working_path + file_name, alaska_save_path + file_name)
 
                 # warp the downloaded raster to EPSG 4269
                 # for alaska warping and masking happen at the same time, this is because by the time we got to
