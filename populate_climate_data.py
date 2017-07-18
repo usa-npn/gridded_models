@@ -45,11 +45,6 @@ def main():
         download_hourly_temps('rtma', region)
         download_hourly_temps('urma', region)
 
-    # downloads hourly rtma/urma uncertainty into our postgis db for the past 24 hours (each hour represents GMT)
-    # overwrites all files previously downloaded files
-    download_hourly_temp_uncertainty('rtma')
-    download_hourly_temp_uncertainty('urma')
-
     # download and import rtma data for the date range that was missed for any reason
     # this looks back one week,
     # another script is in place to delete rtma data older than two weeks for which we also have urma data

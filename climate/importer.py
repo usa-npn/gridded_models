@@ -227,60 +227,60 @@ def download_hourly_temps(dataset, region):
         cleanup(working_path)
 
 
-def download_hourly_temp_uncertainty(dataset):
-    working_path = cfg["temp_path"]
-    save_path = cfg["hourly_utemp_path"]
-    os.makedirs(working_path, exist_ok=True)
-    os.makedirs(save_path, exist_ok=True)
-    cleanup(working_path)
-
-    if dataset == 'rtma':
-        logging.info(' ')
-        logging.info('-----------------populating past 24 hours of rtma uncertainty-----------------')
-        base_url_temp = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndgd/GT.rtma/AR.conus/'
-    elif dataset == 'urma':
-        logging.info(' ')
-        logging.info('-----------------populating past 24 hours of urma uncertainty-----------------')
-        base_url_temp = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndgd/GT.urma/AR.conus/'
-    else:
-        logging.warning('invalid dataset: %s', dataset)
-
-    # hour is UTC
-    for hour in range(0, 24):
-        zero_padded_hour = "{0:0=2d}".format(hour)
-
-        # download the file (we keep retrying if there are network issues)
-        # DS.UTEMP.BIN  =  TEMPERATURE ANALYSIS UNCERTAINTY
-        url = base_url_temp + 'RT.' + zero_padded_hour + '/ds.utemp.bin'
-        file_name = dataset + '_' + zero_padded_hour + '.bin'
-        retrieved = retrieve_from_url(url, working_path + file_name)
-
-        if not retrieved:
-            continue
-
-        # warp to match prism extent, projection, and size
-        gdalwarp_file(working_path + file_name)
-
-        src_ds = gdal.Open(working_path + file_name)
-        rast_band = src_ds.GetRasterBand(1)
-
-        # get timestamp in utc for when the raster map is valid
-        band_meta_data = rast_band.GetMetadata()
-        rast_utc = int(re.findall('\d+', band_meta_data["GRIB_VALID_TIME"])[0])
-        rast_date = datetime.fromtimestamp(rast_utc, timezone.utc)
-        table_name = "hourly_temp_uncertainty_" + str(rast_date.year)
-
-        # create new raster with non land areas masked out
-        rast_array = rast_band.ReadAsArray()
-        apply_usa_mask(rast_array)
-        masked_file_path = save_path + dataset + '_' + rast_date.strftime("%Y%m%d") + zero_padded_hour + '.tif'
-        write_raster(masked_file_path, rast_array, -9999, src_ds.RasterXSize, src_ds.RasterYSize, src_ds.GetProjection(), src_ds.GetGeoTransform())
-
-        # import raster to db
-        rtma_import(masked_file_path, table_name, True, rast_date, rast_date.hour, dataset)
-        logging.info('imported %s', masked_file_path)
-        src_ds = None
-        cleanup(working_path)
+# def download_hourly_temp_uncertainty(dataset):
+#     working_path = cfg["temp_path"]
+#     save_path = cfg["hourly_utemp_path"]
+#     os.makedirs(working_path, exist_ok=True)
+#     os.makedirs(save_path, exist_ok=True)
+#     cleanup(working_path)
+#
+#     if dataset == 'rtma':
+#         logging.info(' ')
+#         logging.info('-----------------populating past 24 hours of rtma uncertainty-----------------')
+#         base_url_temp = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndgd/GT.rtma/AR.conus/'
+#     elif dataset == 'urma':
+#         logging.info(' ')
+#         logging.info('-----------------populating past 24 hours of urma uncertainty-----------------')
+#         base_url_temp = 'ftp://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndgd/GT.urma/AR.conus/'
+#     else:
+#         logging.warning('invalid dataset: %s', dataset)
+#
+#     # hour is UTC
+#     for hour in range(0, 24):
+#         zero_padded_hour = "{0:0=2d}".format(hour)
+#
+#         # download the file (we keep retrying if there are network issues)
+#         # DS.UTEMP.BIN  =  TEMPERATURE ANALYSIS UNCERTAINTY
+#         url = base_url_temp + 'RT.' + zero_padded_hour + '/ds.utemp.bin'
+#         file_name = dataset + '_' + zero_padded_hour + '.bin'
+#         retrieved = retrieve_from_url(url, working_path + file_name)
+#
+#         if not retrieved:
+#             continue
+#
+#         # warp to match prism extent, projection, and size
+#         gdalwarp_file(working_path + file_name)
+#
+#         src_ds = gdal.Open(working_path + file_name)
+#         rast_band = src_ds.GetRasterBand(1)
+#
+#         # get timestamp in utc for when the raster map is valid
+#         band_meta_data = rast_band.GetMetadata()
+#         rast_utc = int(re.findall('\d+', band_meta_data["GRIB_VALID_TIME"])[0])
+#         rast_date = datetime.fromtimestamp(rast_utc, timezone.utc)
+#         table_name = "hourly_temp_uncertainty_" + str(rast_date.year)
+#
+#         # create new raster with non land areas masked out
+#         rast_array = rast_band.ReadAsArray()
+#         apply_usa_mask(rast_array)
+#         masked_file_path = save_path + dataset + '_' + rast_date.strftime("%Y%m%d") + zero_padded_hour + '.tif'
+#         write_raster(masked_file_path, rast_array, -9999, src_ds.RasterXSize, src_ds.RasterYSize, src_ds.GetProjection(), src_ds.GetGeoTransform())
+#
+#         # import raster to db
+#         rtma_import(masked_file_path, table_name, True, rast_date, rast_date.hour, dataset)
+#         logging.info('imported %s', masked_file_path)
+#         src_ds = None
+#         cleanup(working_path)
 
 
 def compute_tmin_tmax(start_date, end_date, shift, skip_older_than_x_days, region):

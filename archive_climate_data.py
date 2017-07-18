@@ -18,9 +18,7 @@ with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml'))
 log_path = cfg["log_path"]
 
 hourly_temp_path = cfg["hourly_temp_path"]
-hourly_utemp_path = cfg["hourly_utemp_path"]
 hourly_temp_archive_path = cfg["hourly_temp_archive_path"]
-hourly_utemp_archive_path = cfg["hourly_utemp_archive_path"]
 
 hourly_temp_alaska_path = cfg["hourly_temp_alaska_path"]
 hourly_temp_alaska_archive_path = cfg["hourly_temp_alaska_archive_path"]
@@ -29,18 +27,13 @@ prism_path = cfg["prism_path"]
 prism_archive_path = cfg["prism_archive_path"]
 
 
-def archive_and_delete_hourly_data(dataset, region, uncertainty):
-    if uncertainty:
-        logging.info("archiving {region} {dataset} hourly temps uncertainty".format(region=region, dataset=dataset))
-    else:
-        logging.info("archiving {region} {dataset} hourly temps".format(region=region, dataset=dataset))
+def archive_and_delete_hourly_data(dataset, region):
+    logging.info("archiving {region} {dataset} hourly temps".format(region=region, dataset=dataset))
 
     thirty_days_ago = datetime.now() - timedelta(days=30)
 
     if region == 'alaska':
         path_to_search = hourly_temp_alaska_path + dataset + '*'
-    elif uncertainty:
-        path_to_search = hourly_utemp_path + dataset + '*'
     else:
         path_to_search = hourly_temp_path + dataset + '*'
 
@@ -49,8 +42,6 @@ def archive_and_delete_hourly_data(dataset, region, uncertainty):
 
         if region == 'alaska':
             archive_file_path = hourly_temp_alaska_archive_path + file_name
-        elif uncertainty:
-            archive_file_path = hourly_utemp_archive_path + file_name
         else:
             archive_file_path = hourly_temp_archive_path + file_name
 
@@ -61,8 +52,6 @@ def archive_and_delete_hourly_data(dataset, region, uncertainty):
 
         if region == 'alaska':
             table_name = 'hourly_temp_alaska_' + year
-        elif uncertainty:
-            table_name = 'hourly_temp_uncertainty_' + year
         else:
             table_name = 'hourly_temp_' + year
 
@@ -120,7 +109,7 @@ def archive_and_delete_prism_data(climate_type):
             shutil.move(file_path, archive_file_path)
 
 
-# this archives old climate data: specifically ncep hourly temps, ncep hourly uncertainty, and prism daily data
+# this archives old climate data: specifically ncep hourly temps, and prism daily data
 # redmine enhancement #622
 def main():
     t0 = time.time()
@@ -132,8 +121,6 @@ def main():
 
     if not os.path.exists(hourly_temp_archive_path):
         os.makedirs(hourly_temp_archive_path)
-    if not os.path.exists(hourly_utemp_archive_path):
-        os.makedirs(hourly_utemp_archive_path)
     if not os.path.exists(hourly_temp_alaska_archive_path):
         os.makedirs(hourly_temp_alaska_archive_path)
 
@@ -143,12 +130,11 @@ def main():
 
     # delete RTMA older than 1 month if matching URMA exists, otherwise archive
     # archive URMA older than 1 month
-    archive_and_delete_hourly_data("rtma", "conus", False)
-    archive_and_delete_hourly_data("urma", "conus", False)
-    archive_and_delete_hourly_data("rtma", "alaska", False)
-    archive_and_delete_hourly_data("urma", "alaska", False)
-    archive_and_delete_hourly_data("rtma", "conus", True)
-    archive_and_delete_hourly_data("urma", "conus", True)
+    archive_and_delete_hourly_data("rtma", "conus")
+    archive_and_delete_hourly_data("urma", "conus")
+    archive_and_delete_hourly_data("rtma", "alaska")
+    archive_and_delete_hourly_data("urma", "alaska")
+
     # archive PRISM older than 6 Months
     archive_and_delete_prism_data("tmin")
     archive_and_delete_prism_data("tmax")
