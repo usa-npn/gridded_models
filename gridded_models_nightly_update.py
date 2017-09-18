@@ -62,8 +62,9 @@ def populate_six_from_day_250(beginning_of_this_year, today, plants, phenophases
             for i in range(date_diff.days + 7):
                 day = day_250_of_current_year + timedelta(days=i)
                 if day.year == current_year:
-                    logging.info('attempting to copy si-x plant: %s phenophase: %s for day: %s', plant, phenophase, day)
-                    driver.Six.copy_spring_index_raster(plant, phenophase, climate_data_provider,
+                    logging.info('attempting to copy si-x plant: %s phenophase: %s for day: %s region: %s',
+                                 plant, phenophase, day, region)
+                    driver.Six.copy_spring_index_raster(plant, phenophase, climate_data_provider, region,
                                                         day_240_of_current_year, day)
                     driver.Six.postgis_import(plant, phenophase, climate_data_provider, region, day, "day")
     # copy geotiffs for six averages and anomalies
@@ -72,12 +73,13 @@ def populate_six_from_day_250(beginning_of_this_year, today, plants, phenophases
             day = day_250_of_current_year + timedelta(days=i)
             if day.year == current_year:
                 logging.info('attempting to copy si-x plant: %s phenophase: %s for day: %s', 'average', phenophase, day)
-                driver.Six.copy_spring_index_raster("average", phenophase, climate_data_provider,
+                driver.Six.copy_spring_index_raster("average", phenophase, climate_data_provider, region,
                                                     day_240_of_current_year, day)
                 driver.Six.postgis_import("average", phenophase, climate_data_provider, region, day, "day")
                 # copy geotiffs for six anomalies and import them into the database
-                logging.info('attempting to copy si-x anomaly: phenophase: %s for day: %s', phenophase, day)
-                copy_spring_index_anomaly_raster(phenophase, day_240_of_current_year, day)
+                if region != 'alaska':
+                    logging.info('attempting to copy si-x anomaly: phenophase: %s for day: %s', phenophase, day)
+                    copy_spring_index_anomaly_raster(phenophase, day_240_of_current_year, day)
 
 
 # This is the main gridded models script. It runs nightly to both pull climate data and generate various rasters which

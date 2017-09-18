@@ -278,8 +278,11 @@ class Six:
 
 
     @staticmethod
-    def copy_spring_index_raster(plant, phenophase, climate_source, from_date, to_date):
+    def copy_spring_index_raster(plant, phenophase, climate_source, region, from_date, to_date):
         folder_name = "six_" + plant + "_" + phenophase + "_" + climate_source + os.sep
+
+        if region == 'alaska':
+            folder_name = "six_" + plant + "_" + phenophase + "_" + climate_source + '_alaska' + os.sep
 
         source_file_name = plant + '_' + phenophase + '_' + climate_source + '_' + from_date.strftime("%Y%m%d") + '.tif'
         dest_file_name = plant + '_' + phenophase + '_' + climate_source + '_' + to_date.strftime("%Y%m%d") + '.tif'
