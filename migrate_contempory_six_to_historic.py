@@ -65,28 +65,33 @@ def main():
 
     # todo can make year not hard coded only when we know if this script will run at end of year or beginning of year
     # today = date.today()
-    year = 2016
+    year = 2017
     beginning_of_the_year = date(year, 1, 1)
 
     # migrate 8 six layers
-    for plant in plants:
-        for phenophase in phenophases:
-            contempory_file_dir = six_path + 'six_' + plant + '_' + phenophase + '_ncep' + os.sep
-            historic_file_dir = six_path + 'six_' + plant + '_' + phenophase + '_ncep' + '_historic' + os.sep
+    for region in ['conus', 'alaska']:
+        for plant in plants:
+            for phenophase in phenophases:
+                if region == 'conus':
+                    contempory_file_dir = six_path + 'six_' + plant + '_' + phenophase + '_ncep' + os.sep
+                    historic_file_dir = six_path + 'six_' + plant + '_' + phenophase + '_ncep' + '_historic' + os.sep
+                else:
+                    contempory_file_dir = six_path + 'six_' + plant + '_' + phenophase + '_ncep_alaska' + os.sep
+                    historic_file_dir = six_path + 'six_' + plant + '_' + phenophase + '_ncep_alaska_historic' + os.sep
 
-            contempory_file_name = plant + '_' + phenophase + '_ncep' + '_' + str(year) + '0907.tif'
-            historic_file_name = plant + '_' + phenophase + '_ncep' + '_' + str(year) + '.tif'
+                contempory_file_name = plant + '_' + phenophase + '_ncep' + '_' + str(year) + '0907.tif'
+                historic_file_name = plant + '_' + phenophase + '_ncep' + '_' + str(year) + '.tif'
 
-            contempory_file_path = contempory_file_dir + contempory_file_name
-            historic_file_path = historic_file_dir + historic_file_name
+                contempory_file_path = contempory_file_dir + contempory_file_name
+                historic_file_path = historic_file_dir + historic_file_name
 
-            copy_geoserver_property_files(historic_file_dir)
+                copy_geoserver_property_files(historic_file_dir)
 
-            if os.path.isfile(contempory_file_path) and not os.path.isfile(historic_file_path):
-                logging.info('copying: ' + contempory_file_path + ' to: ' + historic_file_path)
-                shutil.copy(contempory_file_path, historic_file_path)
-                logging.info('importing to postgis: ' + historic_file_path)
-                driver.Six.postgis_import(plant, phenophase, 'ncep', 'conus', beginning_of_the_year, "year")
+                if os.path.isfile(contempory_file_path) and not os.path.isfile(historic_file_path):
+                    logging.info('copying: ' + contempory_file_path + ' to: ' + historic_file_path)
+                    shutil.copy(contempory_file_path, historic_file_path)
+                    logging.info('importing to postgis: ' + historic_file_path)
+                    driver.Six.postgis_import(plant, phenophase, 'ncep', region, beginning_of_the_year, "year")
 
     # migrate 2 six anomaly layers
     for phenophase in phenophases:
