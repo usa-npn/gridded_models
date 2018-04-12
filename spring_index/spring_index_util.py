@@ -22,14 +22,17 @@ def import_six_postgis(file_path, file_name, six_anomaly_table_name, time_series
         update_time_series(time_series_table_name, file_name, day)
 
 
-def populate_six_30yr_average(plant, phenophase):
+def populate_six_30yr_average(plant, phenophase, climateToWarpTo):
     logging.info(' ')
     logging.info('------------populating spring index 30yr average for %s-----------------', phenophase)
     save_path = cfg["avg_six_path"] + 'six_30yr_average_' + phenophase + os.sep
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
     historic_six_table = 'prism_spring_index'
+    # this holds 30yr avg warped to ncep 2.5k rez
     six_avg_table_name = 'prism_30yr_avg_spring_index'
+    # this holds 30yr avg in native prism 4k rez
+    six_avg_native_table_name = 'prism_30yr_avg_4k_spring_index'
     six_avg_array = None
 
     # calculate average over 30 years by grabbing the year-01-01 map from each year (01-01 represents entire year)
@@ -62,7 +65,12 @@ def populate_six_30yr_average(plant, phenophase):
 
     # for each doy mask out six values greater than doy and then save the raster and import it to the database
     # because of the nature of the masking we work backwards over the day of year
-    new_table = not table_exists(six_avg_table_name)
+    new_table = False
+    if climateToWarpTo is 'NCEP':
+        new_table = not table_exists(six_avg_table_name)
+    if climateToWarpTo is 'PRISM':
+        new_table = not table_exists(six_avg_native_table_name)
+
     for day_of_year in range(365, 0, -1):
         six_avg_array[six_avg_array > day_of_year] = -9999
 
@@ -72,13 +80,20 @@ def populate_six_30yr_average(plant, phenophase):
 
         write_raster(prewarped_file_path, six_avg_array, -9999, rast_cols, rast_rows, projection, transform)
 
-        warp_to_rtma_resolution(prewarped_file_path, postwarped_file_path)
-        os.remove(prewarped_file_path)
+        if climateToWarpTo is 'NCEP':
+            warp_to_rtma_resolution(prewarped_file_path, postwarped_file_path)
+        # os.remove(prewarped_file_path)
 
-        save_raster_to_postgis(postwarped_file_path, six_avg_table_name, 4269)
-        set_plant_column(six_avg_table_name, plant, new_table)
-        set_phenophase_column(six_avg_table_name, phenophase, new_table)
-        set_doy_column(six_avg_table_name, day_of_year, new_table)
+        if climateToWarpTo is 'PRISM':
+            save_raster_to_postgis(prewarped_file_path, six_avg_native_table_name, 4269)
+            set_plant_column(six_avg_native_table_name, plant, new_table)
+            set_phenophase_column(six_avg_native_table_name, phenophase, new_table)
+            set_doy_column(six_avg_native_table_name, day_of_year, new_table)
+        if climateToWarpTo is 'NCEP':
+            save_raster_to_postgis(postwarped_file_path, six_avg_table_name, 4269)
+            set_plant_column(six_avg_table_name, plant, new_table)
+            set_phenophase_column(six_avg_table_name, phenophase, new_table)
+            set_doy_column(six_avg_table_name, day_of_year, new_table)
         new_table = False
         logging.info('populated average six %s for day of year: %s', phenophase, str(day_of_year))
 
@@ -197,6 +212,75 @@ def import_six_anomalies(anomaly_date, phenophase):
         logging.info('populated six %s anomaly for %s based on historical six average for doy %s', phenophase, day.strftime("%Y-%m-%d"), str(day_of_year))
 
         day += delta
+
+
+# populates yearly prism on prism six anomaly
+def import_prism_on_prism_six_anomaly(year, phenophase):
+    logging.info(' ')
+    logging.info('-----------------populating prism on prism spring index %s anomaly for year %s-----------------', phenophase, year)
+
+    time_series_table_name = 'six_' + phenophase + '_anomaly_prism'
+    save_path = cfg["six_anomaly_path"] + os.sep + 'prism_on_prism' + os.sep + 'six_' + phenophase + '_anomaly' + os.sep
+
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+
+    first_day_of_year = date(year, 1, 1)
+
+    plant = 'average'
+    six_table_name = 'prism_spring_index'
+    six_avg_table_name = 'prism_30yr_avg_spring_index'
+    six_anomaly_table_name = 'six_anomaly_historic_prism'
+
+    new_table = not table_exists(six_anomaly_table_name)
+
+    (rast_cols, rast_rows, transform, projection, no_data_value) = get_raster_info(six_table_name, first_day_of_year)
+
+    # get historic 30 year average from day of year 365
+    query = """
+          SELECT ST_AsGDALRaster(ST_Union(rast), 'Gtiff')
+          FROM %s
+          WHERE plant = %s AND doy = %s AND phenophase = %s;"""
+    data = (AsIs(six_avg_table_name), plant, 365, phenophase)
+    av_six = get_raster_from_query(query, data)
+    if av_six is None:
+        logging.warning('skipping - could not get avg spring index for day of year: %s', str(365))
+        return
+    av_six = av_six.astype(np.float32, copy=False)
+    av_six[av_six == -9999] = np.nan
+    
+    # get prism spring index layer for year
+    query = """
+        SELECT ST_AsGDALRaster(ST_Union(rast), 'Gtiff')
+        FROM %s
+        WHERE plant = %s AND rast_date = %s AND phenophase = %s;"""
+    data = (AsIs(six_table_name), plant, first_day_of_year.strftime("%Y-%m-%d"), phenophase)
+    six = get_raster_from_query(query, data)
+    if six is None:
+        logging.warning('error - could not get spring index for date: %s', first_day_of_year.strftime("%Y-%m-%d"))
+        return
+
+    av_six = av_six.astype(np.float32, copy=False)
+    av_six[av_six == -9999] = np.nan
+    six = six.astype(np.float32, copy=False)
+    six[six == -9999] = np.nan
+
+    diff_six = six - av_six
+    diff_six[np.isnan(diff_six)] = -9999
+
+    diff_six = diff_six.astype(np.int16, copy=False)
+
+    # write the raster to disk and import it to the database
+    if phenophase is 'bloom':
+        file_name = 'six_bloom_anomaly_' + year + '.tif'
+    else:
+        file_name = 'six_leaf_anomaly_' + year + '.tif'
+    file_path = save_path + file_name
+    write_raster(file_path, diff_six, -9999, rast_cols, rast_rows, projection, transform)
+
+    import_six_postgis(file_path, file_name, six_anomaly_table_name, time_series_table_name, plant, phenophase,
+                        first_day_of_year)
+
+    logging.info('populated prism on prism six %s anomaly for year %s', phenophase, str(year))
 
 
 def populate_yearly_six_prism_species_averages(phenophase):

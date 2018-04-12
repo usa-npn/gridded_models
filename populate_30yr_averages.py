@@ -30,15 +30,18 @@ def main():
 
 
     # populate 30 year average for each day of year's spring index based on prism data
-    populate_six_30yr_average('average', 'leaf')
-    populate_six_30yr_average('average', 'bloom')
+    populate_six_30yr_average('average', 'leaf', 'PRISM')
+    populate_six_30yr_average('average', 'bloom', 'PRISM')
+
+    # populate_six_30yr_average('average', 'leaf', 'NCEP')
+    # populate_six_30yr_average('average', 'bloom', 'NCEP')
 
 
     # populate 30 year average for each day of year's agdd based on prism data
-    base = 32
-    import_average_agdd(1981, 2011, base)
-    base = 50
-    import_average_agdd(1981, 2011, base)
+    # base = 32
+    # import_average_agdd(1981, 2011, base)
+    # base = 50
+    # import_average_agdd(1981, 2011, base)
 
     t1 = time.time()
     logging.info('*****************************************************************************')
