@@ -220,7 +220,7 @@ def import_prism_on_prism_six_anomaly(year, phenophase):
     logging.info('-----------------populating prism on prism spring index %s anomaly for year %s-----------------', phenophase, year)
 
     time_series_table_name = 'six_' + phenophase + '_anomaly_prism'
-    save_path = cfg["six_anomaly_path"] + os.sep + 'prism_on_prism' + os.sep + 'six_' + phenophase + '_anomaly' + os.sep
+    save_path = cfg["six_anomaly_path"] + 'six_' + phenophase + '_anomaly_prism' + os.sep
 
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
