@@ -228,7 +228,7 @@ def import_prism_on_prism_six_anomaly(year, phenophase):
 
     plant = 'average'
     six_table_name = 'prism_spring_index'
-    six_avg_table_name = 'prism_30yr_avg_spring_index'
+    six_avg_table_name = 'prism_30yr_avg_4k_spring_index'
     six_anomaly_table_name = 'six_anomaly_historic_prism'
 
     new_table = not table_exists(six_anomaly_table_name)
@@ -271,14 +271,14 @@ def import_prism_on_prism_six_anomaly(year, phenophase):
 
     # write the raster to disk and import it to the database
     if phenophase is 'bloom':
-        file_name = 'six_bloom_anomaly_' + year + '.tif'
+        file_name = 'six_bloom_anomaly_' + str(year) + '.tif'
     else:
-        file_name = 'six_leaf_anomaly_' + year + '.tif'
+        file_name = 'six_leaf_anomaly_' + str(year) + '.tif'
     file_path = save_path + file_name
     write_raster(file_path, diff_six, -9999, rast_cols, rast_rows, projection, transform)
 
     import_six_postgis(file_path, file_name, six_anomaly_table_name, time_series_table_name, plant, phenophase,
-                        first_day_of_year)
+                       first_day_of_year)
 
     logging.info('populated prism on prism six %s anomaly for year %s', phenophase, str(year))
 

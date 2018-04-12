@@ -4,6 +4,7 @@ import time
 import logging
 import yaml
 import os.path
+from spring_index.spring_index_util import *
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
@@ -39,6 +40,13 @@ def populate_yearly_prism_six(year):
         driver.Six.postgis_import("average", phenophase, climate_data_provider, 'conus', day, time_rez)
         logging.info('calculated average spring index for phenophase: %s on day: %s', phenophase, day)
     driver.Six.cleanup()
+
+
+def populate_yearly_prism_six_anomaly(years):
+    phenophases = ['leaf', 'bloom']
+    for year in years:
+        for phenophase in phenophases:
+            import_prism_on_prism_six_anomaly(year, phenophase)
 
 
 # def populate_six_other(): # this function can be modified to populate daily prism or ncep si-x
@@ -102,7 +110,12 @@ def main():
     current_year = today.year
     previous_year = current_year - 1
 
-    populate_yearly_prism_six(previous_year)
+    #populate prism spring index for previous year
+    #populate_yearly_prism_six(previous_year) #todo uncomment
+
+    # populate prism on prism anomaly for previous year
+    years = list(range(1981, 2018)) #todo change these years after initial populate
+    populate_yearly_prism_six_anomaly(years)
 
     t1 = time.time()
     logging.info('*****************************************************************************')
