@@ -77,9 +77,8 @@ def populate_six_from_day_250(beginning_of_this_year, today, plants, phenophases
                                                     day_240_of_current_year, day)
                 driver.Six.postgis_import("average", phenophase, climate_data_provider, region, day, "day")
                 # copy geotiffs for six anomalies and import them into the database
-                if region != 'alaska':
-                    logging.info('attempting to copy si-x anomaly: phenophase: %s for day: %s', phenophase, day)
-                    copy_spring_index_anomaly_raster(phenophase, day_240_of_current_year, day)
+                logging.info('attempting to copy si-x anomaly: phenophase: %s for day: %s', phenophase, day)
+                copy_spring_index_anomaly_raster(phenophase, day_240_of_current_year, day)
 
 
 # This is the main gridded models script. It runs nightly to both pull climate data and generate various rasters which
@@ -98,7 +97,7 @@ def main():
     end_of_next_year = date(current_year + 1, 12, 31)
     day_250_of_current_year = beginning_of_this_year + timedelta(days=250)
 
-    regions = ['conus', 'alaska']
+    region = 'conus'
     agdd_bases = [32, 50]
 
     import_qc_data = True
@@ -108,16 +107,16 @@ def main():
     logging.info('***********beginning script gridded_models_nightly_update.py*****************')
     logging.info('*****************************************************************************')
 
-    for region in regions:
-        # #################### CLIMATE DATA CALCULATIONS ####################################################
-        # download and import ndfd forecast temps for the next week
-        # overwrites all files previously downloaded files
-        download_forecast(region)
+    
+    # #################### CLIMATE DATA CALCULATIONS ####################################################
+    # download and import ndfd forecast temps for the next week
+    # overwrites all files previously downloaded files
+    download_forecast(region)
 
-        # downloads hourly rtma/urma temps into our postgis db for the past 24 hours (each hour represents GMT)
-        # overwrites all files previously downloaded files
-        download_hourly_temps('rtma', region)
-        download_hourly_temps('urma', region)
+    # downloads hourly rtma/urma temps into our postgis db for the past 24 hours (each hour represents GMT)
+    # overwrites all files previously downloaded files
+    download_hourly_temps('rtma', region)
+    download_hourly_temps('urma', region)
 
     # download and import rtma data for the date range that was missed for any reason
     # this looks back one week,
@@ -133,8 +132,7 @@ def main():
     # urma -> urma/rtma -> forecast
     # makes data match prism (prism day goes from -12 utc to +12 utc
     hour_shift = -12
-    for region in regions:
-        compute_tmin_tmax(min(beginning_of_this_year, one_week_ago), one_week_into_future, hour_shift, 7, region)
+    compute_tmin_tmax(min(beginning_of_this_year, one_week_ago), one_week_into_future, hour_shift, 7, region)
     #compute_tmin_tmax(date(current_year, 1, 4), today, hour_shift, 7, 'alaska')
 
     # #################### AGDD CALCULATIONS ####################################################
@@ -143,25 +141,22 @@ def main():
     climate_data_provider = "ncep"
 
     # calculate AGDDs for current year
-    for region in regions:
-        for agdd_base in agdd_bases:
-            import_agdd(end_of_this_year, agdd_base, climate_data_provider, region)
+    for agdd_base in agdd_bases:
+        import_agdd(end_of_this_year, agdd_base, climate_data_provider, region)
     for agdd_base in agdd_bases:
         import_agdd_anomalies(end_of_this_year, agdd_base)
 
     # might need compute AGDDs for next year if forecast goes into next year
     if one_week_into_future.year != end_of_this_year.year:
-        for region in regions:
-            for agdd_base in agdd_bases:
-                import_agdd(end_of_next_year, agdd_base, climate_data_provider, region)
+        for agdd_base in agdd_bases:
+            import_agdd(end_of_next_year, agdd_base, climate_data_provider, region)
         for agdd_base in agdd_bases:
             import_agdd_anomalies(end_of_next_year, agdd_base)
 
     # might need to recompute last year's AGDDs if we're still updating those tmin/tmaxs
     if one_week_ago.year != end_of_this_year.year:
-        for region in regions:
-            for agdd_base in agdd_bases:
-                import_agdd(end_of_previous_year, agdd_base, climate_data_provider, region)
+        for agdd_base in agdd_bases:
+            import_agdd(end_of_previous_year, agdd_base, climate_data_provider, region)
         for agdd_base in agdd_bases:
             import_agdd_anomalies(end_of_previous_year, agdd_base)
 
@@ -183,11 +178,10 @@ def main():
     climate_data_provider = "ncep"
     time_rez = "day"
 
-    for region in regions:
-        if today > day_250_of_current_year:
-            populate_six_from_day_250(beginning_of_this_year, today, plants, phenophases, climate_data_provider, region)
-        else:
-            populate_six(beginning_of_this_year, today, plants, phenophases, climate_data_provider, region, time_rez)
+    if today > day_250_of_current_year:
+        populate_six_from_day_250(beginning_of_this_year, today, plants, phenophases, climate_data_provider, region)
+    else:
+        populate_six(beginning_of_this_year, today, plants, phenophases, climate_data_provider, region, time_rez)
 
     # populate spring index anomalies
     # files older than 3 days won't get overwritten, but newer ones will due to tmin/tmax updates
