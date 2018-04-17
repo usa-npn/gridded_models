@@ -11,6 +11,8 @@ import re
 import logging
 import numpy as np
 from time import sleep
+# from socket import error as SocketError
+# import errno
 
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as ymlfile:
@@ -31,6 +33,10 @@ def retrieve_from_url(url_to_get, path_to_save):
             logging.warning('error retrieving file (retrying in 5 seconds): %s', str(e))
             sleep(5)
             retry_count += 1
+        # except SocketError as e:
+        #     if e.errno != errno.ECONNRESET:
+        #         logging.warning('error retrieving file (giving up)')
+        #         return False
         else:
             return True
     logging.warning('error retrieving file (giving up)')
@@ -49,11 +55,12 @@ def download_forecast(region):
     # For more details on the ndfd data see: http://www.nws.noaa.gov/ndfd/technical.htm
     # For more details on ndfd spacial reference see: http://graphical.weather.gov/docs/ndfdSRS.htm
 
-    working_path = cfg["temp_path"]
     if region == 'conus':
+        working_path = cfg["temp_path"]
         tmin_save_path = cfg["daily_tmin_path"]
         tmax_save_path = cfg["daily_tmax_path"]
     elif region == 'alaska':
+        working_path = cfg["temp_path_ak"]
         tmin_save_path = cfg["daily_tmin_alaska_path"]
         tmax_save_path = cfg["daily_tmax_alaska_path"]
     os.makedirs(working_path, exist_ok=True)
@@ -153,10 +160,11 @@ def download_forecast(region):
 
 
 def download_hourly_temps(dataset, region):
-    working_path = cfg["temp_path"]
     if region == 'conus':
+        working_path = cfg["temp_path"]
         save_path = cfg["hourly_temp_path"]
     elif region == 'alaska':
+        working_path = cfg["temp_path_ak"]
         save_path = cfg["hourly_temp_alaska_path"]
     os.makedirs(working_path, exist_ok=True)
     os.makedirs(save_path, exist_ok=True)
@@ -465,11 +473,12 @@ def download_historic_climate_data(start_date, end_date, dataset, region):
     logging.info(' ')
     logging.info("-----------------populating historic {region} {dataset} data-----------------"
                  .format(region=region, dataset=dataset))
-    working_path = cfg["temp_path"]
     # alaska_save_path = cfg["alaska_save_path"]
     if region == 'conus':
+        working_path = cfg["temp_path"]
         save_path = cfg["hourly_temp_path"]
     else:
+        working_path = cfg["temp_path_ak"]
         save_path = cfg["hourly_temp_alaska_path"]
     tmin_save_path = cfg["daily_tmin_path"]
     tmax_save_path = cfg["daily_tmin_path"]
