@@ -26,7 +26,9 @@ def populate_six_30yr_average(plant, phenophase, climateToWarpTo):
     logging.info(' ')
     logging.info('------------populating spring index 30yr average for %s-----------------', phenophase)
     save_path = cfg["avg_six_path"] + 'six_30yr_average_' + phenophase + os.sep
+    native_save_path = cfg["avg_six_path"] + 'six_30yr_average_4k_' + phenophase + os.sep
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    os.makedirs(os.path.dirname(native_save_path), exist_ok=True)
 
     historic_six_table = 'prism_spring_index'
     # this holds 30yr avg warped to ncep 2.5k rez
@@ -75,14 +77,18 @@ def populate_six_30yr_average(plant, phenophase, climateToWarpTo):
         six_avg_array[six_avg_array > day_of_year] = -9999
 
         # write the raster to disk and import it to the database
-        prewarped_file_path = save_path + "six_average_unwarped_{phenophase}_{doy}.tif".format(phenophase=phenophase, doy=day_of_year)
-        postwarped_file_path = save_path + "six_average_{phenophase}_{doy}.tif".format(phenophase=phenophase, doy=day_of_year)
-
+        if climateToWarpTo is 'NCEP':
+            prewarped_file_path = save_path + "six_average_unwarped_{phenophase}_{doy}.tif".format(phenophase=phenophase, doy=day_of_year)
+            postwarped_file_path = save_path + "six_average_{phenophase}_{doy}.tif".format(phenophase=phenophase, doy=day_of_year)
+        if climateToWarpTo is 'PRISM':
+            prewarped_file_path = native_save_path + "six_average_unwarped_{phenophase}_{doy}.tif".format(phenophase=phenophase, doy=day_of_year)
+            postwarped_file_path = native_save_path + "six_average_{phenophase}_{doy}.tif".format(phenophase=phenophase, doy=day_of_year)
+        
         write_raster(prewarped_file_path, six_avg_array, -9999, rast_cols, rast_rows, projection, transform)
 
         if climateToWarpTo is 'NCEP':
             warp_to_rtma_resolution(prewarped_file_path, postwarped_file_path)
-        # os.remove(prewarped_file_path)
+            os.remove(prewarped_file_path)
 
         if climateToWarpTo is 'PRISM':
             save_raster_to_postgis(prewarped_file_path, six_avg_native_table_name, 4269)
