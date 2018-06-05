@@ -6,6 +6,7 @@ import yaml
 import os.path
 import smtplib
 from email.mime.text import MIMEText
+from spring_index.spring_index_util import import_prism_on_prism_six_anomaly
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
@@ -57,6 +58,12 @@ def populate_yearly_prism_six(year):
     driver.Six.cleanup()
 
 
+def populate_yearly_prism_six_anomaly(year):
+    phenophases = ['leaf', 'bloom']
+    for phenophase in phenophases:
+        import_prism_on_prism_six_anomaly(year, phenophase)
+
+
 # This script is used to populate the spring index for historic years. It is not ran nightly.
 # Before running this script populate_prism.py must be ran for the years you want to generate spring index maps.
 # Unless the prism climate data has been populated somewhere else.
@@ -78,7 +85,11 @@ def main():
     current_year = today.year
     previous_year = current_year - 1
 
+    logging.info('populating previous year si-x')
     populate_yearly_prism_six(previous_year)
+    
+    logging.info('populating previous year si-x anomalies')
+    populate_yearly_prism_six_anomaly(previous_year)
 
     t1 = time.time()
     logging.info('*****************************************************************************')
