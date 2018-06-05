@@ -9,6 +9,78 @@ import logging
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
+def dynamic_agdd_in_db(agdd_table_name, start_date, num_days):
+
+    (rast_cols, rast_rows, transform, projection, no_data_value) = get_raster_info(agdd_table_name, start_date)
+
+#     query = """
+#           CREATE OR REPLACE FUNCTION agdd (start_date DATE, n INTEGER) 
+#  RETURNS RASTER AS $$ 
+# DECLARE
+#    counter INTEGER := 1 ; 
+#    agdd RASTER;
+# BEGIN
+ 
+#  IF (n < 1) THEN
+#  RETURN 0 ;
+#  END IF; 
+ 
+#  SELECT ST_Union(ST_MapAlgebra(rast, NULL, '[rast]-25')) FROM prism_tmin_1989 WHERE rast_date = start_date INTO agdd;
+
+#  LOOP 
+#  EXIT WHEN counter = n ; 
+#  counter := counter + 1 ;
+#  SELECT ST_MapAlgebra(ST_UNION(rast), agdd, '[rast1]+[rast2]-25') FROM prism_tmin_1989 WHERE rast_date = start_date + counter INTO agdd;
+#  END LOOP ; 
+ 
+#  RETURN agdd;
+# END ; 
+# $$ LANGUAGE plpgsql;
+# SELECT ST_AsGDALRaster(agdd('1989-09-01', 22), 'Gtiff');"""
+
+    query = """
+CREATE OR REPLACE FUNCTION agdd (start_date DATE, n INTEGER) 
+ RETURNS RASTER AS $$ 
+DECLARE
+   counter INTEGER := 1 ; 
+   agdd RASTER;
+BEGIN
+ 
+ SELECT ST_Union(rast, 'SUM') FROM prism_tmin_1989 WHERE rast_date = start_date INTO agdd;
+
+ LOOP 
+ EXIT WHEN counter = n ; 
+ counter := counter + 1 ;
+ SELECT ST_Union(rast, 'SUM') FROM prism_tmin_1989 WHERE rast_date = start_date + counter OR rast_date = start_date INTO agdd;
+ END LOOP ; 
+ 
+ RETURN agdd;
+END ; 
+$$ LANGUAGE plpgsql;
+SELECT ST_AsGDALRaster(agdd('1989-09-01', 20), 'Gtiff');"""
+
+#     query = """
+# CREATE OR REPLACE FUNCTION agdd (start_date DATE, n INTEGER) 
+#  RETURNS RASTER AS $$ 
+# DECLARE
+#    counter INTEGER := 1 ; 
+#    agdd RASTER;
+# BEGIN
+ 
+#  SELECT ST_Union(rast, 'SUM') FROM prism_tmin_1989 WHERE rast_date < start_date + n AND rast_date > start_date INTO agdd;
+ 
+#  RETURN agdd;
+# END ; 
+# $$ LANGUAGE plpgsql;
+# SELECT ST_AsGDALRaster(agdd('1989-09-01', 20), 'Gtiff');"""
+    data = (AsIs(agdd_table_name), start_date.strftime("%Y-%m-%d"))
+    agdd = get_raster_from_query(query, data)
+
+    save_path = '/Users/npn/Desktop/'
+    file_name = 'dynamic_agdd_' + start_date.strftime("%Y-%m-%d") + '_' + str(num_days) + '.tif'
+    file_path = save_path + file_name
+    write_raster(file_path, agdd, no_data_value, rast_cols, rast_rows, projection, transform)
+
 
 def import_agdd_anomalies(anomaly_date, base):
     logging.info(' ')
@@ -104,6 +176,87 @@ def import_agdd_anomalies(anomaly_date, base):
         logging.info('populated agdd anomaly (base %s) for %s based on historical agdd average for doy %s', base, day.strftime("%Y-%m-%d"), str(day_of_year))
 
         day += delta
+
+
+def dynamic_agdd_test(start_date, num_days, base, climate_data_provider, region):
+    end_date = start_date + timedelta(days=num_days)
+    logging.info(' ')
+    logging.info("computing agdd {region} {climate_data_provider} {start_date} through {end_date} (base {base})"
+        .format(region=region, climate_data_provider=climate_data_provider, start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"), base=base))
+    # set up path to save geotiffs to along with geoserver layer table
+    climate_data_provider == 'prism'
+    save_path = cfg["dynamic_agdd_path"]
+    
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+
+    # tables used to get climate data
+    if climate_data_provider == 'ncep':
+        if region == 'alaska':
+            tmin_table_name = 'tmin_alaska_' + start_date.strftime("%Y")
+            tmax_table_name = 'tmax_alaska_' + start_date.strftime("%Y")
+        else:
+            tmin_table_name = 'tmin_' + start_date.strftime("%Y")
+            tmax_table_name = 'tmax_' + start_date.strftime("%Y")
+    elif climate_data_provider == 'prism':
+        tmin_table_name = 'prism_tmin_' + start_date.strftime("%Y")
+        tmax_table_name = 'prism_tmax_' + start_date.strftime("%Y")
+    else:
+        logging.error('invalid climate data provider: %s', climate_data_provider)
+
+    if not table_exists(tmin_table_name):
+        logging.info('cannot compute agdd tmin table doesnt yet exist: %s ', tmin_table_name)
+        return
+
+    if not table_exists(tmax_table_name):
+        logging.info('cannot compute agdd tmax table doesnt yet exist: %s ', tmax_table_name)
+        return
+
+    day = start_date
+    delta = timedelta(days=1)
+
+    (rast_cols, rast_rows, transform, projection, no_data_value) = get_raster_info(tmin_table_name, start_date)
+
+    agdd = None
+    first = True
+    while day <= start_date + timedelta(days=num_days):
+        logging.info("day = {day}"
+            .format(day=day.strftime("%Y-%m-%d")))
+        # compute gdd
+        try:
+            tmin = get_climate_data(tmin_table_name, day)
+            tmax = get_climate_data(tmax_table_name, day)
+            if tmin is None:
+                logging.warning('skipping - could not get tmin for date: %s', day.strftime("%Y-%m-%d"))
+                day += delta
+                continue
+
+            if tmax is None:
+                logging.warning('skipping - could not get tmax for date: %s', day.strftime("%Y-%m-%d"))
+                day += delta
+                continue
+
+            gdd = (tmin + tmax) / 2 - base
+            gdd[gdd < 0] = 0
+            
+            if not first:
+                agdd += gdd
+            else:
+                agdd = gdd
+
+            # replace no data values
+            agdd[agdd == np.nan] = -9999
+
+            first = False
+
+        except():
+            logging.error('skipping - could not compute agdd (base %s) for date: %s due to an exception', base, day.strftime("%Y-%m-%d"))
+
+        day += delta
+
+    # write the raster to disk
+    file_name = 'agdd_dynamic_test.tif'
+    file_path = save_path + file_name
+    write_raster(file_path, agdd, no_data_value, rast_cols, rast_rows, projection, transform)
 
 
 def import_agdd(agdd_date, base, climate_data_provider, region):

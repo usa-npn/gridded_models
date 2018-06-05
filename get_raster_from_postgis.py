@@ -3,6 +3,7 @@ from util.get_postgis_raster import *
 from datetime import timedelta
 import datetime as dt
 from datetime import date
+from util.gdd import *
 
 
 # This is a utility script used to extract geotiffs from the postgis database. It's only used for debugging purposes.
@@ -19,7 +20,16 @@ def main():
 
     # get_raster_by_filename('agdd_2015', 'agdd_20150205.tif')
 
-    get_hourly_temp_raster(2016, 2, 3, 4, 'urma')
+    # get_hourly_temp_raster(2016, 2, 3, 4, 'urma')
+
+    # testing in db dynamic agdd calc
+    # dynamic_agdd_in_db('prism_tmin_1989', date(1989, 9, 1), 25)
+
+    # testing dynamic agdd using numpy
+    start_date = date(2015, 1, 16)
+    num_days = 5
+    base = 14
+    dynamic_agdd_test(start_date, num_days, base, 'prism', 'conus')
 
     # start_date = date(2015, 1, 16)
     # end_date = date(2015, 1, 16)
