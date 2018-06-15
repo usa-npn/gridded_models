@@ -26,10 +26,12 @@ def main():
     # dynamic_agdd_in_db('prism_tmin_1989', date(1989, 9, 1), 25)
 
     # testing dynamic agdd using numpy
-    start_date = date(2015, 1, 16)
-    num_days = 5
+    start_date = date(2017, 1, 16)
+    num_days = 100
     base = 14
-    dynamic_agdd_test(start_date, num_days, base, 'prism', 'conus')
+    #dynamic_agdd_test(start_date, num_days, base, 'prism', 'conus')
+    dynamic_agdd_test(start_date, num_days, base, 'ncep', 'conus')
+
 
     # start_date = date(2015, 1, 16)
     # end_date = date(2015, 1, 16)

@@ -223,8 +223,13 @@ def dynamic_agdd_test(start_date, num_days, base, climate_data_provider, region)
             .format(day=day.strftime("%Y-%m-%d")))
         # compute gdd
         try:
-            tmin = get_climate_data(tmin_table_name, day)
-            tmax = get_climate_data(tmax_table_name, day)
+            # todo try this https://gis.stackexchange.com/questions/268439/processing-large-geotiff-using-python
+            # tmin = get_climate_data(tmin_table_name, day)
+            # tmax = get_climate_data(tmax_table_name, day)
+            tmin = get_climate_data_from_file("/geo-data/climate_data/daily_data/tmin/tmin_{day}.tif"
+                .format(day=day.strftime("%Y%m%d")))
+            tmax = get_climate_data_from_file("/geo-data/climate_data/daily_data/tmax/tmax_{day}.tif"
+                .format(day=day.strftime("%Y%m%d")))
             if tmin is None:
                 logging.warning('skipping - could not get tmin for date: %s', day.strftime("%Y-%m-%d"))
                 day += delta
@@ -494,4 +499,26 @@ def get_climate_data(table_name, date):
     outarray *= 1.8
     outarray += 32
 
+    return outarray
+
+
+def get_climate_data_from_file(raster_path):
+
+    raster_dataset = gdal.OpenEx(raster_path, gdal.GA_ReadOnly)
+    #geo_transform = raster_dataset.GetGeoTransform()
+    #proj = raster_dataset.GetProjectionRef()
+
+    band = raster_dataset.GetRasterBand(1)
+    outarray = band.ReadAsArray()
+
+    if outarray is None:
+        return outarray
+
+    # convert -9999 values to not a number so we don't have to worry about manipulating them
+    outarray[outarray == -9999.0] = np.nan
+
+    # convert to fahrenheit
+    outarray *= 1.8
+    outarray += 32
+    
     return outarray
