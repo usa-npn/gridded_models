@@ -4,6 +4,7 @@ from util.database import *
 import numpy as np
 from datetime import date
 import logging
+from osgeo import gdal
 
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as ymlfile:
