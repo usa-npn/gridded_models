@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 from datetime import date
 from prism.importer import unzip_prism_data
+from prism.importer import convert_bil_to_tif
 import logging
 import time
 import yaml
@@ -21,7 +22,8 @@ def main():
     logging.info('***********beginning script unzip_prism_files_to_tif.py*****************')
     logging.info('*****************************************************************************')
 
-    unzip_prism_data()
+    #unzip_prism_data()
+    convert_bil_to_tif()
 
     t1 = time.time()
     logging.info('*****************************************************************************')

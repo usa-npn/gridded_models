@@ -174,3 +174,9 @@ def unzip_prism_data():
     for zipped_file in glob.glob(zipped_files_path):
         print("unzipping " + zipped_file + " to " + unzip_to_path)
         unzip(zipped_file, unzip_to_path)
+
+def convert_bil_to_tif():
+    bil_path = "/geo-data/climate_data/prism/tmax_test/"
+    bilfiles = glob.glob(bil_path + "*.bil")
+    for bilfile in bilfiles:
+        subprocess.call(["gdal_translate -of GTiff " + bilfile + " " + bilfile.replace('.bil', '.tif')])
