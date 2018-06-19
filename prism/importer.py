@@ -165,3 +165,12 @@ def get_prism_data(start_date, end_date, climate_variables):
                 else:
                     downloaded = True
                     logging.info('already have stable file for ' + day.strftime("%Y%m%d"))
+
+
+#testing for dynamic agdd
+def unzip_prism_data():
+    zipped_files_path = "/geo-data/climate_data/prism/prism_data/zipped/tmax/" + "*201505*.zip"
+    unzip_to_path = "/geo-data/climate_data/prism/tmax_test/"
+    for zipped_file in glob.glob(zipped_files_path):
+        print("unzipping " + zipped_file + " to " + unzip_to_path)
+        unzip(zipped_file, unzip_to_path)
