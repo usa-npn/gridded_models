@@ -195,7 +195,7 @@ def compute_tavg_from_prism_zips(start_date, stop_date):
         tmax_zip_file = "PRISM_tmax_stable_4kmD1_{date}_bil.zip".format(date=day.strftime("%Y%m%d"))
 
         unzip(tmax_zipped_files_path + tmax_zip_file, unzip_to_path)
-        unzip(tmin_zipped_files_path + tmax_zip_file, unzip_to_path)
+        unzip(tmin_zipped_files_path + tmin_zip_file, unzip_to_path)
 
         tmin_bilfile = unzip_to_path + tmin_zip_file.replace('.zip', '.bil')
         tmax_bilfile = unzip_to_path + tmax_zip_file.replace('.zip', '.bil')
