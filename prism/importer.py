@@ -1,4 +1,5 @@
 from datetime import timedelta
+from datetime import datetime
 from urllib import request
 from cgi import parse_header
 import zipfile
@@ -180,3 +181,59 @@ def convert_bil_to_tif():
     bilfiles = glob.glob(bil_path + "*.bil")
     for bilfile in bilfiles:
         subprocess.call(["gdal_translate", "-of", "GTiff", bilfile, bilfile.replace('.bil', '.tif')])
+
+def compute_tavg_from_prism_zips(start_date, stop_date):
+    tmax_zipped_files_path = "/geo-vault/climate_data/prism/prism_data/zipped/tmax/"
+    tmin_zipped_files_path = "/geo-vault/climate_data/prism/prism_data/zipped/tmin/"
+    unzip_to_path = "/geo-vault/climate_data/prism/prism_data/tavg/"
+
+    day = datetime.strptime(start_date, "%Y-%m-%d")
+    stop = datetime.strptime(stop_date, "%Y-%m-%d")
+
+    while day < stop:
+        tmin_zip_file = "PRISM_tmin_stable_4kmD1_{date}_bil.zip".format(date=day.strftime("%Y%m%d"))
+        tmax_zip_file = "PRISM_tmax_stable_4kmD1_{date}_bil.zip".format(date=day.strftime("%Y%m%d"))
+
+        unzip(tmax_zipped_files_path + tmax_zip_file, unzip_to_path)
+        unzip(tmin_zipped_files_path + tmax_zip_file, unzip_to_path)
+
+        tmin_bilfile = unzip_to_path + tmin_zip_file.replace('.zip', '.bil')
+        tmax_bilfile = unzip_to_path + tmax_zip_file.replace('.zip', '.bil')
+
+        tmin_tiffile = unzip_to_path + tmin_zip_file.replace('.zip', '.tif')
+        tmax_tiffile = unzip_to_path + tmax_zip_file.replace('.zip', '.tif')
+
+        #convert from bil to tif
+        subprocess.call(["gdal_translate", "-of", "GTiff", tmin_bilfile, tmin_tiffile])
+        subprocess.call(["gdal_translate", "-of", "GTiff", tmax_bilfile, tmax_tiffile])
+
+        #compute avg tif
+        avg_tiffile = unzip_to_path + "tavg_{day}".format(date=day.strftime("%Y%m%d"))
+        subprocess.call(["gdal_calc.py", "-A " + tmin_tiffile, "-B " + tmax_tiffile, "--outfile=" + avg_tiffile, "--calc='(A+B)/2'"])
+
+        #remove extraneous files
+        os.remove(tmin_bilfile.replace('.bil', '.bil.aux.xml'))
+        os.remove(tmin_bilfile.replace('.bil', '.hdr'))
+        os.remove(tmin_bilfile.replace('.bil', '.info.txt'))
+        os.remove(tmin_bilfile.replace('.bil', '.stn.csv'))
+        os.remove(tmin_bilfile.replace('.bil', '.stx'))
+        os.remove(tmin_bilfile.replace('.bil', '.prj'))
+        os.remove(tmin_bilfile.replace('.bil', '.xml'))
+        os.remove(tmin_bilfile)
+        os.remove(tmin_tiffile)
+
+        os.remove(tmax_bilfile.replace('.bil', '.bil.aux.xml'))
+        os.remove(tmax_bilfile.replace('.bil', '.hdr'))
+        os.remove(tmax_bilfile.replace('.bil', '.info.txt'))
+        os.remove(tmax_bilfile.replace('.bil', '.stn.csv'))
+        os.remove(tmax_bilfile.replace('.bil', '.stx'))
+        os.remove(tmax_bilfile.replace('.bil', '.prj'))
+        os.remove(tmax_bilfile.replace('.bil', '.xml'))
+        os.remove(tmax_tiffile)
+        os.remove(tmax_bilfile)
+
+
+
+        
+
+        day = day + timedelta(days=1)

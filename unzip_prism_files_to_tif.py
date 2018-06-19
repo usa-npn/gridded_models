@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 from datetime import date
-from prism.importer import unzip_prism_data
-from prism.importer import convert_bil_to_tif
+from prism.importer import compute_tavg_from_prism_zips
 import logging
 import time
 import yaml
@@ -23,7 +22,11 @@ def main():
     logging.info('*****************************************************************************')
 
     #unzip_prism_data()
-    convert_bil_to_tif()
+    #convert_bil_to_tif()
+
+    start_date = "2017-01-01"
+    stop_date = "2017-01-20"
+    compute_tavg_from_prism_zips(start_date, stop_date)
 
     t1 = time.time()
     logging.info('*****************************************************************************')
