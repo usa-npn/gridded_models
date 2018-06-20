@@ -18,24 +18,24 @@ def main():
 
     logging.info(' ')
     logging.info('*****************************************************************************')
-    logging.info('***********beginning script unzip_prism_files_to_tif.py*****************')
+    logging.info('***********beginning script compute_tavg.py*****************')
     logging.info('*****************************************************************************')
 
     #unzip_prism_data()
     #convert_bil_to_tif()
 
     start_date = "2017-01-01"
-    stop_date = "2017-01-20"
+    stop_date = "2017-12-31"
     compute_tavg_from_prism_zips(start_date, stop_date)
 
     t1 = time.time()
     logging.info('*****************************************************************************')
-    logging.info('***********unzip_prism_files_to_tif.py finished in %s seconds***********', t1 - t0)
+    logging.info('***********compute_tavg.py finished in %s seconds***********', t1 - t0)
     logging.info('*****************************************************************************')
 
 
 if __name__ == "__main__":
-    logging.basicConfig(filename=log_path + 'populate_prism.log',
+    logging.basicConfig(filename=log_path + 'compute_tavg.log',
                         level=logging.INFO,
                         format='%(asctime)s %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p')
@@ -46,4 +46,4 @@ if __name__ == "__main__":
     except (SystemExit, KeyboardInterrupt):
         raise
     except:
-        error_log.error('unzip_prism_files_to_tif.py failed to finish: ', exc_info=True)
+        error_log.error('compute_tavg.py failed to finish: ', exc_info=True)

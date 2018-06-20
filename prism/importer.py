@@ -190,7 +190,7 @@ def compute_tavg_from_prism_zips(start_date, stop_date):
     day = datetime.strptime(start_date, "%Y-%m-%d")
     stop = datetime.strptime(stop_date, "%Y-%m-%d")
 
-    while day < stop:
+    while day <= stop:
         tmin_zip_file = "PRISM_tmin_stable_4kmD1_{date}_bil.zip".format(date=day.strftime("%Y%m%d"))
         tmax_zip_file = "PRISM_tmax_stable_4kmD1_{date}_bil.zip".format(date=day.strftime("%Y%m%d"))
 
@@ -209,11 +209,6 @@ def compute_tavg_from_prism_zips(start_date, stop_date):
 
         #compute avg tif
         avg_tiffile = unzip_to_path + "tavg_{date}.tif".format(date=day.strftime("%Y%m%d"))
-        param1 = "-A " + tmin_tiffile
-        param2 = "-B " + tmax_tiffile
-        param3 = "--outfile=" + avg_tiffile
-        param4 = "--calc='(A+B)/2'"
-        #subprocess.call(["gdal_calc.py", param1, param2, param3, param4])
         subprocess.call("gdal_calc.py -A " + tmin_tiffile + " -B " + tmax_tiffile + " --outfile=" + avg_tiffile + " --calc='((A*1.8+32)+(B*1.8+32))/2'", shell=True)
 
 
