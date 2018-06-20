@@ -518,7 +518,7 @@ def get_climate_data(table_name, date):
 
 def get_climate_data_from_file(raster_path):
 
-    raster_dataset = gdal.OpenEx(raster_path, gdal.GA_ReadOnly)
+    raster_dataset = gdal.Open(raster_path)
     #geo_transform = raster_dataset.GetGeoTransform()
     #proj = raster_dataset.GetProjectionRef()
 
@@ -530,9 +530,5 @@ def get_climate_data_from_file(raster_path):
 
     # convert -9999 values to not a number so we don't have to worry about manipulating them
     outarray[outarray == -9999.0] = np.nan
-
-    # convert to fahrenheit
-    outarray *= 1.8
-    outarray += 32
     
     return outarray
