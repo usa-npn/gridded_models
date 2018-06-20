@@ -191,31 +191,31 @@ def dynamic_agdd_test(start_date, num_days, base, climate_data_provider, region)
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
     # tables used to get climate data
-    if climate_data_provider == 'ncep':
-        if region == 'alaska':
-            tmin_table_name = 'tmin_alaska_' + start_date.strftime("%Y")
-            tmax_table_name = 'tmax_alaska_' + start_date.strftime("%Y")
-        else:
-            tmin_table_name = 'tmin_' + start_date.strftime("%Y")
-            tmax_table_name = 'tmax_' + start_date.strftime("%Y")
-    elif climate_data_provider == 'prism':
-        tmin_table_name = 'prism_tmin_' + start_date.strftime("%Y")
-        tmax_table_name = 'prism_tmax_' + start_date.strftime("%Y")
-    else:
-        logging.error('invalid climate data provider: %s', climate_data_provider)
+    # if climate_data_provider == 'ncep':
+    #     if region == 'alaska':
+    #         tmin_table_name = 'tmin_alaska_' + start_date.strftime("%Y")
+    #         tmax_table_name = 'tmax_alaska_' + start_date.strftime("%Y")
+    #     else:
+    #         tmin_table_name = 'tmin_' + start_date.strftime("%Y")
+    #         tmax_table_name = 'tmax_' + start_date.strftime("%Y")
+    # elif climate_data_provider == 'prism':
+    #     tmin_table_name = 'prism_tmin_' + start_date.strftime("%Y")
+    #     tmax_table_name = 'prism_tmax_' + start_date.strftime("%Y")
+    # else:
+    #     logging.error('invalid climate data provider: %s', climate_data_provider)
 
-    if not table_exists(tmin_table_name):
-        logging.info('cannot compute agdd tmin table doesnt yet exist: %s ', tmin_table_name)
-        return
+    # if not table_exists(tmin_table_name):
+    #     logging.info('cannot compute agdd tmin table doesnt yet exist: %s ', tmin_table_name)
+    #     return
 
-    if not table_exists(tmax_table_name):
-        logging.info('cannot compute agdd tmax table doesnt yet exist: %s ', tmax_table_name)
-        return
+    # if not table_exists(tmax_table_name):
+    #     logging.info('cannot compute agdd tmax table doesnt yet exist: %s ', tmax_table_name)
+    #     return
 
     day = start_date
     delta = timedelta(days=1)
 
-    (rast_cols, rast_rows, transform, projection, no_data_value) = get_raster_info(tmin_table_name, start_date)
+    # (rast_cols, rast_rows, transform, projection, no_data_value) = get_raster_info(tmin_table_name, start_date)
 
     agdd = None
     first = True
@@ -227,21 +227,29 @@ def dynamic_agdd_test(start_date, num_days, base, climate_data_provider, region)
             # todo try this https://gis.stackexchange.com/questions/268439/processing-large-geotiff-using-python
             # tmin = get_climate_data(tmin_table_name, day)
             # tmax = get_climate_data(tmax_table_name, day)
-            tmin = get_climate_data_from_file("/geo-data/climate_data/daily_data/tmin/tmin_{day}.tif"
-                .format(day=day.strftime("%Y%m%d")))
-            tmax = get_climate_data_from_file("/geo-data/climate_data/daily_data/tmax/tmax_{day}.tif"
-                .format(day=day.strftime("%Y%m%d")))
-            if tmin is None:
-                logging.warning('skipping - could not get tmin for date: %s', day.strftime("%Y-%m-%d"))
-                day += delta
-                continue
+            
+            # using ncep tmin tmax files https://gis.stackexchange.com/questions/268439/processing-large-geotiff-using-python
+            # tmin = get_climate_data_from_file("/geo-data/climate_data/daily_data/tmin/tmin_{day}.tif"
+            #     .format(day=day.strftime("%Y%m%d")))
+            # tmax = get_climate_data_from_file("/geo-data/climate_data/daily_data/tmax/tmax_{day}.tif"
+            #     .format(day=day.strftime("%Y%m%d")))
+            
+            # if tmin is None:
+            #     logging.warning('skipping - could not get tmin for date: %s', day.strftime("%Y-%m-%d"))
+            #     day += delta
+            #     continue
 
-            if tmax is None:
-                logging.warning('skipping - could not get tmax for date: %s', day.strftime("%Y-%m-%d"))
-                day += delta
-                continue
+            # if tmax is None:
+            #     logging.warning('skipping - could not get tmax for date: %s', day.strftime("%Y-%m-%d"))
+            #     day += delta
+            #     continue
 
-            gdd = (tmin + tmax) / 2 - base
+            # using preprocessed daily prism tavg
+            tavg = get_climate_data_from_file("/geo-vault/climate_data/prism/prism_data/tavg/tavg_{day}.tif"
+                .format(day=day.strftime("%Y%m%d")))
+
+            # gdd = (tmin + tmax) / 2 - base
+            gdd = tavg - base
             gdd[gdd < 0] = 0
             
             if not first:
@@ -262,6 +270,11 @@ def dynamic_agdd_test(start_date, num_days, base, climate_data_provider, region)
     # write the raster to disk
     file_name = 'agdd_dynamic_test.tif'
     file_path = save_path + file_name
+    no_data_value = -9999.0
+    rast_cols = 1405
+    rast_rows = 621
+    transform = [-125.02083333333336, 0.0416666666667, 0.0, 49.937499999999766, 0.0, -0.0416666666667]
+    projection = 'GEOGCS["NAD83",DATUM["North_American_Datum_1983",SPHEROID["GRS 1980",6378137,298.2572221010042,AUTHORITY["EPSG","7019"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6269"]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433],AUTHORITY["EPSG","4269"]]'
     write_raster(file_path, agdd, no_data_value, rast_cols, rast_rows, projection, transform)
 
 
