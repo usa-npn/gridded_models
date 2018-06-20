@@ -30,7 +30,7 @@ def main():
     num_days = 100
     base = 14
     #dynamic_agdd_test(start_date, num_days, base, 'prism', 'conus')
-    dynamic_agdd_test(start_date, num_days, base, 'ncep', 'conus')
+    dynamic_agdd_test(start_date, num_days, base, 'prism', 'conus')
 
 
     # start_date = date(2015, 1, 16)
