@@ -20,7 +20,7 @@ def main():
     num_days = delta.days
 
     print('start_date: ' + start)
-    print('end date: ' + end)
+    print('end_date: ' + end)
     print('base' + base)
    
     # testing dynamic agdd using numpy

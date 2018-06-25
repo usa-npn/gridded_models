@@ -220,8 +220,8 @@ def dynamic_agdd_test(start_date, num_days, base, climate_data_provider, region)
     agdd = None
     first = True
     while day <= start_date + timedelta(days=num_days):
-        logging.info("day = {day}"
-            .format(day=day.strftime("%Y-%m-%d")))
+        print("day = {day}".format(day=day.strftime("%Y-%m-%d")))
+        logging.info("day = {day}".format(day=day.strftime("%Y-%m-%d")))
         # compute gdd
         try:
             # todo try this https://gis.stackexchange.com/questions/268439/processing-large-geotiff-using-python
