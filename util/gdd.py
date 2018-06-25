@@ -268,7 +268,7 @@ def dynamic_agdd_test(start_date, num_days, base, climate_data_provider, region)
         day += delta
 
     # write the raster to disk
-    file_name = "agdd_dynamic_{start_date}_{end_date}_{base}.tif".format(start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"), base=base)
+    file_name = "agdd_dynamic_{start_date}_through_{end_date}_base{base}.tif".format(start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"), base=base)
     file_path = save_path + file_name
     no_data_value = -9999.0
     rast_cols = 1405
