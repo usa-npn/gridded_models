@@ -268,7 +268,7 @@ def dynamic_agdd_test(start_date, num_days, base, climate_data_provider, region)
         day += delta
 
     # write the raster to disk
-    file_name = 'agdd_dynamic_test.tif'
+    file_name = "agdd_dynamic_{start_date}_{end_date}_{base}.tif".format(start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"), base=base)
     file_path = save_path + file_name
     no_data_value = -9999.0
     rast_cols = 1405
@@ -276,6 +276,7 @@ def dynamic_agdd_test(start_date, num_days, base, climate_data_provider, region)
     transform = [-125.02083333333336, 0.0416666666667, 0.0, 49.937499999999766, 0.0, -0.0416666666667]
     projection = 'GEOGCS["NAD83",DATUM["North_American_Datum_1983",SPHEROID["GRS 1980",6378137,298.2572221010042,AUTHORITY["EPSG","7019"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6269"]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433],AUTHORITY["EPSG","4269"]]'
     write_raster(file_path, agdd, no_data_value, rast_cols, rast_rows, projection, transform)
+    print('files saved to: ' + file_path)
 
 
 def import_agdd(agdd_date, base, climate_data_provider, region):
