@@ -209,7 +209,7 @@ def compute_tavg_from_prism_zips(start_date, stop_date):
 
         #compute avg tif
         avg_tiffile = unzip_to_path + "tavg_{date}.tif".format(date=day.strftime("%Y%m%d"))
-        subprocess.call("gdal_calc.py -A " + tmin_tiffile + " -B " + tmax_tiffile + " --outfile=" + avg_tiffile + " --calc='((A*1.8+32)+(B*1.8+32))/2'", shell=True)
+        subprocess.call("gdal_calc.py -A " + tmin_tiffile + " -B " + tmax_tiffile + " --outfile=" + avg_tiffile + " --NoDataValue=-9999 --calc='((A*1.8+32)+(B*1.8+32))/2'", shell=True)
 
 
         #remove extraneous files
