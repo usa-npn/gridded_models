@@ -13,6 +13,7 @@ import yaml
 import datetime as dt
 import http
 import logging
+import contextlib
 
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as yml_file:
@@ -213,25 +214,26 @@ def compute_tavg_from_prism_zips(start_date, stop_date):
 
 
         #remove extraneous files
-        os.remove(tmin_bilfile.replace('.bil', '.bil.aux.xml'))
-        os.remove(tmin_bilfile.replace('.bil', '.hdr'))
-        os.remove(tmin_bilfile.replace('.bil', '.info.txt'))
-        os.remove(tmin_bilfile.replace('.bil', '.stn.csv'))
-        os.remove(tmin_bilfile.replace('.bil', '.stx'))
-        os.remove(tmin_bilfile.replace('.bil', '.prj'))
-        os.remove(tmin_bilfile.replace('.bil', '.xml'))
-        os.remove(tmin_bilfile)
-        os.remove(tmin_tiffile)
+        with contextlib.suppress(FileNotFoundError):
+            os.remove(tmin_bilfile.replace('.bil', '.bil.aux.xml'))
+            os.remove(tmin_bilfile.replace('.bil', '.hdr'))
+            os.remove(tmin_bilfile.replace('.bil', '.info.txt'))
+            os.remove(tmin_bilfile.replace('.bil', '.stn.csv'))
+            os.remove(tmin_bilfile.replace('.bil', '.stx'))
+            os.remove(tmin_bilfile.replace('.bil', '.prj'))
+            os.remove(tmin_bilfile.replace('.bil', '.xml'))
+            os.remove(tmin_bilfile)
+            os.remove(tmin_tiffile)
 
-        os.remove(tmax_bilfile.replace('.bil', '.bil.aux.xml'))
-        os.remove(tmax_bilfile.replace('.bil', '.hdr'))
-        os.remove(tmax_bilfile.replace('.bil', '.info.txt'))
-        os.remove(tmax_bilfile.replace('.bil', '.stn.csv'))
-        os.remove(tmax_bilfile.replace('.bil', '.stx'))
-        os.remove(tmax_bilfile.replace('.bil', '.prj'))
-        os.remove(tmax_bilfile.replace('.bil', '.xml'))
-        os.remove(tmax_tiffile)
-        os.remove(tmax_bilfile)
+            os.remove(tmax_bilfile.replace('.bil', '.bil.aux.xml'))
+            os.remove(tmax_bilfile.replace('.bil', '.hdr'))
+            os.remove(tmax_bilfile.replace('.bil', '.info.txt'))
+            os.remove(tmax_bilfile.replace('.bil', '.stn.csv'))
+            os.remove(tmax_bilfile.replace('.bil', '.stx'))
+            os.remove(tmax_bilfile.replace('.bil', '.prj'))
+            os.remove(tmax_bilfile.replace('.bil', '.xml'))
+            os.remove(tmax_tiffile)
+            os.remove(tmax_bilfile)
 
 
 
