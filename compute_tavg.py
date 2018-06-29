@@ -1,11 +1,16 @@
 #!/usr/bin/python3
 from datetime import date
 from prism.importer import compute_tavg_from_prism_zips
+from util.database import save_raster_to_postgis
+from util.database import set_date_column
 import logging
 import time
 import yaml
 import os.path
 from util.log_manager import get_error_log
+import glob
+import re
+import datetime
 
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
@@ -21,12 +26,20 @@ def main():
     logging.info('***********beginning script compute_tavg.py*****************')
     logging.info('*****************************************************************************')
 
-    #unzip_prism_data()
-    #convert_bil_to_tif()
+    # start_date = "2017-01-01"
+    # stop_date = "2017-12-31"
+    # compute_tavg_from_prism_zips(start_date, stop_date)
 
-    start_date = "2017-01-01"
-    stop_date = "2017-12-31"
-    compute_tavg_from_prism_zips(start_date, stop_date)
+    tavg_table_name = "prism_tavg"
+    tavg_path = "/geo-vault/climate_data/prism/prism_data/tavg/"
+    tavg_files_path = tavg_path + "*.tif"
+    new_table = True
+    for tavg_tif_path in glob.glob(tavg_files_path):
+        tavg_datestring = re.search(r'\d+', tavg_tif_path).group()
+        tavg_date = datetime.datetime.strptime(tavg_datestring, "%Y%m%d").date()
+        save_raster_to_postgis(tavg_tif_path, tavg_table_name, 4269)
+        set_date_column(tavg_table_name, tavg_date, new_table)
+        new_table = False
 
     t1 = time.time()
     logging.info('*****************************************************************************')
