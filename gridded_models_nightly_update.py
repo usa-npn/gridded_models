@@ -143,8 +143,8 @@ def main():
     # # calculate AGDDs for current year
     # for agdd_base in agdd_bases:
     #     import_agdd(end_of_this_year, agdd_base, climate_data_provider, region)
-    # for agdd_base in agdd_bases:
-    #     import_agdd_anomalies(end_of_this_year, agdd_base)
+    for agdd_base in agdd_bases:
+        import_agdd_anomalies(end_of_this_year, agdd_base)
 
     # # might need compute AGDDs for next year if forecast goes into next year
     # if one_week_into_future.year != end_of_this_year.year:
