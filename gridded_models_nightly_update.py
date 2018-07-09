@@ -108,97 +108,97 @@ def main():
     logging.info('*****************************************************************************')
 
     
-    # # #################### CLIMATE DATA CALCULATIONS ####################################################
-    # # download and import ndfd forecast temps for the next week
-    # # overwrites all files previously downloaded files
-    # download_forecast(region)
+    # #################### CLIMATE DATA CALCULATIONS ####################################################
+    # download and import ndfd forecast temps for the next week
+    # overwrites all files previously downloaded files
+    download_forecast(region)
 
-    # # downloads hourly rtma/urma temps into our postgis db for the past 24 hours (each hour represents GMT)
-    # # overwrites all files previously downloaded files
-    # download_hourly_temps('rtma', region)
-    # download_hourly_temps('urma', region)
+    # downloads hourly rtma/urma temps into our postgis db for the past 24 hours (each hour represents GMT)
+    # overwrites all files previously downloaded files
+    download_hourly_temps('rtma', region)
+    download_hourly_temps('urma', region)
 
-    # # download and import rtma data for the date range that was missed for any reason
-    # # this looks back one week,
-    # # another script is in place to delete rtma data older than two weeks for which we also have urma data
-    # # won't overwrite any previously downloaded files
-    # download_historic_climate_data(one_week_ago, today, 'rtma', 'conus')
-    # # alaska rtma archive doesn't exist
-    # # download_historic_climate_data(one_week_ago, today, 'rtma', 'alaska')
+    # download and import rtma data for the date range that was missed for any reason
+    # this looks back one week,
+    # another script is in place to delete rtma data older than two weeks for which we also have urma data
+    # won't overwrite any previously downloaded files
+    download_historic_climate_data(one_week_ago, today, 'rtma', 'conus')
+    # alaska rtma archive doesn't exist
+    # download_historic_climate_data(one_week_ago, today, 'rtma', 'alaska')
 
-    # # compute daily tmin/tmax based on hourly data
-    # # computation is based on mixture of rtma and urma data; rtma is only used when urma isn't available
-    # # overwrites files less than 7 days old so the flow of tmin/tmax through time goes from
-    # # urma -> urma/rtma -> forecast
-    # # makes data match prism (prism day goes from -12 utc to +12 utc
-    # hour_shift = -12
-    # compute_tmin_tmax(min(beginning_of_this_year, one_week_ago), one_week_into_future, hour_shift, 7, region)
-    # #compute_tmin_tmax(date(current_year, 1, 4), today, hour_shift, 7, 'alaska')
+    # compute daily tmin/tmax based on hourly data
+    # computation is based on mixture of rtma and urma data; rtma is only used when urma isn't available
+    # overwrites files less than 7 days old so the flow of tmin/tmax through time goes from
+    # urma -> urma/rtma -> forecast
+    # makes data match prism (prism day goes from -12 utc to +12 utc
+    hour_shift = -12
+    compute_tmin_tmax(min(beginning_of_this_year, one_week_ago), one_week_into_future, hour_shift, 7, region)
+    #compute_tmin_tmax(date(current_year, 1, 4), today, hour_shift, 7, 'alaska')
 
-    # # #################### AGDD CALCULATIONS ####################################################
-    # # populate NCEP agdds and anomalies
-    # # files older than 3 days won't get overwritten, but newer ones will due to tmin/tmax updates
-    # climate_data_provider = "ncep"
+    # #################### AGDD CALCULATIONS ####################################################
+    # populate NCEP agdds and anomalies
+    # files older than 3 days won't get overwritten, but newer ones will due to tmin/tmax updates
+    climate_data_provider = "ncep"
 
-    # # calculate AGDDs for current year
-    # for agdd_base in agdd_bases:
-    #     import_agdd(end_of_this_year, agdd_base, climate_data_provider, region)
+    # calculate AGDDs for current year
+    for agdd_base in agdd_bases:
+        import_agdd(end_of_this_year, agdd_base, climate_data_provider, region)
     for agdd_base in agdd_bases:
         import_agdd_anomalies(end_of_this_year, agdd_base)
 
-    # # might need compute AGDDs for next year if forecast goes into next year
-    # if one_week_into_future.year != end_of_this_year.year:
-    #     for agdd_base in agdd_bases:
-    #         import_agdd(end_of_next_year, agdd_base, climate_data_provider, region)
-    #     for agdd_base in agdd_bases:
-    #         import_agdd_anomalies(end_of_next_year, agdd_base)
+    # might need compute AGDDs for next year if forecast goes into next year
+    if one_week_into_future.year != end_of_this_year.year:
+        for agdd_base in agdd_bases:
+            import_agdd(end_of_next_year, agdd_base, climate_data_provider, region)
+        for agdd_base in agdd_bases:
+            import_agdd_anomalies(end_of_next_year, agdd_base)
 
-    # # might need to recompute last year's AGDDs if we're still updating those tmin/tmaxs
-    # if one_week_ago.year != end_of_this_year.year:
-    #     for agdd_base in agdd_bases:
-    #         import_agdd(end_of_previous_year, agdd_base, climate_data_provider, region)
-    #     for agdd_base in agdd_bases:
-    #         import_agdd_anomalies(end_of_previous_year, agdd_base)
+    # might need to recompute last year's AGDDs if we're still updating those tmin/tmaxs
+    if one_week_ago.year != end_of_this_year.year:
+        for agdd_base in agdd_bases:
+            import_agdd(end_of_previous_year, agdd_base, climate_data_provider, region)
+        for agdd_base in agdd_bases:
+            import_agdd_anomalies(end_of_previous_year, agdd_base)
 
-    # # populate PRISM agdds for year
-    # # files older than 3 days won't get overwritten, but newer ones will due to tmin/tmax updates
-    # climate_data_provider = "prism"
-    # base = 32
-    # import_agdd(end_of_this_year, base, climate_data_provider, "conus")
+    # populate PRISM agdds for year
+    # files older than 3 days won't get overwritten, but newer ones will due to tmin/tmax updates
+    climate_data_provider = "prism"
+    base = 32
+    import_agdd(end_of_this_year, base, climate_data_provider, "conus")
 
-    # # might need to recompute last year's AGDDs if we're still updating those tmin/tmaxs
-    # if one_week_ago.year != end_of_this_year.year:
-    #     base = 32
-    #     import_agdd(end_of_previous_year, base, climate_data_provider, "conus")
+    # might need to recompute last year's AGDDs if we're still updating those tmin/tmaxs
+    if one_week_ago.year != end_of_this_year.year:
+        base = 32
+        import_agdd(end_of_previous_year, base, climate_data_provider, "conus")
 
-    # # #################### SI-X CALCULATIONS ####################################################
-    # plants = ['lilac', 'arnoldred', 'zabelli']
+    # #################### SI-X CALCULATIONS ####################################################
+    plants = ['lilac', 'arnoldred', 'zabelli']
     phenophases = ['leaf', 'bloom']
 
-    # climate_data_provider = "ncep"
-    # time_rez = "day"
+    climate_data_provider = "ncep"
+    time_rez = "day"
 
-    # if today > day_250_of_current_year:
-    #     populate_six_from_day_250(beginning_of_this_year, today, plants, phenophases, climate_data_provider, region)
-    # else:
-    #     populate_six(beginning_of_this_year, today, plants, phenophases, climate_data_provider, region, time_rez)
+    if today > day_250_of_current_year:
+        populate_six_from_day_250(beginning_of_this_year, today, plants, phenophases, climate_data_provider, region)
+    else:
+        populate_six(beginning_of_this_year, today, plants, phenophases, climate_data_provider, region, time_rez)
 
     # populate spring index anomalies
     # files older than 3 days won't get overwritten, but newer ones will due to tmin/tmax updates
     for phenophase in phenophases:
         import_six_anomalies(end_of_this_year, phenophase)
 
-    # # #################### QC CALCULATIONS ####################################################
-    # if import_qc_data:
-    #     # populates various climate variables in the climate agdds mysql db
-    #     urma_start = three_days_ago
-    #     urma_end = today
-    #     acis_start = one_week_ago
-    #     acis_end = today
-    #     prism_start = one_week_ago
-    #     prism_end = three_days_ago
-    #     populate_agdd_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end)
-    #     populate_six_qc(beginning_of_this_year, urma_end, beginning_of_this_year, acis_end, beginning_of_this_year, prism_end)
+    # #################### QC CALCULATIONS ####################################################
+    if import_qc_data:
+        # populates various climate variables in the climate agdds mysql db
+        urma_start = three_days_ago
+        urma_end = today
+        acis_start = one_week_ago
+        acis_end = today
+        prism_start = one_week_ago
+        prism_end = three_days_ago
+        populate_agdd_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end)
+        populate_six_qc(beginning_of_this_year, urma_end, beginning_of_this_year, acis_end, beginning_of_this_year, prism_end)
 
     t1 = time.time()
     logging.info('*****************************************************************************')
