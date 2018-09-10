@@ -142,6 +142,7 @@ def get_prism_data_outdb(start_date, end_date, climate_variables):
                     # unzip the file
                     zip_file = zipped_files_path + filename
                     unzip(zip_file, unzip_path)
+                    bil_file = unzip_path + filename.replace('.zip', '.bil')
 
                     # # import bil file into database as a raster
                     # bil_files_path = unzip_path + "*.bil"
@@ -151,7 +152,6 @@ def get_prism_data_outdb(start_date, end_date, climate_variables):
                     #     postgis_import(bil_file, raster_date, climate_variable)
 
                     # remove non bil files that were unzipped
-                    bil_file = zip_file.replace('.zip', '.bil')
                     os.remove(bil_file.replace('.bil', '.bil.aux.xml'))
                     os.remove(bil_file.replace('.bil', '.hdr'))
                     os.remove(bil_file.replace('.bil', '.info.txt'))
