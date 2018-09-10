@@ -43,17 +43,24 @@ def main():
     logging.info('***********beginning script populate_prism.py*****************')
     logging.info('*****************************************************************************')
 
-    # Specify the climate elements you want to download as well as the date range to download those elements for:
-    request_params = ['tmax', 'tmin']
+    # # Specify the climate elements you want to download as well as the date range to download those elements for:
+    # request_params = ['tmax', 'tmin']
 
-    today = date.today()
-    current_year = today.year
-    end_of_this_year = date(current_year, 12, 31)
+    # today = date.today()
+    # current_year = today.year
+    # end_of_this_year = date(current_year, 12, 31)
 
-    start = date(1980, 1, 1)
-    end = end_of_this_year
+    # start = date(1980, 1, 1)
+    # end = end_of_this_year
 
-    get_prism_data(start, end, request_params)
+    # get_prism_data(start, end, request_params)
+
+    # get precip data using out db method 
+    # (keep files on disk, should have done this with tmin / tmax long ago but didn't know at the time)
+    start = date(2017, 1, 1)
+    end = date(2018, 1, 1)
+    request_params = ['ppt']
+    get_prism_data_outdb(start, end, request_params)
 
     t1 = time.time()
     logging.info('*****************************************************************************')

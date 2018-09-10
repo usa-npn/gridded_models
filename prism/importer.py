@@ -89,6 +89,96 @@ def postgis_import(filename, raster_date, climate_variable):
     conn.commit()
 
 
+def get_prism_data_outdb(start_date, end_date, climate_variables):
+    #prism_archive_path: /geo-vault/climate_data/prism/prism_data/
+    
+    # create directory structure to store zips
+    for climate_variable in climate_variables:
+        zipped_files_path = prism_path + "zipped" + os.sep + climate_variable + os.sep
+        os.makedirs(zipped_files_path, exist_ok=True)
+    
+
+    # make sure unzipped files path is cleaned out
+    # unzipped_files_path = unzip_path + "*.*"
+    # for unzipped_file in glob.glob(unzipped_files_path):
+    #     os.remove(unzipped_file)
+
+    delta = end_date - start_date
+    for climate_variable in climate_variables:
+        unzip_path = prism_archive_path + climate_variable + os.sep
+        os.makedirs(unzip_path, exist_ok=True)
+
+        # zipped_files_path = prism_path + "zipped" + os.sep + climate_variable + os.sep
+        zipped_files_path = prism_archive_path + "zipped" + os.sep + climate_variable + os.sep
+        for i in range(delta.days + 1):
+            downloaded = False
+            while not downloaded:
+                day = start_date + timedelta(days=i)
+
+                # prism data is only historical, never look for today or in the future
+                if day >= dt.datetime.today().date() - timedelta(days=1):
+                    downloaded = True
+                    continue
+
+                # only download file if we don't already have the stable version
+                if not os.path.isfile(zipped_files_path + 'PRISM_' + climate_variable + '_stable_4kmD1_' + day.strftime("%Y%m%d") + '_bil.zip')\
+                        and not os.path.isfile(zipped_files_path + 'PRISM_' + climate_variable + '_stable_4kmD1_' + day.strftime("%Y%m%d") + '_bil.zip'):
+                    request_url = "http://services.nacse.org/prism/data/public/4km/{climate_var}/{date}"\
+                        .format(climate_var=climate_variable, date=day.strftime("%Y%m%d"))
+                    try:
+                        response = request.urlopen(request_url)
+                    except http.client.HTTPException as e:
+                        print('error downloading ' + request_url)
+                        downloaded = False
+                        continue
+                    downloaded = True
+                    filename, _ = parse_header(response.headers.get('Content-Disposition'))
+                    filename = filename.replace("filename=", "").replace("\"", "")
+
+                    # open zip file for writing (overwrites if file already exists)
+                    with open(os.path.join(zipped_files_path, filename), "wb") as local_file:
+                        local_file.write(response.read())
+
+                    # unzip the file
+                    zip_file = zipped_files_path + filename
+                    unzip(zip_file, unzip_path)
+
+                    # # import bil file into database as a raster
+                    # bil_files_path = unzip_path + "*.bil"
+                    # for bil_file in glob.glob(bil_files_path):
+                    #     raster_date = re.search('4kmD1_(.*)_bil.bil', bil_file).group(1)
+                    #     raster_date = '-'.join([raster_date[:4], raster_date[4:6], raster_date[6:]])
+                    #     postgis_import(bil_file, raster_date, climate_variable)
+
+                    # remove non bil files that were unzipped
+                    bil_file = zip_file.replace('.zip', '.bil')
+                    os.remove(bil_file.replace('.bil', '.bil.aux.xml'))
+                    os.remove(bil_file.replace('.bil', '.hdr'))
+                    os.remove(bil_file.replace('.bil', '.info.txt'))
+                    os.remove(bil_file.replace('.bil', '.stn.csv'))
+                    os.remove(bil_file.replace('.bil', '.stx'))
+                    os.remove(bil_file.replace('.bil', '.prj'))
+                    os.remove(bil_file.replace('.bil', '.xml'))
+                   
+                    # delete early and provisional zip files if needed
+                    if 'provisional' in filename:
+                        # we have provisional so we don't need the early anymore
+                        file_to_delete = zipped_files_path + filename.replace('provisional', 'early')
+                        if os.path.isfile(file_to_delete):
+                            os.remove(file_to_delete)
+                    if 'stable' in filename:
+                        # we have stable so we don't need the early or provisional anymore
+                        file_to_delete = zipped_files_path + filename.replace('stable', 'early')
+                        if os.path.isfile(file_to_delete):
+                            os.remove(file_to_delete)
+                        file_to_delete = zipped_files_path + filename.replace('stable', 'provisional')
+                        if os.path.isfile(file_to_delete):
+                            os.remove(file_to_delete)
+                else:
+                    downloaded = True
+                    logging.info('already have stable file for ' + day.strftime("%Y%m%d"))
+
+
 def get_prism_data(start_date, end_date, climate_variables):
     # create directory structure to store zips
     for climate_variable in climate_variables:
@@ -235,8 +325,57 @@ def compute_tavg_from_prism_zips(start_date, stop_date):
             os.remove(tmax_tiffile)
             os.remove(tmax_bilfile)
 
-
-
-        
-
         day = day + timedelta(days=1)
+
+# def compute_tavg_from_ncep_zips(start_date, stop_date):
+#     tmax_zipped_files_path = "/geo-data/climate_data/daily_data/tmax/"
+#     tmin_zipped_files_path = "/geo-data/climate_data/daily_data/tmin/"
+
+#     day = datetime.strptime(start_date, "%Y-%m-%d")
+#     stop = datetime.strptime(stop_date, "%Y-%m-%d")
+
+#     while day <= stop:
+#         tmin_zip_file = "PRISM_tmin_stable_4kmD1_{date}_bil.zip".format(date=day.strftime("%Y%m%d"))
+#         tmax_zip_file = "PRISM_tmax_stable_4kmD1_{date}_bil.zip".format(date=day.strftime("%Y%m%d"))
+
+#         unzip(tmax_zipped_files_path + tmax_zip_file, unzip_to_path)
+#         unzip(tmin_zipped_files_path + tmin_zip_file, unzip_to_path)
+
+#         tmin_bilfile = unzip_to_path + tmin_zip_file.replace('.zip', '.bil')
+#         tmax_bilfile = unzip_to_path + tmax_zip_file.replace('.zip', '.bil')
+
+#         tmin_tiffile = unzip_to_path + tmin_zip_file.replace('.zip', '.tif')
+#         tmax_tiffile = unzip_to_path + tmax_zip_file.replace('.zip', '.tif')
+
+#         #convert from bil to tif
+#         subprocess.call(["gdal_translate", "-of", "GTiff", tmin_bilfile, tmin_tiffile])
+#         subprocess.call(["gdal_translate", "-of", "GTiff", tmax_bilfile, tmax_tiffile])
+
+#         #compute avg tif
+#         avg_tiffile = unzip_to_path + "tavg_{date}.tif".format(date=day.strftime("%Y%m%d"))
+#         subprocess.call("gdal_calc.py -A " + tmin_tiffile + " -B " + tmax_tiffile + " --outfile=" + avg_tiffile + " --NoDataValue=-9999 --calc='((A*1.8+32)+(B*1.8+32))/2'", shell=True)
+
+
+#         #remove extraneous files
+#         with contextlib.suppress(FileNotFoundError):
+#             os.remove(tmin_bilfile.replace('.bil', '.bil.aux.xml'))
+#             os.remove(tmin_bilfile.replace('.bil', '.hdr'))
+#             os.remove(tmin_bilfile.replace('.bil', '.info.txt'))
+#             os.remove(tmin_bilfile.replace('.bil', '.stn.csv'))
+#             os.remove(tmin_bilfile.replace('.bil', '.stx'))
+#             os.remove(tmin_bilfile.replace('.bil', '.prj'))
+#             os.remove(tmin_bilfile.replace('.bil', '.xml'))
+#             os.remove(tmin_bilfile)
+#             os.remove(tmin_tiffile)
+
+#             os.remove(tmax_bilfile.replace('.bil', '.bil.aux.xml'))
+#             os.remove(tmax_bilfile.replace('.bil', '.hdr'))
+#             os.remove(tmax_bilfile.replace('.bil', '.info.txt'))
+#             os.remove(tmax_bilfile.replace('.bil', '.stn.csv'))
+#             os.remove(tmax_bilfile.replace('.bil', '.stx'))
+#             os.remove(tmax_bilfile.replace('.bil', '.prj'))
+#             os.remove(tmax_bilfile.replace('.bil', '.xml'))
+#             os.remove(tmax_tiffile)
+#             os.remove(tmax_bilfile)
+            
+#         day = day + timedelta(days=1)
