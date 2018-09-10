@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 from datetime import date
 from prism.importer import get_prism_data
+from prism.importer import get_prism_data_outdb
 import logging
 import time
 import yaml
