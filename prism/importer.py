@@ -189,7 +189,13 @@ def postgis_import(filename, raster_date, climate_variable):
 
 def get_prism_data_outdb(start_date, end_date, climate_variables):
     for climate_variable in climate_variables:
+        zipped_files_path = prism_archive_path + "zipped" + os.sep + climate_variable + os.sep
         unzip_path = prism_archive_path + climate_variable + os.sep
+
+        for zip_file in glob.glob(zipped_files_path + "*.zip"):
+            # unzip the file
+            unzip(zip_file, unzip_path)
+
         for bil_file in glob.glob(unzip_path + "*.bil"):
             tif_file = bil_file.replace('.bil', '.tif')
             #convert from bil to tif
