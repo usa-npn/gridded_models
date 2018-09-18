@@ -151,7 +151,7 @@ def get_prism_data_outdb(start_date, end_date, climate_variables):
                     zip_file = zipped_files_path + filename
                     unzip(zip_file, unzip_path)
                     bil_file = unzip_path + filename.replace('.zip', '.bil')
-                    tif_file = unzip_path + bil_file.replace('.bil', '.tif')
+                    tif_file = unzip_path + filename.replace('.zip', '.tif')
 
                     #convert from bil to tif
                     subprocess.call(["gdal_translate", "-of", "GTiff", bil_file, tif_file])
