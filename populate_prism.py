@@ -13,6 +13,20 @@ with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml'))
     cfg = yaml.load(ymlfile)
 log_path = cfg["log_path"]
 
+def populate_precip():
+    start = date(2016, 1, 1)
+    end = date(2016, 2, 1) #date.today()
+    get_prism_data_outdb(start, end, ['ppt'])
+
+def populate_temp():
+    today = date.today()
+    current_year = today.year
+    end_of_this_year = date(current_year, 12, 31)
+
+    start = date(1980, 1, 1)
+    end = end_of_this_year
+    get_prism_data_outdb(start, end, ['tmax', 'tmin'])
+
 
 def main():
     # This script downloads climate data available from January 1981 through yesterday at a 4k resolution.
@@ -44,24 +58,11 @@ def main():
     logging.info('***********beginning script populate_prism.py*****************')
     logging.info('*****************************************************************************')
 
-    # # Specify the climate elements you want to download as well as the date range to download those elements for:
-    # request_params = ['tmax', 'tmin']
-
-    # today = date.today()
-    # current_year = today.year
-    # end_of_this_year = date(current_year, 12, 31)
-
-    # start = date(1980, 1, 1)
-    # end = end_of_this_year
-
-    # get_prism_data(start, end, request_params)
+    #populate_temp()
 
     # get precip data using out db method 
     # (keep files on disk, should have done this with tmin / tmax long ago but didn't know at the time)
-    start = date(2017, 1, 1)
-    end = date(2018, 1, 1)
-    request_params = ['ppt']
-    get_prism_data_outdb(start, end, request_params)
+    populate_precip()
 
     t1 = time.time()
     logging.info('*****************************************************************************')
