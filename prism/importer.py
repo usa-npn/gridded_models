@@ -103,15 +103,15 @@ def get_prism_data_outdb(start_date, end_date, climate_variables):
         zipped_files_path = prism_archive_path + "zipped" + os.sep + climate_variable + os.sep
         os.makedirs(zipped_files_path, exist_ok=True)
 
-        # create directory to unzip bil files to
-        unzip_path = prism_archive_path + climate_variable + os.sep
-        os.makedirs(unzip_path, exist_ok=True)
-
         # check if data and time series tables have been created yet
         table_name = "prism_ppt_data"
         time_series_table = "prism_" + climate_variable
         new_table = not table_exists(table_name)
         new_time_series = not table_exists(time_series_table)
+
+        # create directory to unzip bil files to
+        unzip_path = prism_archive_path + time_series_table + os.sep
+        os.makedirs(unzip_path, exist_ok=True)
 
         for i in range(delta.days + 1):
             downloaded = False
