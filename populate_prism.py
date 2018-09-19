@@ -14,8 +14,8 @@ with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml'))
 log_path = cfg["log_path"]
 
 def populate_precip():
-    start = date(2016, 1, 1)
-    end = date(2016, 2, 1) #date.today()
+    start = date(2017, 1, 1)
+    end = date.today()
     get_prism_data_outdb(start, end, ['ppt'])
 
 def populate_temp():

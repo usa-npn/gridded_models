@@ -100,7 +100,7 @@ def get_prism_data_outdb(start_date, end_date, climate_variables):
     delta = end_date - start_date
     for climate_variable in climate_variables:
         # create directory to store zip files
-        zipped_files_path = prism_archive_path + "zipped" + os.sep + climate_variable + os.sep
+        zipped_files_path = prism_path + "zipped" + os.sep + climate_variable + os.sep
         os.makedirs(zipped_files_path, exist_ok=True)
 
         # check if data and time series tables have been created yet
@@ -110,7 +110,7 @@ def get_prism_data_outdb(start_date, end_date, climate_variables):
         new_time_series = not table_exists(time_series_table)
 
         # create directory to unzip bil files to
-        unzip_path = prism_archive_path + time_series_table + os.sep
+        unzip_path = prism_path + time_series_table + os.sep
         os.makedirs(unzip_path, exist_ok=True)
 
         for i in range(delta.days + 1):
@@ -124,8 +124,7 @@ def get_prism_data_outdb(start_date, end_date, climate_variables):
                     continue
 
                 # only download file if we don't already have the stable version
-                if not os.path.isfile(zipped_files_path + 'PRISM_' + climate_variable + '_stable_4kmD1_' + day.strftime("%Y%m%d") + '_bil.zip')\
-                        and not os.path.isfile(zipped_files_path + 'PRISM_' + climate_variable + '_stable_4kmD1_' + day.strftime("%Y%m%d") + '_bil.zip'):
+                if not os.path.isfile(unzip_path + 'PRISM_' + climate_variable + '_stable_4kmD1_' + day.strftime("%Y%m%d") + '_bil.tif'):
                     request_url = "http://services.nacse.org/prism/data/public/4km/{climate_var}/{date}"\
                         .format(climate_var=climate_variable, date=day.strftime("%Y%m%d"))
                     try:
@@ -173,6 +172,8 @@ def get_prism_data_outdb(start_date, end_date, climate_variables):
                     os.remove(bil_file.replace('.bil', '.prj'))
                     os.remove(bil_file.replace('.bil', '.xml'))
                     os.remove(bil_file)
+                    # also remove zip file
+                    os.remove(zip_file)
                    
                     # delete early and provisional files if needed
                     if 'provisional' in filename:
