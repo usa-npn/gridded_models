@@ -158,7 +158,7 @@ def get_prism_data_outdb(start_date, end_date, climate_variables):
                     save_raster_to_postgis(tif_file, table_name, 4269, True)
 
                     if not new_time_series:
-                        update_time_series(time_series_table, tif_file, day)
+                        update_time_series(time_series_table, filename.replace('.zip', '.tif'), day)
                     
                     set_date_column(table_name, day, new_table)
                     new_table = False
