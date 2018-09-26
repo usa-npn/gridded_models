@@ -124,7 +124,7 @@ def get_prism_data_outdb(start_date, end_date, climate_variables):
                     continue
 
                 # only download file if we don't already have the stable version
-                if not os.path.isfile(unzip_path + 'PRISM_' + climate_variable + '_stable_4kmD1_' + day.strftime("%Y%m%d") + '_bil.tif'):
+                if not os.path.isfile(unzip_path + 'PRISM_' + climate_variable + '_stable_4kmD2_' + day.strftime("%Y%m%d") + '_bil.tif'):
                     request_url = "http://services.nacse.org/prism/data/public/4km/{climate_var}/{date}"\
                         .format(climate_var=climate_variable, date=day.strftime("%Y%m%d"))
                     try:
