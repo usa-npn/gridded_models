@@ -79,7 +79,7 @@ def compute_tavg_from_prism_zips(start_date, stop_date):
 
         # save tavg raster to postgis
         save_raster_to_postgis(avg_tiffile, tavg_table_name, 4269)
-        set_date_column(tavg_table_name, day.strftime("%Y%m%d"), new_table)
+        set_date_column(tavg_table_name, day, new_table)
         new_table = False
 
         day = day + timedelta(days=1)
@@ -114,7 +114,7 @@ def compute_ncep_tavg(start_date, stop_date):
 
         #import into postgis
         save_raster_to_postgis(avg_tiffile, tavg_table_name, 4269)
-        set_date_column(tavg_table_name, day.strftime("%Y%m%d"), new_table)
+        set_date_column(tavg_table_name, day, new_table)
         new_table = False
 
         day = day + timedelta(days=1)
