@@ -203,21 +203,23 @@ def dynamic_agdd(start_date, num_days, base, climate_data_provider, region):
         # compute gdd
         try:
 
-            tavg = None
-            # using preprocessed daily prism tavg
-            if climate_data_provider == 'prism':
-                tavg = get_climate_data_from_file("/geo-vault/climate_data/prism/prism_data/tavg/tavg_{day}.tif"
-                .format(day=day.strftime("%Y%m%d")))
+            tavg_tif_path = None
 
-            #using ncep
+            if climate_data_provider == 'prism':
+                tavg_tif_path = "/geo-vault/climate_data/prism/prism_data/tavg/tavg_{day}.tif"
+                .format(day=day.strftime("%Y%m%d"))
+
             if climate_data_provider == 'ncep':
-                tavg = get_climate_data_from_file("/geo-data/climate_data/daily_data/tavg/tavg_{day}.tif"
-                .format(day=day.strftime("%Y%m%d")))
+                tavg_tif_path = "/geo-data/climate_data/daily_data/tavg/tavg_{day}.tif"
+                .format(day=day.strftime("%Y%m%d"))
+            
+            tavg = get_climate_data_from_file(tavg_tif_path)
 
             if first:
-                ds = gdal.Open(tavg)
+                ds = gdal.Open(tavg_tif_path)
                 projection = ds.GetProjection()
                 transform = ds.GetGeoTransform()
+                ds = None
 
             gdd = tavg - base
             gdd[gdd < 0] = 0
