@@ -185,32 +185,9 @@ def dynamic_agdd(start_date, num_days, base, climate_data_provider, region):
     logging.info("computing agdd {region} {climate_data_provider} {start_date} through {end_date} (base {base})"
         .format(region=region, climate_data_provider=climate_data_provider, start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"), base=base))
     # set up path to save geotiffs to along with geoserver layer table
-    climate_data_provider == 'prism'
     save_path = cfg["dynamic_agdd_path"]
     
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
-
-    # tables used to get climate data
-    # if climate_data_provider == 'ncep':
-    #     if region == 'alaska':
-    #         tmin_table_name = 'tmin_alaska_' + start_date.strftime("%Y")
-    #         tmax_table_name = 'tmax_alaska_' + start_date.strftime("%Y")
-    #     else:
-    #         tmin_table_name = 'tmin_' + start_date.strftime("%Y")
-    #         tmax_table_name = 'tmax_' + start_date.strftime("%Y")
-    # elif climate_data_provider == 'prism':
-    #     tmin_table_name = 'prism_tmin_' + start_date.strftime("%Y")
-    #     tmax_table_name = 'prism_tmax_' + start_date.strftime("%Y")
-    # else:
-    #     logging.error('invalid climate data provider: %s', climate_data_provider)
-
-    # if not table_exists(tmin_table_name):
-    #     logging.info('cannot compute agdd tmin table doesnt yet exist: %s ', tmin_table_name)
-    #     return
-
-    # if not table_exists(tmax_table_name):
-    #     logging.info('cannot compute agdd tmax table doesnt yet exist: %s ', tmax_table_name)
-    #     return
 
     day = start_date
     delta = timedelta(days=1)
@@ -223,31 +200,16 @@ def dynamic_agdd(start_date, num_days, base, climate_data_provider, region):
         logging.info("day = {day}".format(day=day.strftime("%Y-%m-%d")))
         # compute gdd
         try:
-            # todo try this https://gis.stackexchange.com/questions/268439/processing-large-geotiff-using-python
-            # tmin = get_climate_data(tmin_table_name, day)
-            # tmax = get_climate_data(tmax_table_name, day)
-            
-            # using ncep tmin tmax files https://gis.stackexchange.com/questions/268439/processing-large-geotiff-using-python
-            # tmin = get_climate_data_from_file("/geo-data/climate_data/daily_data/tmin/tmin_{day}.tif"
-            #     .format(day=day.strftime("%Y%m%d")))
-            # tmax = get_climate_data_from_file("/geo-data/climate_data/daily_data/tmax/tmax_{day}.tif"
-            #     .format(day=day.strftime("%Y%m%d")))
-            
-            # if tmin is None:
-            #     logging.warning('skipping - could not get tmin for date: %s', day.strftime("%Y-%m-%d"))
-            #     day += delta
-            #     continue
-
-            # if tmax is None:
-            #     logging.warning('skipping - could not get tmax for date: %s', day.strftime("%Y-%m-%d"))
-            #     day += delta
-            #     continue
 
             # using preprocessed daily prism tavg
             tavg = get_climate_data_from_file("/geo-vault/climate_data/prism/prism_data/tavg/tavg_{day}.tif"
                 .format(day=day.strftime("%Y%m%d")))
 
-            # gdd = (tmin + tmax) / 2 - base
+            #using ncep
+            if climate_data_provider == 'ncep':
+                tavg = get_climate_data_from_file("/geo-data/climate_data/daily_data/tavg/tavg_{day}.tif"
+                .format(day=day.strftime("%Y%m%d")))
+
             gdd = tavg - base
             gdd[gdd < 0] = 0
             
@@ -267,14 +229,21 @@ def dynamic_agdd(start_date, num_days, base, climate_data_provider, region):
         day += delta
 
     # write the raster to disk
-    file_name = "agdd_{start_date}_through_{end_date}_base{base}.tif".format(start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"), base=base)
+    file_name = "{climate}_agdd_{start_date}_through_{end_date}_base{base}.tif".format(climate=climate_data_provider, start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"), base=base)
     file_path = save_path + file_name
     no_data_value = -9999.0
     rast_cols = 1405
     rast_rows = 621
-    transform = [-125.02083333333336, 0.0416666666667, 0.0, 49.937499999999766, 0.0, -0.0416666666667]
-    projection = 'GEOGCS["NAD83",DATUM["North_American_Datum_1983",SPHEROID["GRS 1980",6378137,298.2572221010042,AUTHORITY["EPSG","7019"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6269"]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433],AUTHORITY["EPSG","4269"]]'
+    # transform = [-125.02083333333336, 0.0416666666667, 0.0, 49.937499999999766, 0.0, -0.0416666666667]
+    # projection = 'GEOGCS["NAD83",DATUM["North_American_Datum_1983",SPHEROID["GRS 1980",6378137,298.2572221010042,AUTHORITY["EPSG","7019"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6269"]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433],AUTHORITY["EPSG","4269"]]'
+    ds = gdal.Open(file_path)
+    projection = ds.GetProjection()
+    transform = ds.GetGeoTransform()
+    if climate_data_provider == 'ncep':
+        rast_cols = 2606
+        rast_rows = 1228
     write_raster(file_path, agdd, no_data_value, rast_cols, rast_rows, projection, transform)
+    ds = None
     print('file saved to: ' + file_path)
 
 

@@ -9,9 +9,10 @@ import sys
 
 def main():
 
-    start = sys.argv[1]
-    end = sys.argv[2]
-    base = sys.argv[3]
+    climateProvider = sys.argv[1]
+    start = sys.argv[2]
+    end = sys.argv[3]
+    base = sys.argv[4]
 
     start_date = dt.datetime.strptime(start, '%Y-%m-%d')
     end_date = dt.datetime.strptime(end, '%Y-%m-%d')
@@ -23,7 +24,7 @@ def main():
     print('end_date: ' + end)
     print('base' + base)
    
-    dynamic_agdd(start_date, num_days, int(base), 'prism', 'conus')
+    dynamic_agdd(start_date, num_days, int(base), climateProvider, 'conus')
 
 if __name__ == "__main__":
     main()
