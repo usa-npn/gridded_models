@@ -196,6 +196,8 @@ def dynamic_agdd(start_date, num_days, base, climate_data_provider, region):
 
     agdd = None
     first = True
+    projection = None
+    transform = None
     while day <= start_date + timedelta(days=num_days):
         logging.info("day = {day}".format(day=day.strftime("%Y-%m-%d")))
         # compute gdd
@@ -211,6 +213,11 @@ def dynamic_agdd(start_date, num_days, base, climate_data_provider, region):
             if climate_data_provider == 'ncep':
                 tavg = get_climate_data_from_file("/geo-data/climate_data/daily_data/tavg/tavg_{day}.tif"
                 .format(day=day.strftime("%Y%m%d")))
+
+            if first:
+                ds = gdal.Open(tavg)
+                projection = ds.GetProjection()
+                transform = ds.GetGeoTransform()
 
             gdd = tavg - base
             gdd[gdd < 0] = 0
@@ -238,9 +245,7 @@ def dynamic_agdd(start_date, num_days, base, climate_data_provider, region):
     rast_rows = 621
     # transform = [-125.02083333333336, 0.0416666666667, 0.0, 49.937499999999766, 0.0, -0.0416666666667]
     # projection = 'GEOGCS["NAD83",DATUM["North_American_Datum_1983",SPHEROID["GRS 1980",6378137,298.2572221010042,AUTHORITY["EPSG","7019"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6269"]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433],AUTHORITY["EPSG","4269"]]'
-    ds = gdal.Open(file_path)
-    projection = ds.GetProjection()
-    transform = ds.GetGeoTransform()
+    
     if climate_data_provider == 'ncep':
         rast_cols = 2606
         rast_rows = 1228
