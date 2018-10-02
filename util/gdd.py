@@ -206,12 +206,10 @@ def dynamic_agdd(start_date, num_days, base, climate_data_provider, region):
             tavg_tif_path = None
 
             if climate_data_provider == 'prism':
-                tavg_tif_path = "/geo-vault/climate_data/prism/prism_data/tavg/tavg_{day}.tif"
-                .format(day=day.strftime("%Y%m%d")
+                tavg_tif_path = "/geo-vault/climate_data/prism/prism_data/tavg/tavg_{day}.tif".format(day=day.strftime("%Y%m%d"))
 
             if climate_data_provider == 'ncep':
-                tavg_tif_path = "/geo-data/climate_data/daily_data/tavg/tavg_{day}.tif"
-                .format(day=day.strftime("%Y%m%d")
+                tavg_tif_path = "/geo-data/climate_data/daily_data/tavg/tavg_{day}.tif".format(day=day.strftime("%Y%m%d"))
             
             tavg = get_climate_data_from_file(tavg_tif_path)
 
