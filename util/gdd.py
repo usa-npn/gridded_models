@@ -201,8 +201,10 @@ def dynamic_agdd(start_date, num_days, base, climate_data_provider, region):
         # compute gdd
         try:
 
+            tavg = None
             # using preprocessed daily prism tavg
-            tavg = get_climate_data_from_file("/geo-vault/climate_data/prism/prism_data/tavg/tavg_{day}.tif"
+            if climate_data_provider == 'prism':
+                tavg = get_climate_data_from_file("/geo-vault/climate_data/prism/prism_data/tavg/tavg_{day}.tif"
                 .format(day=day.strftime("%Y%m%d")))
 
             #using ncep
