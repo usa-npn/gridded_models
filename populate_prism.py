@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 from datetime import date
+from datetime import timedelta
 from prism.importer import get_prism_data
 from prism.importer import get_prism_data_outdb
 import logging
@@ -15,7 +16,7 @@ log_path = cfg["log_path"]
 
 def populate_precip():
     start = date(2017, 1, 1)
-    end = date.today()
+    end = date.today() + timedelta(days=1)
     get_prism_data_outdb(start, end, ['ppt'])
 
 def populate_temp():
