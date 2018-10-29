@@ -525,7 +525,7 @@ def download_historic_climate_data(start_date, end_date, dataset, region):
 
             zero_padded_hour = "{0:0=2d}".format(hour)
             if dataset == 'urma' and region == 'conus':
-                url_file_name = 'urma2p5.t' + zero_padded_hour + 'z.2dvaranl_ndfd.grb2'
+                url_file_name = 'urma2p5.t' + zero_padded_hour + 'z.2dvaranl_ndfd.grb2_wexp'
             elif dataset == 'urma' and region == 'alaska':
                 url_file_name = 'akurma.t' + zero_padded_hour + 'z.2dvaranl_ndfd_3p0.grb2'
             elif dataset == 'rtma' and region == 'conus':
