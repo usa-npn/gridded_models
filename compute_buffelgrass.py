@@ -52,6 +52,7 @@ def compute_buffelgrass(start_date, stop_date):
     while day <= stop:
         # copy start date precip file over to buffelgrass dir
         precip_accum_file = buffelgrass_files_path + "buffelgrass_{date}.tif".format(date=day.strftime("%Y%m%d"))
+        print('copying' + get_prism_precip_file_name(day) + ' to ' + precip_accum_file)
         shutil.copy(get_prism_precip_file_name(day), precip_accum_file)
 
         window_stop = day
