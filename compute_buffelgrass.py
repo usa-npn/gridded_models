@@ -28,6 +28,7 @@ def get_prism_precip_file_name(day):
     stable_file_name = precip_files_path + "PRISM_ppt_stable_4kmD2_{date}.tif".format(date=day.strftime("%Y%m%d"))
     provisional_file_name = precip_files_path + "PRISM_ppt_provisional_4kmD2_{date}.tif".format(date=day.strftime("%Y%m%d"))
     early_file_name = precip_files_path + "PRISM_ppt_early_4kmD2_{date}.tif".format(date=day.strftime("%Y%m%d"))
+    print('stable file name: ' + stable_file_name)
     if Path(stable_file_name).is_file():
         return stable_file_name
     elif Path(provisional_file_name).is_file():
