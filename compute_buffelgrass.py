@@ -39,7 +39,7 @@ def get_prism_precip_file_name(day):
 
 
 def compute_buffelgrass(start_date, stop_date):
-    buffelgrass_files_path = "/geo-data/gridded_models/buffelgrass/buffelgrass_prism"
+    buffelgrass_files_path = "/geo-data/gridded_models/buffelgrass/buffelgrass_prism/"
 
     os.makedirs(buffelgrass_files_path, exist_ok=True)
 
