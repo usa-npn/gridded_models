@@ -17,7 +17,7 @@ log_path = cfg["log_path"]
 
 def populate_precip():
     start = date(2017, 1, 1)
-    end = date.today() + timedelta(days=1)
+    end = date.today() #+ timedelta(days=1)
     get_prism_data_outdb(start, end, ['ppt'])
 
 # todo extend get_prism_data_outdb for temp data or use importer.get_prism_data(start_date, end_date, climate_variables)
@@ -66,8 +66,8 @@ def main():
 
     # get precip data using out db method 
     # (keep files on disk, should have done this with tmin / tmax long ago but didn't know at the time)
-    #populate_precip()
-    clean_prism_precip_early_and_provisional()
+    populate_precip()
+    # clean_prism_precip_early_and_provisional()
 
     t1 = time.time()
     logging.info('*****************************************************************************')

@@ -156,11 +156,6 @@ def get_prism_data_outdb(start_date, end_date, climate_variables):
             while not downloaded:
                 day = start_date + timedelta(days=i)
 
-                # prism data is only historical, never look for today or in the future
-                if day >= dt.datetime.today().date() - timedelta(days=1):
-                    downloaded = True
-                    continue
-
                 # only download file if we don't already have the stable version
                 if not os.path.isfile(unzip_path + 'PRISM_' + climate_variable + '_stable_4kmD2_' + day.strftime("%Y%m%d") + '_bil.tif'):
                     request_url = "http://services.nacse.org/prism/data/public/4km/{climate_var}/{date}"\
