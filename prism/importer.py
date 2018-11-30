@@ -118,7 +118,7 @@ def clean_prism_precip_early_and_provisional():
 
         if 'stable' in tif_file:
             # we have stable so we don't need the early or provisional anymore
-            early_tif_file = tif_file.replace('provisional', 'early')
+            early_tif_file = tif_file.replace('stable', 'early')
             if os.path.isfile(early_tif_file):
                 # remove tif file from disk, postgis, and timeseries
                 logging.info('removing: ' + early_tif_file)
@@ -222,7 +222,7 @@ def get_prism_data_outdb(start_date, end_date, climate_variables):
 
                     if 'stable' in filename:
                         # we have stable so we don't need the early or provisional anymore
-                        early_tif_file = tif_file.replace('provisional', 'early')
+                        early_tif_file = tif_file.replace('stable', 'early')
                         if os.path.isfile(early_tif_file):
                             # remove tif file from disk, postgis, and timeseries
                             remove_from_table_by_filename(early_tif_file, table_name)
