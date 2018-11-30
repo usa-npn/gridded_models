@@ -96,6 +96,44 @@ def postgis_import(filename, raster_date, climate_variable):
     conn.commit()
 
 
+# retroactively cleanup early and provisional ppt files
+# created to cleanup a bug in get_prism_data_outdb in the initial populate of ppt files 
+def clean_prism_precip_early_and_provisional():
+    table_name = "prism_ppt_data"
+    time_series_table = "prism_ppt"
+    unzip_path = prism_path + time_series_table + os.sep
+    unzipped_files_path = unzip_path + "*.*"
+    for tif_file in glob.glob(unzipped_files_path):
+        # delete early and provisional files if needed
+        if 'provisional' in tif_file:
+            # we have provisional so we don't need the early anymore
+            early_tif_file = tif_file.replace('provisional', 'early')
+            if os.path.isfile(early_tif_file):
+                # remove tif file from disk, postgis, and timeseries
+                logging.info('removing: ' + early_tif_file)
+                remove_from_table_by_filename(early_tif_file, table_name)
+                delete_from_time_series(time_series_table, early_tif_file)
+                os.remove(early_tif_file)
+
+
+        if 'stable' in tif_file:
+            # we have stable so we don't need the early or provisional anymore
+            early_tif_file = tif_file.replace('provisional', 'early')
+            if os.path.isfile(early_tif_file):
+                # remove tif file from disk, postgis, and timeseries
+                logging.info('removing: ' + early_tif_file)
+                remove_from_table_by_filename(early_tif_file, table_name)
+                delete_from_time_series(time_series_table, early_tif_file)
+                os.remove(early_tif_file)
+            provisional_tif_file = tif_file.replace('stable', 'provisional')
+            if os.path.isfile(provisional_tif_file):
+                # remove tif file from disk, postgis, and timeseries
+                logging.info('removing: ' + provisional_tif_file)
+                remove_from_table_by_filename(provisional_tif_file, table_name)
+                delete_from_time_series(time_series_table, provisional_tif_file)
+                os.remove(provisional_tif_file)
+
+
 def get_prism_data_outdb(start_date, end_date, climate_variables):    
     delta = end_date - start_date
     for climate_variable in climate_variables:
@@ -178,11 +216,9 @@ def get_prism_data_outdb(start_date, end_date, climate_variables):
                     # delete early and provisional files if needed
                     if 'provisional' in filename:
                         # we have provisional so we don't need the early anymore
-                        file_to_delete = zipped_files_path + filename.replace('provisional', 'early')
-                        if os.path.isfile(file_to_delete):
-                            os.remove(file_to_delete)
+                        early_tif_file = tif_file.replace('provisional', 'early')
+                        if os.path.isfile(early_tif_file):
                             # remove tif file from disk, postgis, and timeseries
-                            early_tif_file = tif_file.replace('provisional', 'early')
                             remove_from_table_by_filename(early_tif_file, table_name)
                             if not new_time_series:
                                 delete_from_time_series(time_series_table, early_tif_file)
@@ -191,20 +227,16 @@ def get_prism_data_outdb(start_date, end_date, climate_variables):
 
                     if 'stable' in filename:
                         # we have stable so we don't need the early or provisional anymore
-                        file_to_delete = zipped_files_path + filename.replace('stable', 'early')
-                        if os.path.isfile(file_to_delete):
-                            os.remove(file_to_delete)
+                        early_tif_file = tif_file.replace('provisional', 'early')
+                        if os.path.isfile(early_tif_file):
                             # remove tif file from disk, postgis, and timeseries
-                            early_tif_file = tif_file.replace('provisional', 'early')
                             remove_from_table_by_filename(early_tif_file, table_name)
                             if not new_time_series:
                                 delete_from_time_series(time_series_table, early_tif_file)
                             os.remove(early_tif_file)
-                        file_to_delete = zipped_files_path + filename.replace('stable', 'provisional')
-                        if os.path.isfile(file_to_delete):
-                            os.remove(file_to_delete)
+                        provisional_tif_file = tif_file.replace('stable', 'provisional')
+                        if os.path.isfile(provisional_tif_file):
                             # remove tif file from disk, postgis, and timeseries
-                            provisional_tif_file = tif_file.replace('stable', 'provisional')
                             remove_from_table_by_filename(provisional_tif_file, table_name)
                             if not new_time_series:
                                 delete_from_time_series(time_series_table, provisional_tif_file)

@@ -3,6 +3,7 @@ from datetime import date
 from datetime import timedelta
 from prism.importer import get_prism_data
 from prism.importer import get_prism_data_outdb
+from prism.importer import clean_prism_precip_early_and_provisional
 import logging
 import time
 import yaml
@@ -19,14 +20,16 @@ def populate_precip():
     end = date.today() + timedelta(days=1)
     get_prism_data_outdb(start, end, ['ppt'])
 
-def populate_temp():
-    today = date.today()
-    current_year = today.year
-    end_of_this_year = date(current_year, 12, 31)
+# todo extend get_prism_data_outdb for temp data or use importer.get_prism_data(start_date, end_date, climate_variables)
+# get_prism_data_outdb is only written for ppt (precip) at the moment
+# def populate_temp():
+#     today = date.today()
+#     current_year = today.year
+#     end_of_this_year = date(current_year, 12, 31)
 
-    start = date(1980, 1, 1)
-    end = end_of_this_year
-    get_prism_data_outdb(start, end, ['tmax', 'tmin'])
+#     start = date(1980, 1, 1)
+#     end = end_of_this_year
+#     get_prism_data_outdb(start, end, ['tmax', 'tmin'])
 
 
 def main():
@@ -63,7 +66,8 @@ def main():
 
     # get precip data using out db method 
     # (keep files on disk, should have done this with tmin / tmax long ago but didn't know at the time)
-    populate_precip()
+    #populate_precip()
+    clean_prism_precip_early_and_provisional()
 
     t1 = time.time()
     logging.info('*****************************************************************************')
