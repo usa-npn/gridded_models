@@ -25,7 +25,9 @@ log_path = cfg["log_path"]
 def compute_tavg_from_prism_zips(start_date, stop_date):
     tmax_zipped_files_path = "/geo-vault/climate_data/prism/prism_data/zipped/tmax/"
     tmin_zipped_files_path = "/geo-vault/climate_data/prism/prism_data/zipped/tmin/"
-    unzip_to_path = "/geo-vault/climate_data/prism/prism_data/tavg/"
+    unzip_to_path = "/geo-data/climate_data/prism/prism_data/tavg/"
+
+    os.makedirs(unzip_to_path, exist_ok=True)
 
     tavg_table_name = "prism_tavg"
     new_table = not table_exists(tavg_table_name)
@@ -134,9 +136,9 @@ def main():
     # compute_tavg_from_prism_zips(start_date, stop_date)
 
     #generate ncep tavg
-    start_date = "2016-01-01"
-    stop_date = "2018-10-08"
-    compute_ncep_tavg(start_date, stop_date)
+    start_date = "2018-10-15"
+    stop_date = datetime.today() + timedelta(days=6)
+    compute_ncep_tavg(start_date, stop_date.strftime('%Y-%m-%d'))
 
     t1 = time.time()
     logging.info('*****************************************************************************')
