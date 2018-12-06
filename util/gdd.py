@@ -228,7 +228,7 @@ def dynamic_agdd(start_date, num_days, base, climate_data_provider, region):
                 agdd = gdd
 
             # replace no data values
-            agdd[agdd == np.nan] = -9999
+            # agdd[agdd == np.nan] = -9999
 
             first = False
 
@@ -236,6 +236,9 @@ def dynamic_agdd(start_date, num_days, base, climate_data_provider, region):
             logging.error('skipping - could not compute agdd (base %s) for date: %s due to an exception', base, day.strftime("%Y-%m-%d"))
 
         day += delta
+    
+    # replace no data values
+    agdd[agdd == np.nan] = -9999
 
     # write the raster to disk
     file_name = "{climate}_agdd_{start_date}_through_{end_date}_base{base}.tif".format(climate=climate_data_provider, start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"), base=base)
