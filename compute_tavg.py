@@ -137,9 +137,9 @@ def main():
 
     #generate ncep tavg
     #start_date = "2018-10-15"
-    start_date = datetime.today() - timedelta(days=7)
+    start_date = datetime.today() - timedelta(days=14)
     stop_date = datetime.today() + timedelta(days=6)
-    compute_ncep_tavg(start_date, stop_date.strftime('%Y-%m-%d'))
+    compute_ncep_tavg(start_date.strftime('%Y-%m-%d'), stop_date.strftime('%Y-%m-%d'))
 
     t1 = time.time()
     logging.info('*****************************************************************************')
