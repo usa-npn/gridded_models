@@ -179,7 +179,7 @@ def import_agdd_anomalies(anomaly_date, base):
         day += delta
 
 
-def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provider, region):
+def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provider, region, temp_unit):
     end_date = start_date + timedelta(days=num_days)
     logging.info(' ')
     logging.info("computing double sine agdd {region} {climate_data_provider} {start_date} through {end_date} (lower threshold {lower_thresh}, upper threshold {upper_thresh})"
@@ -218,6 +218,10 @@ def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provid
             
             tmin = get_climate_data_from_file(tmin_tif_path)
             tmax = get_climate_data_from_file(tmax_tif_path)
+
+            if temp_unit == 'fahrenheit':
+                tmin = tmin * 1.8 + 32
+                tmax = tmax * 1.8 + 32
 
             if first:
                 ds = gdal.Open(tmin_tif_path)
@@ -346,7 +350,7 @@ def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provid
     print('file saved to: ' + file_path)
 
 
-def dynamic_agdd(start_date, num_days, base, climate_data_provider, region):
+def dynamic_agdd(start_date, num_days, base, climate_data_provider, region, temp_unit):
     end_date = start_date + timedelta(days=num_days)
     logging.info(' ')
     logging.info("computing agdd {region} {climate_data_provider} {start_date} through {end_date} (base {base})"
@@ -378,6 +382,9 @@ def dynamic_agdd(start_date, num_days, base, climate_data_provider, region):
                 tavg_tif_path = "/geo-data/climate_data/daily_data/tavg/tavg_{day}.tif".format(day=day.strftime("%Y%m%d"))
             
             tavg = get_climate_data_from_file(tavg_tif_path)
+
+            if temp_unit == 'celsius':
+                tavg = (tavg - 32) * (5/9)
 
             if first:
                 ds = gdal.Open(tavg_tif_path)

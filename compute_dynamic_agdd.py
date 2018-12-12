@@ -11,9 +11,10 @@ def main():
 
     agddMethod = sys.argv[1]
     climateProvider = sys.argv[2]
-    start = sys.argv[3]
-    end = sys.argv[4]
-    lowerThreshold = sys.argv[5]
+    tempUnit = sys.argv[3]
+    start = sys.argv[4]
+    end = sys.argv[5]
+    lowerThreshold = sys.argv[6]
 
     start_date = dt.datetime.strptime(start, '%Y-%m-%d')
     end_date = dt.datetime.strptime(end, '%Y-%m-%d')
@@ -27,11 +28,11 @@ def main():
     print('lowerThreshold' + lowerThreshold)
 
     if agddMethod == 'simple':
-        dynamic_agdd(start_date, num_days, int(lowerThreshold), climateProvider, 'conus')
+        dynamic_agdd(start_date, num_days, int(lowerThreshold), climateProvider, 'conus', tempUnit)
     elif agddMethod == 'double-sine':
-        upperThreshold = sys.argv[6]
+        upperThreshold = sys.argv[7]
         print('upperThreshold' + upperThreshold)
-        dynamic_double_sine_agdd(start_date, num_days, int(lowerThreshold), int(upperThreshold), climateProvider, 'conus')
+        dynamic_double_sine_agdd(start_date, num_days, int(lowerThreshold), int(upperThreshold), climateProvider, 'conus', tempUnit)
     else:
         print('invalid agddMethod, only simple and double-sine are accepted')
 
