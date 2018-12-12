@@ -315,7 +315,8 @@ def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provid
             if not first:
                 agdd += gdd
             else:
-                agdd = gdd
+                oceanMask = np.where(tmax[np.isnan()], np.nan, 0)
+                agdd = gdd + oceanMask
 
             first = False
             tmin_prev_day = np.copy(tmin)
