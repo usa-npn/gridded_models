@@ -179,6 +179,172 @@ def import_agdd_anomalies(anomaly_date, base):
         day += delta
 
 
+def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provider, region):
+    end_date = start_date + timedelta(days=num_days)
+    logging.info(' ')
+    logging.info("computing double sine agdd {region} {climate_data_provider} {start_date} through {end_date} (lower threshold {lower_thresh}, upper threshold {upper_thresh})"
+        .format(region=region, climate_data_provider=climate_data_provider, start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"), lower_thresh = lct, upper_thresh = uct))
+
+    # save_path = '/Users/npn/Development/temp/ncep_daily/agdd/'
+    save_path = cfg["dynamic_agdd_path"]
+    
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+
+    day = start_date
+    delta = timedelta(days=1)
+
+    agdd = None
+    first = True
+    projection = None
+    transform = None
+    tmin_prev_day = None
+
+    while day <= start_date + timedelta(days=num_days):
+        logging.info("day = {day}".format(day=day.strftime("%Y-%m-%d")))
+        try:
+
+            tmin_tif_path = None
+            tmax_tif_path = None
+
+            # todo later if possible (prism temps not outdb)
+            # if climate_data_provider == 'prism':
+            #     tavg_tif_path = "/geo-vault/climate_data/prism/prism_data/tavg/tavg_{day}.tif".format(day=day.strftime("%Y%m%d"))
+
+            if climate_data_provider == 'ncep':
+                tmin_tif_path = "/geo-data/climate_data/daily_data/tmin/tmin_{day}.tif".format(day=day.strftime("%Y%m%d"))
+                tmax_tif_path = "/geo-data/climate_data/daily_data/tmax/tmax_{day}.tif".format(day=day.strftime("%Y%m%d"))
+                # tmin_tif_path = "/Users/npn/Development/temp/ncep_daily/tmin/tmin_{day}.tif".format(day=day.strftime("%Y%m%d"))
+                # tmax_tif_path = "/Users/npn/Development/temp/ncep_daily/tmax/tmax_{day}.tif".format(day=day.strftime("%Y%m%d"))
+            
+            tmin = get_climate_data_from_file(tmin_tif_path)
+            tmax = get_climate_data_from_file(tmax_tif_path)
+
+            if first:
+                ds = gdal.Open(tmin_tif_path)
+                projection = ds.GetProjection()
+                transform = ds.GetGeoTransform()
+                ds = None
+                tmin_prev_day = np.copy(tmin)                
+
+            # double sine algorithm
+            taveam = (tmax + tmin_prev_day) / 2
+            tavepm = (tmax + tmin) / 2
+            alphaam = (tmax - tmin_prev_day) / 2
+            thetaam = np.arcsin((lct - taveam) / alphaam)
+            alphapm = (tmax - tmin) / 2
+            thetapm = np.arcsin((lct - tavepm) / alphapm)
+            theta2am = np.arcsin((uct - taveam) / alphaam)
+            theta2pm = np.arcsin((uct - tavepm) / alphapm)
+
+            # case 1
+            case1_outer_condition = tmin_prev_day >= uct
+            case1am = np.where(case1_outer_condition, 0.5*(uct-lct), 0)
+            case1pm1 = np.where(np.logical_and(case1_outer_condition, tmin >=uct), 
+            0.5*(uct-lct), 0)
+            case1pm2 = np.where(np.logical_and(case1_outer_condition, np.logical_and(tmin < uct, tmin >= lct)),
+            (1 / (2 * np.pi)) * ((tavepm - lct) * (theta2pm + (np.pi / 2)) + (uct-lct) * ((np.pi / 2) - theta2pm) - (alphapm * np.cos(theta2pm))), 0)
+            case1pm3 = np.where(np.logical_and(case1_outer_condition, np.logical_and(tmin < uct, tmin < lct)),
+            (1 / (2 * np.pi)) * ((tavepm - lct) * (theta2pm - thetapm) + alphapm * (np.cos(thetapm) - np.cos(theta2pm)) + (uct - lct) * ((np.pi / 2) - theta2pm)), 0)
+            case1pm = case1pm1 + case1pm2 + case1pm3
+            case1gdd = case1am + case1pm
+            
+
+            # case 2 If the upper temperature exceeds the lower critical temperature then there is no development
+            # case2_outer_condition = tmax < lct
+            # this becomes a no opp
+            # case2gdd = np.where(case2_outer_condition, 0, 0)
+
+
+            # Case 3, tmin1 and maximum temperature both between upper and lower critical threshold temperatures.
+            case3_outer_condition = np.logical_and(
+                # np.logical_not(case1_outer_condition),
+                # np.logical_not(case2_outer_condition),
+                np.logical_and(tmin_prev_day >= lct, tmin_prev_day <= uct), 
+                np.logical_and(tmax >= lct, tmax <= uct))
+            case3am = np.where(case3_outer_condition, 0.5*(uct-lct), 0)
+            case3pm1 = np.where(np.logical_and(case3_outer_condition, np.logical_and(tmin >= lct, tmin <= uct)), # case 3, tmin and tmax between thresholds
+            0.5 * (tavepm - lct), 0)
+            case3pm2 = np.where(np.logical_and(case3_outer_condition, tmin < lct), # case 4, tmin below lct, tmax between thresholds
+            (1 / (2 * np.pi)) * ((tavepm - lct) * ((np.pi / 2) - thetapm) + (alphapm * np.cos(thetapm))), 0)
+            case3pm = case3pm1 + case3pm2
+            case3gdd = case3am + case3pm
+
+
+            # Case 4, minimum temperature is below minimum critical threshold temperature, but maximum temperature is above minimum critical threshold temperature, and below maximum critical threshold temperature.
+            case4_outer_condition = np.logical_and(tmin_prev_day <= lct, np.logical_and(tmax >= lct, tmax <= uct))
+            case4am = np.where(case4_outer_condition,
+            (1 / (2 * np.pi)) * ((taveam - lct) * ((np.pi / 2) - thetaam) + (alphaam * np.cos(thetaam))), 0)
+            case4pm1 = np.where(np.logical_and(case4_outer_condition, tmin < lct), # case 4, tmin below lct, tmax between thresholds
+            (1 / (2 * np.pi)) * ((tavepm - lct) * ((np.pi / 2) - thetapm) + (alphapm * np.cos(thetapm))), 0)
+            case4pm2 = np.where(np.logical_and(case4_outer_condition, tmin >= lct), # case 3, tmin between thresholds, tmax between threshold
+            0.5 * (tavepm - lct), 0)
+            case4pm = case4pm1 + case4pm2
+            case4gdd = case4am + case4pm
+
+
+            # Case 5, minimum temperature is between the minimum and maximum critical temperature thresholds, but the maximum temperature is above the maximum critical temperature threshold.
+            case5_outer_condition = np.logical_and(np.logical_and(tmin_prev_day >= lct, tmin_prev_day <= uct), tmax >= uct)
+            case5am = np.where(case5_outer_condition,
+            (1 / (2 * np.pi)) * (((taveam - lct) * (theta2am + (np.pi / 2)) + (uct - lct) * ((np.pi / 2) - theta2am) - (alphaam * np.cos(theta2am)))), 0)
+            case5pm1 = np.where(np.logical_and(case5_outer_condition, np.logical_and(tmin >= lct, tmin <= uct)), # case 5, tmin between thresholds, tmax above uct
+            (1 / (2 * np.pi)) * ((tavepm - lct) * (theta2pm + (np.pi / 2)) + (uct-lct) * ((np.pi / 2) - theta2pm) - (alphapm * np.cos(theta2pm))), 0)
+            case5pm2 = np.where(np.logical_and(case5_outer_condition, tmin < lct), # case 6, tmin below lct, tmax above uct
+            (1 / (2 * np.pi)) * ((tavepm - lct) * (theta2pm - thetapm) + alphapm * (np.cos(thetapm) - np.cos(theta2pm)) + (uct - lct) * ((np.pi / 2) - theta2pm)), 0)
+            case5pm3 = np.where(np.logical_and(case5_outer_condition, tmin > uct), #case 1, tmin2 and tmax above uct
+            0.5 * (uct-lct), 0)
+            case5pm = case5pm1 + case5pm2 + case5pm3
+            case5gdd = case5am + case5pm
+
+
+            # Case 6, minimum temperature is below the minimum critical threshold temperature, and maximum temperature is above the maximum critical threshold temperature.
+            case6_outer_condition = np.logical_and(tmin_prev_day <= lct, tmax > uct)
+            case6am = np.where(case6_outer_condition,
+            (1 / (2 * np.pi)) * ((taveam - lct) * (theta2am - thetaam) + alphaam * (np.cos(thetaam) - np.cos(theta2am)) + (uct - lct) * ((np.pi / 2) - theta2am)), 0)
+            case6pm1 = np.where(np.logical_and(case6_outer_condition, np.logical_and(tmin >= lct, tmin < lct)), # case 6, tmin below lct, tmax above uct
+            (1 / (2 * np.pi)) * ((tavepm - lct) * (theta2pm - thetapm) + alphapm * (np.cos(thetapm) - np.cos(theta2pm)) + (uct - lct) * ((np.pi / 2) - theta2pm)), 0)
+            case6pm2 = np.where(np.logical_and(case6_outer_condition, np.logical_and(tmin < uct, tmin >= lct)), # case 5, tmin2 between thresholds, tmax abov uct
+            (1 / (2 * np.pi)) * ((tavepm - lct) * (theta2pm + (np.pi / 2)) + (uct - lct) * ((np.pi / 2) - theta2pm) - (alphapm * np.cos(theta2pm))), 0)
+            case6pm3 = np.where(np.logical_and(case6_outer_condition, tmin >= uct), # case 1, tmin and tmax above uct
+            0.5 * (uct-lct), 0)
+            case6pm = case6pm1 + case6pm2 + case6pm3
+            case6gdd = case6am + case6pm
+
+            gdd = case1gdd + case3gdd + case4gdd + case5gdd + case6gdd
+            gdd[gdd < 0] = 0
+            
+            if not first:
+                agdd += gdd
+            else:
+                agdd = gdd
+
+            first = False
+            tmin_prev_day = np.copy(tmin)
+
+        except():
+            logging.error('skipping - could not compute double-sine agdd (lower_thresh %s, upper_thresh %s) for date: %s due to an exception', lct, uct, day.strftime("%Y-%m-%d"))
+
+        day += delta
+    
+    # replace no data values
+    no_data_value = -9999
+    agdd[np.isnan(agdd)] = no_data_value
+
+    # write the raster to disk
+    file_name = "{climate}_double_sine_agdd_{start_date}_through_{end_date}_lthr{lower_thresh}_uthr{upper_thresh}.tif".format(climate=climate_data_provider, start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"), lower_thresh=lct, upper_thresh=uct)
+    file_path = save_path + file_name
+    rast_cols = 1405
+    rast_rows = 621
+    # transform = [-125.02083333333336, 0.0416666666667, 0.0, 49.937499999999766, 0.0, -0.0416666666667]
+    # projection = 'GEOGCS["NAD83",DATUM["North_American_Datum_1983",SPHEROID["GRS 1980",6378137,298.2572221010042,AUTHORITY["EPSG","7019"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6269"]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433],AUTHORITY["EPSG","4269"]]'
+    
+    if climate_data_provider == 'ncep':
+        rast_cols = 2606
+        rast_rows = 1228
+    write_raster(file_path, agdd, no_data_value, rast_cols, rast_rows, projection, transform)
+    ds = None
+    print('file saved to: ' + file_path)
+
+
 def dynamic_agdd(start_date, num_days, base, climate_data_provider, region):
     end_date = start_date + timedelta(days=num_days)
     logging.info(' ')
@@ -200,7 +366,6 @@ def dynamic_agdd(start_date, num_days, base, climate_data_provider, region):
     transform = None
     while day <= start_date + timedelta(days=num_days):
         logging.info("day = {day}".format(day=day.strftime("%Y-%m-%d")))
-        # compute gdd
         try:
 
             tavg_tif_path = None
