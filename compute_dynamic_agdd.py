@@ -31,7 +31,7 @@ def main():
     elif agddMethod == 'double-sine':
         upperThreshold = sys.argv[6]
         print('upperThreshold' + upperThreshold)
-        dynamic_double_sine_agdd(start_date, num_days, lowerThreshold, upperThreshold, climateProvider, 'conus')
+        dynamic_double_sine_agdd(start_date, num_days, int(lowerThreshold), int(upperThreshold), climateProvider, 'conus')
     else:
         print('invalid agddMethod, only simple and double-sine are accepted')
 
