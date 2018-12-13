@@ -37,7 +37,7 @@ def main():
         print('invalid agddMethod, only simple and double-sine are accepted')
 
     # testing
-    # dynamic_double_sine_agdd(dt.datetime.strptime('2018-01-01', '%Y-%m-%d'), 20, 10, 30, 'ncep', 'conus')
+    # dynamic_double_sine_agdd(dt.datetime.strptime('2018-01-01', '%Y-%m-%d'), 20, 50, 86, 'ncep', 'conus', 'fahrenheit')
 
 
 if __name__ == "__main__":

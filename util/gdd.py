@@ -240,7 +240,7 @@ def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provid
             theta2am = np.arcsin((uct - taveam) / alphaam)
             theta2pm = np.arcsin((uct - tavepm) / alphapm)
 
-            # case 1
+            # case 1 If the lower temperature exceeds the upper critical temperature then there is development
             case1_outer_condition = tmin_prev_day >= uct
             case1am = np.where(case1_outer_condition, 0.5*(uct-lct), 0)
             case1pm1 = np.where(np.logical_and(case1_outer_condition, tmin >=uct), 
@@ -263,9 +263,9 @@ def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provid
             case3_outer_condition = np.logical_and(
                 # np.logical_not(case1_outer_condition),
                 # np.logical_not(case2_outer_condition),
-                np.logical_and(tmin_prev_day >= lct, tmin_prev_day <= uct), 
+                np.logical_and(tmin_prev_day >= lct, tmin_prev_day < uct), 
                 np.logical_and(tmax >= lct, tmax <= uct))
-            case3am = np.where(case3_outer_condition, 0.5*(uct-lct), 0)
+            case3am = np.where(case3_outer_condition, 0.5*(taveam-lct), 0)
             case3pm1 = np.where(np.logical_and(case3_outer_condition, np.logical_and(tmin >= lct, tmin <= uct)), # case 3, tmin and tmax between thresholds
             0.5 * (tavepm - lct), 0)
             case3pm2 = np.where(np.logical_and(case3_outer_condition, tmin < lct), # case 4, tmin below lct, tmax between thresholds
@@ -275,7 +275,7 @@ def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provid
 
 
             # Case 4, minimum temperature is below minimum critical threshold temperature, but maximum temperature is above minimum critical threshold temperature, and below maximum critical threshold temperature.
-            case4_outer_condition = np.logical_and(tmin_prev_day <= lct, np.logical_and(tmax >= lct, tmax <= uct))
+            case4_outer_condition = np.logical_and(tmin_prev_day < lct, np.logical_and(tmax >= lct, tmax <= uct))
             case4am = np.where(case4_outer_condition,
             (1 / (2 * np.pi)) * ((taveam - lct) * ((np.pi / 2) - thetaam) + (alphaam * np.cos(thetaam))), 0)
             case4pm1 = np.where(np.logical_and(case4_outer_condition, tmin < lct), # case 4, tmin below lct, tmax between thresholds
@@ -287,7 +287,7 @@ def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provid
 
 
             # Case 5, minimum temperature is between the minimum and maximum critical temperature thresholds, but the maximum temperature is above the maximum critical temperature threshold.
-            case5_outer_condition = np.logical_and(np.logical_and(tmin_prev_day >= lct, tmin_prev_day <= uct), tmax >= uct)
+            case5_outer_condition = np.logical_and(np.logical_and(tmin_prev_day >= lct, tmin_prev_day < uct), tmax > uct)
             case5am = np.where(case5_outer_condition,
             (1 / (2 * np.pi)) * (((taveam - lct) * (theta2am + (np.pi / 2)) + (uct - lct) * ((np.pi / 2) - theta2am) - (alphaam * np.cos(theta2am)))), 0)
             case5pm1 = np.where(np.logical_and(case5_outer_condition, np.logical_and(tmin >= lct, tmin <= uct)), # case 5, tmin between thresholds, tmax above uct
@@ -301,7 +301,7 @@ def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provid
 
 
             # Case 6, minimum temperature is below the minimum critical threshold temperature, and maximum temperature is above the maximum critical threshold temperature.
-            case6_outer_condition = np.logical_and(tmin_prev_day <= lct, tmax > uct)
+            case6_outer_condition = np.logical_and(tmin_prev_day < lct, tmax > uct)
             case6am = np.where(case6_outer_condition,
             (1 / (2 * np.pi)) * ((taveam - lct) * (theta2am - thetaam) + alphaam * (np.cos(thetaam) - np.cos(theta2am)) + (uct - lct) * ((np.pi / 2) - theta2am)), 0)
             case6pm1 = np.where(np.logical_and(case6_outer_condition, np.logical_and(tmin >= lct, tmin < lct)), # case 6, tmin below lct, tmax above uct
