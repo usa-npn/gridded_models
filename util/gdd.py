@@ -219,17 +219,20 @@ def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provid
                 # tmax_tif_path = "/Users/npn/Development/temp/ncep_daily/tmax/tmax_{day}.tif".format(day=day.strftime("%Y%m%d"))
                 tmin = get_climate_data_from_file(tmin_tif_path, temp_unit)
                 tmax = get_climate_data_from_file(tmax_tif_path, temp_unit)
+                if first:
+                    ds = gdal.Open(tmin_tif_path)
+                    projection = ds.GetProjection()
+                    transform = ds.GetGeoTransform()
+                    ds = None
             elif climate_data_provider == 'prism':
                 tmin_table_name = 'prism_tmin_' + day.strftime("%Y")
                 tmax_table_name = 'prism_tmax_' + day.strftime("%Y")
                 tmin = get_climate_data(tmin_table_name, day, temp_unit)
                 tmax = get_climate_data(tmax_table_name, day, temp_unit)
+                if first:
+                    (rast_cols, rast_rows, transform, projection, no_data_value) = get_raster_info(tmin_table_name, day)
 
             if first:
-                ds = gdal.Open(tmin_tif_path)
-                projection = ds.GetProjection()
-                transform = ds.GetGeoTransform()
-                ds = None
                 tmin_prev_day = np.copy(tmin)                
 
             # double sine algorithm
