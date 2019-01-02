@@ -205,6 +205,8 @@ def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provid
 
             tmin_tif_path = None
             tmax_tif_path = None
+            tmin = None
+            tmax = None
 
             # todo later if possible (prism temps not outdb)
             # if climate_data_provider == 'prism':
@@ -215,13 +217,13 @@ def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provid
                 tmax_tif_path = "/geo-data/climate_data/daily_data/tmax/tmax_{day}.tif".format(day=day.strftime("%Y%m%d"))
                 # tmin_tif_path = "/Users/npn/Development/temp/ncep_daily/tmin/tmin_{day}.tif".format(day=day.strftime("%Y%m%d"))
                 # tmax_tif_path = "/Users/npn/Development/temp/ncep_daily/tmax/tmax_{day}.tif".format(day=day.strftime("%Y%m%d"))
-            
-            tmin = get_climate_data_from_file(tmin_tif_path)
-            tmax = get_climate_data_from_file(tmax_tif_path)
-
-            if temp_unit == 'fahrenheit':
-                tmin = tmin * 1.8 + 32
-                tmax = tmax * 1.8 + 32
+                tmin = get_climate_data_from_file(tmin_tif_path, temp_unit)
+                tmax = get_climate_data_from_file(tmax_tif_path, temp_unit)
+            elif climate_data_provider == 'prism':
+                tmin_table_name = 'prism_tmin_' + day.strftime("%Y")
+                tmax_table_name = 'prism_tmax_' + day.strftime("%Y")
+                tmin = get_climate_data(tmin_table_name, day, temp_unit)
+                tmax = get_climate_data(tmax_table_name, day, temp_unit)
 
             if first:
                 ds = gdal.Open(tmin_tif_path)
@@ -381,7 +383,7 @@ def dynamic_agdd(start_date, num_days, base, climate_data_provider, region, temp
             if climate_data_provider == 'ncep':
                 tavg_tif_path = "/geo-data/climate_data/daily_data/tavg/tavg_{day}.tif".format(day=day.strftime("%Y%m%d"))
             
-            tavg = get_climate_data_from_file(tavg_tif_path)
+            tavg = get_climate_data_from_file(tavg_tif_path, 'already_stored_as_fahrenheit')
 
             if temp_unit == 'celsius':
                 tavg = (tavg - 32) * (5/9)
@@ -543,8 +545,8 @@ def import_agdd(agdd_date, base, climate_data_provider, region):
 
         # compute gdd
         try:
-            tmin = get_climate_data(tmin_table_name, day)
-            tmax = get_climate_data(tmax_table_name, day)
+            tmin = get_climate_data(tmin_table_name, day, 'fahrenheit')
+            tmax = get_climate_data(tmax_table_name, day, 'fahrenheit')
             if tmin is None:
                 logging.warning('skipping - could not get tmin for date: %s', day.strftime("%Y-%m-%d"))
                 day += delta
@@ -613,8 +615,8 @@ def import_average_agdd(first_year, last_year, base):
                 logging.info('date_from_doy: %s', date_from_doy.strftime("%Y-%m-%d"))
                 tmin_table_name = 'prism' + "_" + 'tmin' + "_" + date_from_doy.strftime("%Y")
                 tmax_table_name = 'prism' + "_" + 'tmax' + "_" + date_from_doy.strftime("%Y")
-                tmin = get_climate_data(tmin_table_name, date_from_doy)
-                tmax = get_climate_data(tmax_table_name, date_from_doy)
+                tmin = get_climate_data(tmin_table_name, date_from_doy, 'fahrenheit')
+                tmax = get_climate_data(tmax_table_name, date_from_doy, 'fahrenheit')
 
                 gdd = (tmin + tmax) / 2 - base
                 gdd[gdd < 0] = 0
@@ -649,7 +651,7 @@ def import_average_agdd(first_year, last_year, base):
         logging.info('populated average agdd for day of year: %s', str(day_of_year))
 
 
-def get_climate_data(table_name, date):
+def get_climate_data(table_name, date, temp_unit):
     outarray = get_raster_array(table_name, 'rast_date', date.strftime("%Y-%m-%d"))
 
     if outarray is None:
@@ -658,14 +660,14 @@ def get_climate_data(table_name, date):
     # convert -9999 values to not a number so we don't have to worry about manipulating them
     outarray[outarray == -9999.0] = np.nan
 
-    # convert to fahrenheit
-    outarray *= 1.8
-    outarray += 32
+    if temp_unit == 'fahrenheit':
+        outarray *= 1.8
+        outarray += 32
 
     return outarray
 
 
-def get_climate_data_from_file(raster_path):
+def get_climate_data_from_file(raster_path, temp_unit):
 
     raster_dataset = gdal.Open(raster_path)
     #geo_transform = raster_dataset.GetGeoTransform()
@@ -679,5 +681,9 @@ def get_climate_data_from_file(raster_path):
 
     # convert -9999 values to not a number so we don't have to worry about manipulating them
     outarray[outarray == -9999.0] = np.nan
+
+    if temp_unit == 'fahrenheit':
+        outarray *= 1.8
+        outarray += 32
     
     return outarray
