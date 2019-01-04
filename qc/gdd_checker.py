@@ -182,6 +182,11 @@ def populate_agdd_qc(urma_start, urma_end, acis_start, acis_end, prism_start, pr
     logging.info('-----------------populating prism qc agdds-----------------')
     populate_agdds(prism_start, prism_end, 'PRISM', prism_source_id, stations)
 
+def main():
+    start = date(2018, 1, 1)
+    end = date(2019,1,4)
+    populate_agdd_qc(start, end, start, end, start, end)
+
 
 if __name__ == "__main__":
-    print("nothing to do")
+    main()
