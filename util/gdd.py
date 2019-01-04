@@ -228,7 +228,7 @@ def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provid
                     tmin = get_climate_data_from_file(tmin_tif_path, temp_unit)
                     tmax = get_climate_data_from_file(tmax_tif_path, temp_unit)
                 except:
-                    error_log.error('could not get temp data, aborting agdd computation: ', exc_info=True)
+                    logging.error('could not get temp data, aborting agdd computation: ', exc_info=True)
                     return
                 if first:
                     ds = gdal.Open(tmin_tif_path)
@@ -429,7 +429,7 @@ def dynamic_agdd(start_date, num_days, base, climate_data_provider, region, temp
             try:
                 tavg = get_climate_data_from_file(tavg_tif_path, 'already_stored_as_fahrenheit')
             except:
-                error_log.error('could not get tavg data, aborting agdd computation: ', exc_info=True)
+                logging.error('could not get tavg data, aborting agdd computation: ', exc_info=True)
                 return
 
             if temp_unit == 'celsius':
