@@ -5,6 +5,7 @@ from climate.importer import *
 from util.gdd import *
 from qc.gdd_checker import *
 from qc.six_checker import *
+from compute_tavg import compute_ncep_tavg
 from datetime import date
 from datetime import datetime
 import logging
@@ -95,6 +96,7 @@ def populate_six_from_day_250(beginning_of_this_year, today, plants, phenophases
                 logging.info('attempting to copy si-x anomaly: phenophase: %s for day: %s', phenophase, day)
                 copy_spring_index_anomaly_raster(phenophase, day_240_of_current_year, day)
 
+
 def importClimateData():
     # #################### CLIMATE DATA CALCULATIONS ####################################################
     # download and import ndfd forecast temps for the next week
@@ -126,7 +128,13 @@ def importClimateData():
     logging.info('computing daily temperatures based on ncep hourly data')
     hour_shift = -12
     compute_tmin_tmax(min(beginning_of_this_year, one_week_ago), one_week_into_future, hour_shift, 7, region)
-    #compute_tmin_tmax(date(current_year, 1, 4), today, hour_shift, 7, 'alaska')
+    
+    logging.info('computing daily ncep tavg')
+    try:
+        compute_ncep_tavg(one_week_ago, one_week_into_future)
+    except:
+        logging.error('unable to compute tavg, likely that tmin/tmax is missing', exc_info=True)
+
 
 def importAgdd():
     # #################### AGDD CALCULATIONS ####################################################
@@ -173,6 +181,7 @@ def importAgdd():
         logging.info('recomputing last year prism agdds')
         import_agdd(end_of_previous_year, base, climate_data_provider, "conus")
 
+
 def importSix():
     # #################### SI-X CALCULATIONS ####################################################
     plants = ['lilac', 'arnoldred', 'zabelli']
@@ -193,6 +202,7 @@ def importSix():
     logging.info('computing six anomaly maps')
     for phenophase in phenophases:
         import_six_anomalies(end_of_this_year, phenophase)
+
 
 def importCustomPestMapAgdd():
     ############## PEST MAP CUSTOM AGDD RASTER CACHE POPULATOR #######################################
@@ -218,6 +228,7 @@ def importCustomPestMapAgdd():
     num_days = delta.days
     logging.info('poplulating double-sine agdd base 37.4 with Jan 1 start date for pestMaps')
     dynamic_double_sine_agdd(beginning_of_this_year, num_days, lowerThreshold, upperThreshold, 'ncep', 'conus', 'fahrenheit', True)
+
 
 def importQcData():
     # populates various climate variables in the climate agdds mysql db
