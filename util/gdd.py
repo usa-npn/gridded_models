@@ -224,8 +224,12 @@ def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provid
                 tmax_tif_path = "/geo-data/climate_data/daily_data/tmax/tmax_{day}.tif".format(day=day.strftime("%Y%m%d"))
                 # tmin_tif_path = "/Users/npn/Development/temp/ncep_daily/tmin/tmin_{day}.tif".format(day=day.strftime("%Y%m%d"))
                 # tmax_tif_path = "/Users/npn/Development/temp/ncep_daily/tmax/tmax_{day}.tif".format(day=day.strftime("%Y%m%d"))
-                tmin = get_climate_data_from_file(tmin_tif_path, temp_unit)
-                tmax = get_climate_data_from_file(tmax_tif_path, temp_unit)
+                try:
+                    tmin = get_climate_data_from_file(tmin_tif_path, temp_unit)
+                    tmax = get_climate_data_from_file(tmax_tif_path, temp_unit)
+                except:
+                    error_log.error('could not get temp data, aborting agdd computation: ', exc_info=True)
+                    return
                 if first:
                     ds = gdal.Open(tmin_tif_path)
                     projection = ds.GetProjection()
@@ -422,7 +426,11 @@ def dynamic_agdd(start_date, num_days, base, climate_data_provider, region, temp
             if climate_data_provider == 'ncep':
                 tavg_tif_path = "/geo-data/climate_data/daily_data/tavg/tavg_{day}.tif".format(day=day.strftime("%Y%m%d"))
             
-            tavg = get_climate_data_from_file(tavg_tif_path, 'already_stored_as_fahrenheit')
+            try:
+                tavg = get_climate_data_from_file(tavg_tif_path, 'already_stored_as_fahrenheit')
+            except:
+                error_log.error('could not get tavg data, aborting agdd computation: ', exc_info=True)
+                return
 
             if temp_unit == 'celsius':
                 tavg = (tavg - 32) * (5/9)
