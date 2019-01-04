@@ -179,16 +179,23 @@ def import_agdd_anomalies(anomaly_date, base):
         day += delta
 
 
-def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provider, region, temp_unit):
+def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provider, region, temp_unit, forPestMapCache):
     end_date = start_date + timedelta(days=num_days)
+    
+    # save_path = '/Users/npn/Development/temp/ncep_daily/agdd/'
+    save_path = cfg["dynamic_agdd_path"]
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+
+    # check if geotiff already exists and if so just return, geowebservice will just scp over the already created file
+    if not forPestMapCache:
+        file_name = "{climate}_{temp_unit}_double_sine_{start_date}_through_{current_day}_lthr{lower_thresh}_uthr{upper_thresh}.tif".format(climate=climate_data_provider, temp_unit=temp_unit, start_date=start_date.strftime("%Y-%m-%d"), current_day=day.strftime("%Y-%m-%d"), lower_thresh=lct, upper_thresh=uct)
+        file_path = save_path + file_name
+        if os.path.isfile(file_path):
+            return
+
     logging.info(' ')
     logging.info("computing double sine agdd {region} {climate_data_provider} {start_date} through {end_date} (lower threshold {lower_thresh}, upper threshold {upper_thresh})"
         .format(region=region, climate_data_provider=climate_data_provider, start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"), lower_thresh = lct, upper_thresh = uct))
-
-    # save_path = '/Users/npn/Development/temp/ncep_daily/agdd/'
-    save_path = cfg["dynamic_agdd_path"]
-    
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
     day = start_date
     delta = timedelta(days=1)
@@ -233,6 +240,12 @@ def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provid
                     (rast_cols, rast_rows, transform, projection, no_data_value) = get_raster_info(tmin_table_name, day)
 
             if first:
+                no_data_value = -9999
+                rast_cols = 1405
+                rast_rows = 621
+                if climate_data_provider == 'ncep':
+                    rast_cols = 2606
+                    rast_rows = 1228
                 tmin_prev_day = np.copy(tmin)                
 
             # double sine algorithm
@@ -327,6 +340,18 @@ def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provid
                 oceanMask = np.where(np.isnan(tmax), np.nan, 0)
                 agdd = gdd + oceanMask
 
+            if forPestMapCache:
+                # replace no data values
+                dailyAgdd = np.copy(agdd)
+                dailyAgdd[np.isnan(dailyAgdd)] = no_data_value
+
+                # write the raster to disk
+                file_name = "{climate}_{temp_unit}_double_sine_{start_date}_through_{current_day}_lthr{lower_thresh}_uthr{upper_thresh}.tif".format(climate=climate_data_provider, temp_unit=temp_unit, start_date=start_date.strftime("%Y-%m-%d"), current_day=day.strftime("%Y-%m-%d"), lower_thresh=lct, upper_thresh=uct)
+                file_path = save_path + file_name
+                write_raster(file_path, dailyAgdd, no_data_value, rast_cols, rast_rows, projection, transform)
+                print('file saved to: ' + file_path)
+                dailyAgdd = None
+
             first = False
             tmin_prev_day = np.copy(tmin)
 
@@ -335,40 +360,51 @@ def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provid
 
         day += delta
     
-    # replace no data values
-    no_data_value = -9999
-    agdd[np.isnan(agdd)] = no_data_value
+    if not forPestMapCache:
+        # replace no data values
+        agdd[np.isnan(agdd)] = no_data_value
 
-    # write the raster to disk
-    file_name = "{climate}_{temp_unit}_double_sine_{start_date}_through_{end_date}_lthr{lower_thresh}_uthr{upper_thresh}.tif".format(climate=climate_data_provider, temp_unit=temp_unit, start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"), lower_thresh=lct, upper_thresh=uct)
-    file_path = save_path + file_name
-    rast_cols = 1405
-    rast_rows = 621
-    # transform = [-125.02083333333336, 0.0416666666667, 0.0, 49.937499999999766, 0.0, -0.0416666666667]
-    # projection = 'GEOGCS["NAD83",DATUM["North_American_Datum_1983",SPHEROID["GRS 1980",6378137,298.2572221010042,AUTHORITY["EPSG","7019"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6269"]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433],AUTHORITY["EPSG","4269"]]'
-    
-    if climate_data_provider == 'ncep':
-        rast_cols = 2606
-        rast_rows = 1228
-    write_raster(file_path, agdd, no_data_value, rast_cols, rast_rows, projection, transform)
-    ds = None
-    print('file saved to: ' + file_path)
+        # write the raster to disk
+        file_name = "{climate}_{temp_unit}_double_sine_{start_date}_through_{end_date}_lthr{lower_thresh}_uthr{upper_thresh}.tif".format(climate=climate_data_provider, temp_unit=temp_unit, start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"), lower_thresh=lct, upper_thresh=uct)
+        file_path = save_path + file_name
+        # transform = [-125.02083333333336, 0.0416666666667, 0.0, 49.937499999999766, 0.0, -0.0416666666667]
+        # projection = 'GEOGCS["NAD83",DATUM["North_American_Datum_1983",SPHEROID["GRS 1980",6378137,298.2572221010042,AUTHORITY["EPSG","7019"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6269"]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433],AUTHORITY["EPSG","4269"]]'
+        
+        write_raster(file_path, agdd, no_data_value, rast_cols, rast_rows, projection, transform)
+        ds = None
+        print('file saved to: ' + file_path)
 
 
-def dynamic_agdd(start_date, num_days, base, climate_data_provider, region, temp_unit):
+def dynamic_agdd(start_date, num_days, base, climate_data_provider, region, temp_unit, forPestMapCache):
     end_date = start_date + timedelta(days=num_days)
+
+    # set up path to save geotiffs to along with geoserver layer table
+    save_path = cfg["dynamic_agdd_path"]
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+
+    # check if geotiff already exists and if so just return, geowebservice will just scp over the already created file
+    if not forPestMapCache:
+        file_name = "{climate}_{temp_unit}_simple_{start_date}_through_{end_date}_base{base}.tif".format(climate=climate_data_provider, temp_unit=temp_unit, start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"), base=base)
+        file_path = save_path + file_name
+        if os.path.isfile(file_path):
+            return
+
     logging.info(' ')
     logging.info("computing agdd {region} {climate_data_provider} {start_date} through {end_date} (base {base})"
         .format(region=region, climate_data_provider=climate_data_provider, start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"), base=base))
-    # set up path to save geotiffs to along with geoserver layer table
-    save_path = cfg["dynamic_agdd_path"]
     
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-
     day = start_date
     delta = timedelta(days=1)
 
     # (rast_cols, rast_rows, transform, projection, no_data_value) = get_raster_info(tmin_table_name, start_date)
+    rast_cols = 1405
+    rast_rows = 621
+    no_data_value = -9999
+    # transform = [-125.02083333333336, 0.0416666666667, 0.0, 49.937499999999766, 0.0, -0.0416666666667]
+    # projection = 'GEOGCS["NAD83",DATUM["North_American_Datum_1983",SPHEROID["GRS 1980",6378137,298.2572221010042,AUTHORITY["EPSG","7019"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6269"]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433],AUTHORITY["EPSG","4269"]]'
+    if climate_data_provider == 'ncep':
+        rast_cols = 2606
+        rast_rows = 1228
 
     agdd = None
     first = True
@@ -407,29 +443,39 @@ def dynamic_agdd(start_date, num_days, base, climate_data_provider, region, temp
 
             first = False
 
+            # when generating pestmap cache we want to save each day to disk, not just the final day
+            if forPestMapCache:
+                # replace no data values
+                dailyAgdd = np.copy(agdd) 
+                dailyAgdd[np.isnan(dailyAgdd)] = no_data_value
+
+                # write the raster to disk
+                file_name = "{climate}_{temp_unit}_simple_{start_date}_through_{current_date}_base{base}.tif".format(climate=climate_data_provider, temp_unit=temp_unit, start_date=start_date.strftime("%Y-%m-%d"), current_date=day.strftime("%Y-%m-%d"), base=base)
+                file_path = save_path + file_name
+                
+                write_raster(file_path, dailyAgdd, no_data_value, rast_cols, rast_rows, projection, transform)
+                print('file saved to: ' + file_path)
+                dailyAgdd = None
+
         except():
             logging.error('skipping - could not compute agdd (base %s) for date: %s due to an exception', base, day.strftime("%Y-%m-%d"))
 
         day += delta
-    
-    # replace no data values
-    no_data_value = -9999
-    agdd[np.isnan(agdd)] = no_data_value
 
-    # write the raster to disk
-    file_name = "{climate}_{temp_unit}_simple_{start_date}_through_{end_date}_base{base}.tif".format(climate=climate_data_provider, temp_unit=temp_unit, start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"), base=base)
-    file_path = save_path + file_name
-    rast_cols = 1405
-    rast_rows = 621
-    # transform = [-125.02083333333336, 0.0416666666667, 0.0, 49.937499999999766, 0.0, -0.0416666666667]
-    # projection = 'GEOGCS["NAD83",DATUM["North_American_Datum_1983",SPHEROID["GRS 1980",6378137,298.2572221010042,AUTHORITY["EPSG","7019"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6269"]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433],AUTHORITY["EPSG","4269"]]'
+    # only write final day to disk when not populating pestmap cache, (this is for normal dynamicAgdd requests)
+    if not forPestMapCache:
+        # replace no data values
+        agdd[np.isnan(agdd)] = no_data_value
+
+        # write the raster to disk
+        file_name = "{climate}_{temp_unit}_simple_{start_date}_through_{end_date}_base{base}.tif".format(climate=climate_data_provider, temp_unit=temp_unit, start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"), base=base)
+        file_path = save_path + file_name
+        
+        write_raster(file_path, agdd, no_data_value, rast_cols, rast_rows, projection, transform)
+        print('file saved to: ' + file_path)
     
-    if climate_data_provider == 'ncep':
-        rast_cols = 2606
-        rast_rows = 1228
-    write_raster(file_path, agdd, no_data_value, rast_cols, rast_rows, projection, transform)
     ds = None
-    print('file saved to: ' + file_path)
+    
 
 
 def import_agdd(agdd_date, base, climate_data_provider, region):
