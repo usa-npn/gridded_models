@@ -188,7 +188,7 @@ def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provid
 
     # check if geotiff already exists and if so just return, geowebservice will just scp over the already created file
     if not forPestMapCache:
-        file_name = "{climate}_{temp_unit}_double_sine_{start_date}_through_{current_day}_lthr{lower_thresh}_uthr{upper_thresh}.tif".format(climate=climate_data_provider, temp_unit=temp_unit, start_date=start_date.strftime("%Y-%m-%d"), current_day=day.strftime("%Y-%m-%d"), lower_thresh=lct, upper_thresh=uct)
+        file_name = "{climate}_{temp_unit}_double_sine_{start_date}_through_{end_date}_lthr{lower_thresh}_uthr{upper_thresh}.tif".format(climate=climate_data_provider, temp_unit=temp_unit, start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"), lower_thresh=lct, upper_thresh=uct)
         file_path = save_path + file_name
         if os.path.isfile(file_path):
             return
