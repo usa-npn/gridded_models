@@ -3,7 +3,7 @@ import spring_index.postgis_driver as driver
 from spring_index.spring_index_util import *
 from climate.importer import *
 from util.gdd import *
-from qc.gdd_checker import *
+from qc.gdd_checker import populate_agdd_qc
 from qc.six_checker import *
 from compute_tavg import compute_ncep_tavg
 from datetime import date
@@ -214,20 +214,20 @@ def importCustomPestMapAgdd():
     dynamic_agdd(march_first_start, num_days, 50, 'ncep', 'conus', 'fahrenheit', True)
 
     # asian lng horned beetle
-    lowerThreshold = 0
-    upperThreshold = 50
+    lowerThreshold = 50
+    upperThreshold = 86
     delta = one_week_into_future - beginning_of_this_year
     num_days = delta.days
     logging.info('poplulating double-sine agdd base 50 with Jan 1 start date for pestMaps')
     dynamic_double_sine_agdd(beginning_of_this_year, num_days, lowerThreshold, upperThreshold, 'ncep', 'conus', 'fahrenheit', True)
 
-    # gypsy moth
-    lowerThreshold = 0
-    upperThreshold = 37.4
-    delta = one_week_into_future - beginning_of_this_year
-    num_days = delta.days
-    logging.info('poplulating double-sine agdd base 37.4 with Jan 1 start date for pestMaps')
-    dynamic_double_sine_agdd(beginning_of_this_year, num_days, lowerThreshold, upperThreshold, 'ncep', 'conus', 'fahrenheit', True)
+    # gypsy moth #todo get thresholds from alyssa
+    # lowerThreshold = 0
+    # upperThreshold = 37.4
+    # delta = one_week_into_future - beginning_of_this_year
+    # num_days = delta.days
+    # logging.info('poplulating double-sine agdd base 37.4 with Jan 1 start date for pestMaps')
+    # dynamic_double_sine_agdd(beginning_of_this_year, num_days, lowerThreshold, upperThreshold, 'ncep', 'conus', 'fahrenheit', True)
 
 
 def importQcData():
