@@ -65,7 +65,7 @@ def main():
 
     # todo can make year not hard coded only when we know if this script will run at end of year or beginning of year
     # today = date.today()
-    year = 2017
+    year = 2018
     beginning_of_the_year = date(year, 1, 1)
 
     # migrate 8 six layers
