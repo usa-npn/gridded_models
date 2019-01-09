@@ -218,16 +218,16 @@ def importCustomPestMapAgdd():
     upperThreshold = 86
     delta = one_week_into_future - beginning_of_this_year
     num_days = delta.days
-    logging.info('poplulating double-sine agdd base 50 with Jan 1 start date for pestMaps')
+    logging.info('poplulating double-sine agdd lth 50 uth 86 with Jan 1 start date for pestMaps')
     dynamic_double_sine_agdd(beginning_of_this_year, num_days, lowerThreshold, upperThreshold, 'ncep', 'conus', 'fahrenheit', True)
 
-    # gypsy moth #todo get thresholds from alyssa
-    # lowerThreshold = 0
-    # upperThreshold = 37.4
-    # delta = one_week_into_future - beginning_of_this_year
-    # num_days = delta.days
-    # logging.info('poplulating double-sine agdd base 37.4 with Jan 1 start date for pestMaps')
-    # dynamic_double_sine_agdd(beginning_of_this_year, num_days, lowerThreshold, upperThreshold, 'ncep', 'conus', 'fahrenheit', True)
+    # gypsy moth
+    lowerThreshold = 37.4
+    upperThreshold = 104
+    delta = one_week_into_future - beginning_of_this_year
+    num_days = delta.days
+    logging.info('poplulating double-sine agdd lth 37.4 uth 104 with Jan 1 start date for pestMaps')
+    dynamic_double_sine_agdd(beginning_of_this_year, num_days, lowerThreshold, upperThreshold, 'ncep', 'conus', 'fahrenheit', True)
 
 
 def importQcData():
