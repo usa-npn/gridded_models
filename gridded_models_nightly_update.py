@@ -131,7 +131,7 @@ def importClimateData():
     
     logging.info('computing daily ncep tavg')
     try:
-        compute_ncep_tavg(one_week_ago, one_week_into_future)
+        compute_ncep_tavg(one_week_ago.strftime('%Y-%m-%d'), one_week_into_future.strftime('%Y-%m-%d'))
     except:
         logging.error('unable to compute tavg, likely that tmin/tmax is missing', exc_info=True)
 
