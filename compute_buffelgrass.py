@@ -59,7 +59,7 @@ def compute_buffelgrass(start_date, stop_date):
         window_day = day - timedelta(days=24)
         while window_day <= window_stop:
             window_day_precip_file = get_prism_precip_file_name(window_day)
-            subprocess.call("gdal_calc.py -A " + precip_accum_file + " -B " + window_day_precip_file + " --outfile=" + precip_accum_file + " --NoDataValue=-9999 --calc='A*(A>0)+B*(B>0)' --overwrite", shell=True)
+            subprocess.call("gdal_calc.py -A " + precip_accum_file + " -B " + window_day_precip_file + " --outfile=" + precip_accum_file + " --NoDataValue=-9999 --calc='(A*(A>0)+B*(B>0))*.0393700787' --overwrite", shell=True)
             window_day = window_day + timedelta(days=1)
 
         #import into postgis
@@ -80,7 +80,7 @@ def main():
 
     # generate prism tavg
     start_date = "2018-01-01"
-    stop_date = "2018-11-01"
+    stop_date = "2018-12-31"
     compute_buffelgrass(start_date, stop_date)
 
     t1 = time.time()
