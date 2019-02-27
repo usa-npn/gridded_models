@@ -49,6 +49,8 @@ def compute_buffelgrass(start_date, stop_date):
     day = datetime.strptime(start_date, "%Y-%m-%d")
     stop = datetime.strptime(stop_date, "%Y-%m-%d")
 
+    temp = buffelgrass_files_path + "temp.tif"
+
     while day <= stop:
         # copy start date precip file over to buffelgrass dir
         precip_accum_file = buffelgrass_files_path + "buffelgrass_{date}.tif".format(date=day.strftime("%Y%m%d"))
@@ -58,10 +60,7 @@ def compute_buffelgrass(start_date, stop_date):
         window_stop = day
         window_day = day - timedelta(days=24)
         while window_day <= window_stop:
-            temp = buffelgrass_files_path + "temp.tif"
-            shutil.copy(precip_accum_file, temp)
-            if os.path.isfile(precip_accum_file):
-                os.remove(precip_accum_file)
+            os.rename(precip_accum_file, temp)
             window_day_precip_file = get_prism_precip_file_name(window_day)
             # window_day_precip_file can be None if we don't have precip data prior to the start date
             if window_day_precip_file is not None:
