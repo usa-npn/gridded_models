@@ -55,7 +55,14 @@ def compute_buffelgrass(start_date, stop_date):
         # copy start date precip file over to buffelgrass dir
         precip_accum_file = buffelgrass_files_path + "buffelgrass_{date}.tif".format(date=day.strftime("%Y%m%d"))
         print('copying' + get_prism_precip_file_name(day) + ' to ' + precip_accum_file)
-        shutil.copy(get_prism_precip_file_name(day), precip_accum_file)
+        try:
+            shutil.copy(get_prism_precip_file_name(day), precip_accum_file)
+        except IOError as e:
+            print("Unable to copy file. %s" % e)
+            exit(1)
+        except:
+            print("Unexpected error:")
+            exit(1)
 
         window_stop = day
         window_day = day - timedelta(days=24)
