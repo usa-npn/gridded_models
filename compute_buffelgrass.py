@@ -60,6 +60,8 @@ def compute_buffelgrass(start_date, stop_date):
         while window_day <= window_stop:
             temp = buffelgrass_files_path + "temp.tif"
             shutil.copy(precip_accum_file, temp)
+            if os.path.isfile(precip_accum_file):
+                os.remove(precip_accum_file)
             window_day_precip_file = get_prism_precip_file_name(window_day)
             # window_day_precip_file can be None if we don't have precip data prior to the start date
             if window_day_precip_file is not None:
