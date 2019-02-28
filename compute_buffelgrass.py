@@ -55,26 +55,20 @@ def compute_buffelgrass(start_date, stop_date):
         # copy start date precip file over to buffelgrass dir
         precip_accum_file = buffelgrass_files_path + "buffelgrass_{date}.tif".format(date=day.strftime("%Y%m%d"))
         print('copying' + get_prism_precip_file_name(day) + ' to ' + precip_accum_file)
-        try:
-            shutil.copy(get_prism_precip_file_name(day), precip_accum_file)
-        except IOError as e:
-            print("Unable to copy file. %s" % e)
-            exit(1)
-        except:
-            print("Unexpected error:")
-            exit(1)
+        shutil.copy(get_prism_precip_file_name(day), precip_accum_file)
 
         window_stop = day
         window_day = day - timedelta(days=24)
         while window_day <= window_stop:
-            os.rename(precip_accum_file, temp)
+            if os.path.isfile(precip_accum_file):
+                os.rename(precip_accum_file, temp)
             window_day_precip_file = get_prism_precip_file_name(window_day)
             # window_day_precip_file can be None if we don't have precip data prior to the start date
             if window_day_precip_file is not None:
                 # .0393700787 is to convert mm to inches
                 subprocess.call("gdal_calc.py -A " + temp + " -B " + window_day_precip_file + " --outfile=" + precip_accum_file + " --NoDataValue=-9999 --calc='(A*(A>0)+B*(B>0))*.0393700787' --overwrite", shell=True)
-            if os.path.isfile(temp):
-                os.remove(temp)
+                if os.path.isfile(temp):
+                    os.remove(temp)
             window_day = window_day + timedelta(days=1)
 
         #import into postgis
