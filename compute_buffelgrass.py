@@ -66,11 +66,11 @@ def compute_buffelgrass(start_date, stop_date):
             # window_day_precip_file can be None if we don't have precip data prior to the start date
             if window_day_precip_file is not None:
                 # .0393700787 is to convert mm to inches
-                subprocess.call("gdal_calc.py -A " + temp + " -B " + window_day_precip_file + " --outfile=" + precip_accum_file + " --NoDataValue=-9999 --calc='(A*(A>0)+B*(B>0))*.0393700787' --overwrite", shell=True)
+                subprocess.call("gdal_calc.py -A " + temp + " -B " + window_day_precip_file + " --outfile=" + precip_accum_file + " --NoDataValue=-9999 --calc='A*(A>0)+B*(B>0)' --overwrite", shell=True)
                 if os.path.isfile(temp):
                     os.remove(temp)
             window_day = window_day + timedelta(days=1)
-
+        subprocess.call("gdal_calc.py -A " + precip_accum_file + " --outfile=" + precip_accum_file + " --NoDataValue=-9999 --calc='A*.0393700787' --overwrite", shell=True)
         #import into postgis
         # save_raster_to_postgis(avg_tiffile, tavg_table_name, 4269)
         # set_date_column(tavg_table_name, day, new_table)
