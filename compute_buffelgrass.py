@@ -49,8 +49,6 @@ def compute_buffelgrass(start_date, stop_date):
     day = datetime.strptime(start_date, "%Y-%m-%d")
     stop = datetime.strptime(stop_date, "%Y-%m-%d")
 
-    temp = buffelgrass_files_path + "temp.tif"
-
     while day <= stop:
         # copy start date precip file over to buffelgrass dir
         precip_accum_file = buffelgrass_files_path + "buffelgrass_{date}.tif".format(date=day.strftime("%Y%m%d"))
@@ -60,16 +58,12 @@ def compute_buffelgrass(start_date, stop_date):
         window_stop = day
         window_day = day - timedelta(days=24)
         while window_day <= window_stop:
-            if os.path.isfile(precip_accum_file):
-                os.rename(precip_accum_file, temp)
             window_day_precip_file = get_prism_precip_file_name(window_day)
             # window_day_precip_file can be None if we don't have precip data prior to the start date
             if window_day_precip_file is not None:
-                # .0393700787 is to convert mm to inches
-                subprocess.call("gdal_calc.py -A " + temp + " -B " + window_day_precip_file + " --outfile=" + precip_accum_file + " --NoDataValue=-9999 --calc='A*(A>0)+B*(B>0)' --overwrite", shell=True)
-                if os.path.isfile(temp):
-                    os.remove(temp)
+                subprocess.call("gdal_calc.py -A " + precip_accum_file + " -B " + window_day_precip_file + " --outfile=" + precip_accum_file + " --NoDataValue=-9999 --calc='A*(A>0)+B*(B>0)' --overwrite", shell=True)
             window_day = window_day + timedelta(days=1)
+        # convert mm to inches
         subprocess.call("gdal_calc.py -A " + precip_accum_file + " --outfile=" + precip_accum_file + " --NoDataValue=-9999 --calc='A*.0393700787' --overwrite", shell=True)
         #import into postgis
         # save_raster_to_postgis(avg_tiffile, tavg_table_name, 4269)
