@@ -57,7 +57,7 @@ def compute_buffelgrass(start_date, stop_date):
 
         window_stop = day
         window_day = day - timedelta(days=24)
-        while window_day <= window_stop:
+        while window_day < window_stop:
             window_day_precip_file = get_prism_precip_file_name(window_day)
             # window_day_precip_file can be None if we don't have precip data prior to the start date
             if window_day_precip_file is not None:
