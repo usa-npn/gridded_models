@@ -260,10 +260,10 @@ def main():
     importAgdd()
     t2 = time.time()
     
-    importSix()
+    importCustomPestMapAgdd()
     t3 = time.time()
     
-    #importCustomPestMapAgdd()
+    importSix()    
     t4 = time.time()
     
     importQcData()
@@ -272,8 +272,8 @@ def main():
     logging.info('***time stats***')
     logging.info('importClimateData() finished in %s seconds', t1 - t0)
     logging.info('importAgdd() finished in %s seconds', t2 - t1)
-    logging.info('importSix() finished in %s seconds', t3 - t2)
-    logging.info('importCustomPestMapAgdd() finished in %s seconds', t4 - t3)
+    logging.info('importCustomPestMapAgdd() finished in %s seconds', t3 - t2)
+    logging.info('importSix() finished in %s seconds', t4 - t3)
     logging.info('importQcData() finished in %s seconds', t5 - t4)
 
     logging.info('*****************************************************************************')
