@@ -178,10 +178,10 @@ def import_six_anomalies(anomaly_date, phenophase):
 
         # skip if six anomaly has already been computed and is older than 8 days
         # (otherwise recompute it, because newer tmin/tmax files get updated nightly)
-        if not new_table and day < (today - timedelta(days=8)) and six_row_exists(six_anomaly_table_name, plant, phenophase, day):
-            # logging.info('skipping day %s because it already exists', day.strftime("%Y-%m-%d"))
-            day += delta
-            continue
+        # if not new_table and day < (today - timedelta(days=8)) and six_row_exists(six_anomaly_table_name, plant, phenophase, day):
+        #     # logging.info('skipping day %s because it already exists', day.strftime("%Y-%m-%d"))
+        #     day += delta
+        #     continue
 
         query = """
           SELECT ST_AsGDALRaster(ST_Union(rast), 'Gtiff')
