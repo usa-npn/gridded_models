@@ -190,15 +190,14 @@ def importSix():
     climate_data_provider = "ncep"
     time_rez = "day"
 
-    # if today > day_250_of_current_year:
-    #     logging.info('poplulating six maps by copying doy 250')
-    #     populate_six_from_day_250(beginning_of_this_year, today, plants, phenophases, climate_data_provider, region)
-    # else:
-    #     logging.info('computing six maps')
-    #     populate_six(beginning_of_this_year, today, plants, phenophases, climate_data_provider, region, time_rez)
+    if today > day_250_of_current_year:
+        logging.info('poplulating six maps by copying doy 250')
+        populate_six_from_day_250(beginning_of_this_year, today, plants, phenophases, climate_data_provider, region)
+    else:
+        logging.info('computing six maps')
+        populate_six(beginning_of_this_year, today, plants, phenophases, climate_data_provider, region, time_rez)
 
     # populate spring index anomalies
-    # files older than 3 days won't get overwritten, but newer ones will due to tmin/tmax updates
     logging.info('computing six anomaly maps')
     for phenophase in phenophases:
         import_six_anomalies(end_of_this_year, phenophase)
@@ -254,19 +253,19 @@ def main():
     logging.info('***********beginning script gridded_models_nightly_update.py*****************')
     logging.info('*****************************************************************************')
 
-    # importClimateData()
+    importClimateData()
     t1 = time.time()
     
-    # importAgdd()
+    importAgdd()
     t2 = time.time()
     
-    # importCustomPestMapAgdd()
+    importCustomPestMapAgdd()
     t3 = time.time()
     
     importSix()    
     t4 = time.time()
     
-    # importQcData()
+    importQcData()
     t5 = time.time()
 
     logging.info('***time stats***')
