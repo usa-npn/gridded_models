@@ -30,12 +30,21 @@ def main():
     print('end_date: ' + end)
     print('lowerThreshold' + lowerThreshold)
 
+    # sometimes threshold is a float, but not always...
+    # when lct ends in .0 convert it to an int
+    lct = float(lowerThreshold)
+    if lct% 1 == 0:
+        lct = int(lct)
+
     if agddMethod == 'simple':
-        dynamic_agdd(start_date, num_days, int(lowerThreshold), climateProvider, 'conus', tempUnit, False)
+        dynamic_agdd(start_date, num_days, lct, climateProvider, 'conus', tempUnit, False)
     elif agddMethod == 'double-sine':
         upperThreshold = sys.argv[7]
+        uct = float(upperThreshold)
+        if uct% 1 == 0:
+            uct = int(uct)
         print('upperThreshold' + upperThreshold)
-        dynamic_double_sine_agdd(start_date, num_days, float(lowerThreshold), int(upperThreshold), climateProvider, 'conus', tempUnit, False)
+        dynamic_double_sine_agdd(start_date, num_days, lct, uct, climateProvider, 'conus', tempUnit, False)
     else:
         print('invalid agddMethod, only simple and double-sine are accepted')
 
