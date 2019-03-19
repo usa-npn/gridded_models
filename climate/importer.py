@@ -14,6 +14,13 @@ from time import sleep
 # from socket import error as SocketError
 # import errno
 
+# sometimes rtma ftp downloads hang, this is attempt to fix it
+# https://stackoverflow.com/questions/49022363/request-urlretrieve-in-multiprocessing-python-gets-stuck
+import socket
+# Set the default timeout in seconds
+timeout = 10
+socket.setdefaulttimeout(timeout)
+
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
@@ -22,14 +29,18 @@ with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir
 def retrieve_from_url(url_to_get, path_to_save):
     logging.info('downloading %s to %s', url_to_get, path_to_save)
     retry_count = 0
-    while retry_count < 25:
+    while retry_count < 10:
         try:
             urlretrieve(url_to_get, path_to_save)
         except urllib.error.URLError as e:
             logging.warning('error retrieving file (retrying in 5 seconds): %s', str(e))
             sleep(5)
             retry_count += 1
-        except urllib.error.ContentTooShortError as e:
+        # except urllib.error.ContentTooShortError as e:
+        #     logging.warning('error retrieving file (retrying in 5 seconds): %s', str(e))
+        #     sleep(5)
+        #     retry_count += 1
+        except Exception as e:
             logging.warning('error retrieving file (retrying in 5 seconds): %s', str(e))
             sleep(5)
             retry_count += 1
