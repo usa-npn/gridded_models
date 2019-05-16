@@ -26,9 +26,7 @@ log_path = cfg["log_path"]
 def clip_to_arizona(raster_file):
     buffelgrass_files_path = "/geo-data/gridded_models/buffelgrass/buffelgrass_prism/"
 
-    script_dir = os.path.dirname(__file__)
-    rel_path = Path("assets/shape_files/arizona/states.shp")
-    arizona_shp_path = os.path.join(script_dir, rel_path)
+    arizona_shp_path = Path("/usr/local/scripts/gridded_models/assets/shape_files/arizona/states.shp")
 
     temp_file = buffelgrass_files_path + 'temp.tif'
     shutil.copy(raster_file, temp_file)
@@ -78,9 +76,12 @@ def compute_buffelgrass(start_date, stop_date):
         window_day = day - timedelta(days=24)
         while window_day < window_stop:
             window_day_precip_file = get_prism_precip_file_name(window_day)
+            temp_precip_file = buffelgrass_files_path + 'temp_precip.tif'
             # window_day_precip_file can be None if we don't have precip data prior to the start date
             if window_day_precip_file is not None:
-                subprocess.call("gdal_calc.py -A " + precip_accum_file + " -B " + window_day_precip_file + " --outfile=" + precip_accum_file + " --NoDataValue=-9999 --calc='A*(A>0)+B*(B>0)' --overwrite", shell=True)
+                shutil.copy(window_day_precip_file, temp_precip_file)
+                clip_to_arizona(temp_precip_file)
+                subprocess.call("gdal_calc.py -A " + precip_accum_file + " -B " + temp_precip_file + " --outfile=" + precip_accum_file + " --NoDataValue=-9999 --calc='A*(A>0)+B*(B>0)' --overwrite", shell=True)
                 clip_to_arizona(precip_accum_file)
             window_day = window_day + timedelta(days=1)
         # convert mm to inches
