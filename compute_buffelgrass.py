@@ -23,6 +23,23 @@ with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml'))
     cfg = yaml.load(ymlfile)
 log_path = cfg["log_path"]
 
+def clip_to_arizona(raster_file):
+    buffelgrass_files_path = "/geo-data/gridded_models/buffelgrass/buffelgrass_prism/"
+
+    script_dir = os.path.dirname(__file__)
+    rel_path = Path("assets/shape_files/arizona/states.shp")
+    arizona_shp_path = os.path.join(script_dir, rel_path)
+
+    temp_file = buffelgrass_files_path + 'temp.tif'
+    shutil.copy(raster_file, temp_file)
+    os.remove(raster_file)
+
+    warp_command = "gdalwarp -cutline {mask_file} -crop_to_cutline -srcnodata 9999 -dstnodata -9999 -t_srs EPSG:4269 {source_file} {dest_file}" \
+        .format(mask_file=arizona_shp_path, source_file=temp_file, dest_file=raster_file)
+    ps = subprocess.Popen(warp_command, stdout=subprocess.PIPE, shell=True)
+    ps.wait()
+    os.remove(temp_file)
+
 def get_prism_precip_file_name(day):
     precip_files_path = "/geo-data/climate_data/prism/prism_data/prism_ppt/"
     stable_file_name = precip_files_path + "PRISM_ppt_stable_4kmD2_{date}_bil.tif".format(date=day.strftime("%Y%m%d"))
@@ -54,6 +71,8 @@ def compute_buffelgrass(start_date, stop_date):
         precip_accum_file = buffelgrass_files_path + "buffelgrass_{date}.tif".format(date=day.strftime("%Y%m%d"))
         print('copying' + get_prism_precip_file_name(day) + ' to ' + precip_accum_file)
         shutil.copy(get_prism_precip_file_name(day), precip_accum_file)
+        clip_to_arizona(precip_accum_file)
+
 
         window_stop = day
         window_day = day - timedelta(days=24)
@@ -62,6 +81,7 @@ def compute_buffelgrass(start_date, stop_date):
             # window_day_precip_file can be None if we don't have precip data prior to the start date
             if window_day_precip_file is not None:
                 subprocess.call("gdal_calc.py -A " + precip_accum_file + " -B " + window_day_precip_file + " --outfile=" + precip_accum_file + " --NoDataValue=-9999 --calc='A*(A>0)+B*(B>0)' --overwrite", shell=True)
+                clip_to_arizona(precip_accum_file)
             window_day = window_day + timedelta(days=1)
         # convert mm to inches
         subprocess.call("gdal_calc.py -A " + precip_accum_file + " --outfile=" + precip_accum_file + " --NoDataValue=-9999 --calc='A*.0393700787' --overwrite", shell=True)

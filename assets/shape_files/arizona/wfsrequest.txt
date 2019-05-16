@@ -1,0 +1,1 @@
+https://geoserver.usanpn.org:443/geoserver/gdd/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=gdd:states&CQL_FILTER=NAME=%27Arizona%27&outputFormat=SHAPE-ZIP
