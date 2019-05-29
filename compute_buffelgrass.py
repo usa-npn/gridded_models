@@ -4,6 +4,7 @@ from prism.importer import unzip
 from util.database import save_raster_to_postgis
 from util.database import set_date_column
 from util.database import table_exists
+from util.database import update_time_series
 import logging
 import time
 import yaml
@@ -58,15 +59,17 @@ def compute_buffelgrass(start_date, stop_date):
 
     os.makedirs(buffelgrass_files_path, exist_ok=True)
 
-    # buffelgrass_table_name = "prism_buffelgrass"
-    # new_table = not table_exists(buffelgrass_table_name)
+    time_series_table = "buffelgrass_prism"
+    buffelgrass_table_name = "prism_buffelgrass"
+    new_table = not table_exists(buffelgrass_table_name)
 
     day = datetime.strptime(start_date, "%Y-%m-%d")
     stop = datetime.strptime(stop_date, "%Y-%m-%d")
 
     while day <= stop:
         # copy start date precip file over to buffelgrass dir
-        precip_accum_file = buffelgrass_files_path + "buffelgrass_{date}.tif".format(date=day.strftime("%Y%m%d"))
+        tif_name = "buffelgrass_{date}.tif".format(date=day.strftime("%Y%m%d"))
+        precip_accum_file = buffelgrass_files_path + tif_name
         print('copying' + get_prism_precip_file_name(day) + ' to ' + precip_accum_file)
         shutil.copy(get_prism_precip_file_name(day), precip_accum_file)
         clip_to_arizona(precip_accum_file)
@@ -87,9 +90,13 @@ def compute_buffelgrass(start_date, stop_date):
         # convert mm to inches
         subprocess.call("gdal_calc.py -A " + precip_accum_file + " --outfile=" + precip_accum_file + " --NoDataValue=-9999 --calc='A*.0393700787' --overwrite", shell=True)
         #import into postgis
-        # save_raster_to_postgis(avg_tiffile, tavg_table_name, 4269)
-        # set_date_column(tavg_table_name, day, new_table)
-        # new_table = False
+        save_raster_to_postgis(precip_accum_file, buffelgrass_table_name, 4269)
+        set_date_column(buffelgrass_table_name, day, new_table)
+
+        if table_exists(time_series_table):
+                update_time_series(time_series_table, tif_name, day)
+
+        new_table = False
         day = day + timedelta(days=1)
 
 
@@ -103,7 +110,7 @@ def main():
 
     # generate prism tavg
     start_date = "2018-01-01"
-    stop_date = "2018-12-31"
+    stop_date = "2019-12-27"
     compute_buffelgrass(start_date, stop_date)
 
     t1 = time.time()
