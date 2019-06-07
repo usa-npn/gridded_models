@@ -167,8 +167,14 @@ def get_prism_data_outdb(start_date, end_date, climate_variables):
                         downloaded = False
                         continue
                     downloaded = True
-                    filename, _ = parse_header(response.headers.get('Content-Disposition'))
-                    filename = filename.replace("filename=", "").replace("\"", "")
+                    filename = ''
+                    try:
+                        filename, _ = parse_header(response.headers.get('Content-Disposition'))
+                        filename = filename.replace("filename=", "").replace("\"", "")
+                    except:
+                        # this is because we were getting error parsing content-disposition zip for yesterday
+                        filename = "PRISM_{climate_var}_early_4kmD2_{date}_bil.zip"
+                            .format(climate_var=climate_variable, date=day.strftime("%Y%m%d"))
 
                     # if zip file already exists don't want to redownload it
                     if os.path.isfile(os.path.join(zipped_files_path, filename)):
