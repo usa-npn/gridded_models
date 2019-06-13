@@ -67,18 +67,20 @@ def compute_buffelgrass(start_date, stop_date):
     stop = datetime.strptime(stop_date, "%Y-%m-%d")
 
     while day <= stop:
+        daylag = day - timedelta(days=1)
         # copy start date precip file over to buffelgrass dir
         tif_name = "buffelgrass_{date}.tif".format(date=day.strftime("%Y%m%d"))
         precip_accum_file = buffelgrass_files_path + tif_name
-        print('copying' + get_prism_precip_file_name(day) + ' to ' + precip_accum_file)
-        shutil.copy(get_prism_precip_file_name(day), precip_accum_file)
+        print('copying' + get_prism_precip_file_name(daylag) + ' to ' + precip_accum_file)
+        shutil.copy(get_prism_precip_file_name(daylag), precip_accum_file)
         clip_to_arizona(precip_accum_file)
 
 
         window_stop = day
         window_day = day - timedelta(days=24)
         while window_day < window_stop:
-            window_day_precip_file = get_prism_precip_file_name(window_day)
+            window_daylag = window_day - timedelta(days=1)
+            window_day_precip_file = get_prism_precip_file_name(window_daylag)
             temp_precip_file = buffelgrass_files_path + 'temp_precip.tif'
             # window_day_precip_file can be None if we don't have precip data prior to the start date
             if window_day_precip_file is not None:
@@ -109,8 +111,9 @@ def main():
     logging.info('*****************************************************************************')
 
     # generate prism tavg
-    start_date = "2018-01-01"
-    stop_date = "2019-12-27"
+    start_date = "2019-01-01"
+    # stop_date = "2019-12-27"
+    stop_date = date.today().strftime("%Y%m%d")
     compute_buffelgrass(start_date, stop_date)
 
     t1 = time.time()
