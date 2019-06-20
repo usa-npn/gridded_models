@@ -18,11 +18,17 @@ import contextlib
 import subprocess
 import shutil
 from pathlib import Path
+from prism.importer import get_prism_data_outdb
 
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 log_path = cfg["log_path"]
+
+def populate_precip():
+    start = date(2018, 1, 1)
+    end = date.today() - timedelta(days=1)
+    get_prism_data_outdb(start, end, ['ppt'])
 
 def clip_to_arizona(raster_file):
     buffelgrass_files_path = "/geo-data/gridded_models/buffelgrass/buffelgrass_prism/"
@@ -110,7 +116,8 @@ def main():
     logging.info('***********beginning script compute_buffelgrass.py*****************')
     logging.info('*****************************************************************************')
 
-    # generate prism tavg
+    populate_precip()
+
     start_date = "2019-01-01"
     # stop_date = "2019-12-27"
     stop_date = date.today().strftime("%Y%m%d")
