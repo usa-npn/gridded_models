@@ -120,7 +120,7 @@ def main():
 
     start_date = "2019-01-01"
     # stop_date = "2019-12-27"
-    stop_date = date.today().strftime("%Y%m%d")
+    stop_date = date.today().strftime("%Y-%m-%d")
     compute_buffelgrass(start_date, stop_date)
 
     t1 = time.time()
