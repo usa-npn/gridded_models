@@ -14,8 +14,7 @@ from datetime import timedelta
 import yaml
 import os.path
 from util.log_manager import get_error_log
-import os
-import psutil
+
 
 # dates
 today = date.today()
@@ -255,24 +254,18 @@ def main():
     logging.info('***********beginning script gridded_models_nightly_update.py*****************')
     logging.info('*****************************************************************************')
 
-    #importClimateData()
+    importClimateData()
     t1 = time.time()
-    
-    process = psutil.Process(os.getpid())
-    logging.info('memory usage 1')
-    logging.info(process.memory_info().rss)  # in bytes
     importAgdd()
     t2 = time.time()
-    logging.info('memory usage 2')
-    logging.info(process.memory_info().rss)  # in bytes
 
-    #importCustomPestMapAgdd()
+    importCustomPestMapAgdd()
     t3 = time.time()
     
-    #importSix()    
+    importSix()    
     t4 = time.time()
     
-    #importQcData()
+    importQcData()
     t5 = time.time()
 
     logging.info('***time stats***')
