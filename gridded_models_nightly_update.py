@@ -229,6 +229,16 @@ def importCustomPestMapAgdd():
     logging.info('poplulating double-sine agdd lth 37.4 uth 104 with Jan 1 start date for pestMaps')
     dynamic_double_sine_agdd(beginning_of_this_year, num_days, lowerThreshold, upperThreshold, 'ncep', 'conus', 'fahrenheit', True)
 
+    # bronze birch borer, emerald ash borer, lilac borer, magnolia scale
+    lowerThreshold = 50
+    upperThreshold = 150
+    delta = one_week_into_future - beginning_of_this_year
+    num_days = delta.days
+    logging.info('poplulating double-sine agdd lth 50 uth 150 with Jan 1 start date for pestMaps')
+    dynamic_double_sine_agdd(beginning_of_this_year, num_days, lowerThreshold, upperThreshold, 'ncep', 'conus', 'fahrenheit', True)
+
+
+    # magnolia scale
 
 def importQcData():
     # populates various climate variables in the climate agdds mysql db
