@@ -20,6 +20,7 @@ from util.log_manager import get_error_log
 today = date.today()
 current_year = today.year
 one_week_ago = today - timedelta(days=7)
+one_month_ago = today - timedelta(days=31)
 three_days_ago = today - timedelta(days=3)
 one_week_into_future = today + timedelta(days=7)
 beginning_of_this_year = date(current_year, 1, 1)
@@ -242,16 +243,16 @@ def importCustomPestMapAgdd():
 
 def importQcData():
     # populates various climate variables in the climate agdds mysql db
-    urma_start = three_days_ago
+    urma_start = one_month_ago #three_days_ago
     urma_end = today
-    acis_start = one_week_ago
+    acis_start = one_month_ago #one_week_ago
     acis_end = today
-    prism_start = one_week_ago
+    prism_start = one_month_ago #one_week_ago
     prism_end = three_days_ago
     logging.info('populating agdd qc')
     populate_agdd_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end)
     logging.info('populating six qc')
-    populate_six_qc(beginning_of_this_year, urma_end, beginning_of_this_year, acis_end, beginning_of_this_year, prism_end)
+    #populate_six_qc(beginning_of_this_year, urma_end, beginning_of_this_year, acis_end, beginning_of_this_year, prism_end)
 
 
 # This is the main gridded models script. It runs nightly to both pull climate data and generate various rasters which
