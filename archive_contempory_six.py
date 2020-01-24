@@ -57,19 +57,20 @@ def archive_daily_six_data_for_year(year, plant, phenophase):
         contempory_file_path = contempory_file_dir + contempory_file_name
         archive_file_path = archive_file_dir + contempory_file_name
 
-        # mv file to storage drive
-        shutil.copy(contempory_file_path, archive_file_path)
+        if os.path.exists(contempory_file_path):
+            # mv file to storage drive
+            shutil.copy(contempory_file_path, archive_file_path)
 
-        # delete from timeseries
-        time_series_table = 'six' + '_' + plant + '_' + phenophase + '_ncep'
-        remove_from_time_series(time_series_table, contempory_file_name)
+            # delete from timeseries
+            time_series_table = 'six' + '_' + plant + '_' + phenophase + '_ncep'
+            remove_from_time_series(time_series_table, contempory_file_name)
 
-        # delete from postgis database
-        table_name = 'ncep_spring_index'
-        remove_from_daily_six(table_name, day.strftime("%Y%m%d"), plant, phenophase)
+            # delete from postgis database
+            table_name = 'ncep_spring_index'
+            remove_from_daily_six(table_name, day.strftime("%Y%m%d"), plant, phenophase)
 
-        # delete file from disk
-        os.remove(contempory_file_path)
+            # delete file from disk
+            os.remove(contempory_file_path)
 
 
 def archive_daily_six_anomaly_data_for_year(year, phenophase):
@@ -92,19 +93,20 @@ def archive_daily_six_anomaly_data_for_year(year, phenophase):
         contempory_file_path = contempory_file_dir + contempory_file_name
         archive_file_path = archive_file_dir + contempory_file_name
 
-        # mv file to storage drive
-        shutil.copy(contempory_file_path, archive_file_path)
+        if os.path.exists(contempory_file_path):
+            # mv file to storage drive
+            shutil.copy(contempory_file_path, archive_file_path)
 
-        # delete from timeseries
-        time_series_table = 'six_' + phenophase + '_anomaly'
-        remove_from_time_series(time_series_table, contempory_file_name)
+            # delete from timeseries
+            time_series_table = 'six_' + phenophase + '_anomaly'
+            remove_from_time_series(time_series_table, contempory_file_name)
 
-        # delete from postgis database
-        table_name = 'six_anomaly'
-        remove_from_daily_six_anomaly(table_name, day.strftime("%Y%m%d"), phenophase)
+            # delete from postgis database
+            table_name = 'six_anomaly'
+            remove_from_daily_six_anomaly(table_name, day.strftime("%Y%m%d"), phenophase)
 
-        # delete file from disk
-        os.remove(contempory_file_path)
+            # delete file from disk
+            os.remove(contempory_file_path)
 
 
 
@@ -126,7 +128,7 @@ def main():
     plants = ['lilac', 'arnoldred', 'zabelli', 'average']
     phenophases = ['leaf', 'bloom']
 
-    year = 2016
+    year = 2017
 
     for plant in plants:
         for phenophase in phenophases:
