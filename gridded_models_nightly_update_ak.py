@@ -13,11 +13,14 @@ from datetime import timedelta
 import yaml
 import os.path
 from util.log_manager import get_error_log
+import psycopg2
 
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 log_path = cfg["log_path"]
+db = cfg["postgis"]
+conn = psycopg2.connect(dbname=db["db"], port=db["port"], user=db["user"], password=db["password"], host=db["host"])
 
 
 # populate spring index for year through six days in the future
@@ -25,7 +28,11 @@ def populate_six(beginning_of_this_year, today, plants, phenophases, climate_dat
     start_date = beginning_of_this_year
     end_date = today + timedelta(days=6)
 
-    driver.Six.load_daily_climate_data(start_date, end_date, climate_data_provider, region)
+    try:
+        driver.Six.load_daily_climate_data(start_date, end_date, climate_data_provider, region, conn.cursor())
+    finally:
+        conn.rollback()
+        conn.close()
     for plant in plants:
         for phenophase in phenophases:
             driver.Six.compute_daily_index(plant, phenophase)
@@ -110,12 +117,12 @@ def main():
     # #################### CLIMATE DATA CALCULATIONS ####################################################
     # download and import ndfd forecast temps for the next week
     # overwrites all files previously downloaded files
-    download_forecast(region)
+    ##download_forecast(region)
 
     # downloads hourly rtma/urma temps into our postgis db for the past 24 hours (each hour represents GMT)
     # overwrites all files previously downloaded files
-    download_hourly_temps('rtma', region)
-    download_hourly_temps('urma', region)
+    ##download_hourly_temps('rtma', region)
+    ##download_hourly_temps('urma', region)
 
     # compute daily tmin/tmax based on hourly data
     # computation is based on mixture of rtma and urma data; rtma is only used when urma isn't available
@@ -123,8 +130,7 @@ def main():
     # urma -> urma/rtma -> forecast
     # makes data match prism (prism day goes from -12 utc to +12 utc
     hour_shift = -12
-    compute_tmin_tmax(min(beginning_of_this_year, one_week_ago), one_week_into_future, hour_shift, 7, region)
-    #compute_tmin_tmax(date(current_year, 1, 4), today, hour_shift, 7, 'alaska')
+    ##compute_tmin_tmax(min(beginning_of_this_year, one_week_ago), one_week_into_future, hour_shift, 7, region)
 
     # #################### AGDD CALCULATIONS ####################################################
     # populate NCEP agdds
@@ -132,18 +138,18 @@ def main():
     climate_data_provider = "ncep"
 
     # calculate AGDDs for current year
-    for agdd_base in agdd_bases:
-        import_agdd(end_of_this_year, agdd_base, climate_data_provider, region)
+    ##for agdd_base in agdd_bases:
+    ##    import_agdd(end_of_this_year, agdd_base, climate_data_provider, region)
 
     # might need compute AGDDs for next year if forecast goes into next year
-    if one_week_into_future.year != end_of_this_year.year:
-        for agdd_base in agdd_bases:
-            import_agdd(end_of_next_year, agdd_base, climate_data_provider, region)
+    ##if one_week_into_future.year != end_of_this_year.year:
+    ##    for agdd_base in agdd_bases:
+    ##        import_agdd(end_of_next_year, agdd_base, climate_data_provider, region)
 
     # might need to recompute last year's AGDDs if we're still updating those tmin/tmaxs
-    if one_week_ago.year != end_of_this_year.year:
-        for agdd_base in agdd_bases:
-            import_agdd(end_of_previous_year, agdd_base, climate_data_provider, region)
+    ##if one_week_ago.year != end_of_this_year.year:
+    ##    for agdd_base in agdd_bases:
+    ##        import_agdd(end_of_previous_year, agdd_base, climate_data_provider, region)
 
     # #################### SI-X CALCULATIONS ####################################################
     plants = ['lilac', 'arnoldred', 'zabelli']

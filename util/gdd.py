@@ -602,6 +602,9 @@ def import_agdd(agdd_date, base, climate_data_provider, region):
 
         # compute gdd
         try:
+            #print(tmin_table_name)
+            #print(tmax_table_name)
+            #print(day.strftime("%Y-%m-%d"))
             tmin = get_climate_data(tmin_table_name, day, 'fahrenheit')
             tmax = get_climate_data(tmax_table_name, day, 'fahrenheit')
             if tmin is None:

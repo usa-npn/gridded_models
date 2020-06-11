@@ -20,7 +20,7 @@ def get_acis_climate_data(station_ids, climate_elements, start_date, end_date):
                     stations=station_ids,
                     climate_elements=climate_elements)
         response = urlopen(url)
-        str_response = response.readall().decode('utf-8')
+        str_response = response.read().decode('utf-8')
         data = json.loads(str_response)
         return data
     except HTTPError as err:
@@ -276,7 +276,7 @@ def get_acis_missing_climate_data():
         except URLError as err:
             print("Some other error happened: {reason}".format(reason=err.reason))
 
-        str_response = response.readall().decode('utf-8')
+        str_response = response.read().decode('utf-8')
         data = json.loads(str_response)
         # print(data['data'])
 

@@ -364,6 +364,8 @@ def compute_tmin_tmax(start_date, end_date, shift, skip_older_than_x_days, regio
 
             arr = get_climate_data(hourly_temp_table_name, shifted_day, shifted_hour, 'urma')
             if arr is not None:
+                #print(str(shifted_day) + ' ' + str(shifted_hour))
+                #print('urma hourly size: ' + str(arr.shape[0]) + ' ' + str(arr.shape[1]))
                 temps.append(arr)
                 if not retrieved_raster_info:
                     (rast_cols, rast_rows, transform, projection, no_data_value) = get_raster_info(hourly_temp_table_name, shifted_day, shifted_hour, 'urma')
@@ -372,6 +374,8 @@ def compute_tmin_tmax(start_date, end_date, shift, skip_older_than_x_days, regio
             else:
                 arr = get_climate_data(hourly_temp_table_name, shifted_day, shifted_hour, 'rtma')
                 if arr is not None:
+                    #print(str(shifted_day) + ' ' + str(shifted_hour))
+                    #print('rtma hourly size: ' + str(arr.shape[0]) + ' ' + str(arr.shape[1]))
                     temps.append(arr)
                     if not retrieved_raster_info:
                         (rast_cols, rast_rows, transform, projection, no_data_value) = get_raster_info(hourly_temp_table_name, shifted_day, shifted_hour, 'rtma')
