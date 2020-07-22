@@ -23,8 +23,9 @@ class Six:
     with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as ymlfile:
         cfg = yaml.load(ymlfile)
     db = cfg["postgis"]
-    conn = psycopg2.connect(dbname=db["db"], port=db["port"], user=db["user"],
-                        password=db["password"], host=db["host"])
+    #conn = psycopg2.connect(dbname=db["db"], port=db["port"], user=db["user"],
+    #                    password=db["password"], host=db["host"], keepalives=1, keepalives_idle=30,
+    #                    keepalives_interval=10, keepalives_count=5)
     save_path = cfg["six_path"]
 
     projection = None
@@ -52,6 +53,10 @@ class Six:
         # Load raster from postgis into a virtual memory file
         vsipath = '/vsimem/from_postgis'
         table_name = climate_data_provider + '_' + str(year)
+        with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as ymlfile:
+            cfg = yaml.load(ymlfile)
+        db = cfg["postgis"]
+        conn = psycopg2.connect(dbname=db["db"], port=db["port"], user=db["user"], password=db["password"], host=db["host"])
         for day in range(0, num_days):
             t00 = time.time()
             print('day: ' + str(day))
@@ -59,7 +64,7 @@ class Six:
 
             #get daily tmax
             tmax_table_name = climate_data_provider + '_tmax_' + str(year)
-            curs = Six.conn.cursor()
+            curs = conn.cursor()
             query = "SELECT ST_AsGDALRaster(ST_Union(rast), 'Gtiff') FROM %s WHERE rast_date = %s;"
             data = (AsIs(tmax_table_name), current_date.strftime("%Y-%m-%d"))
             curs.execute(query, data)
@@ -78,7 +83,7 @@ class Six:
             curs.close()
 
             for hour in range (0, 24):
-                curs = Six.conn.cursor()
+                curs = conn.cursor()
                 print('hour: ' + str(hour))
                 query = "SELECT ST_AsGDALRaster(ST_Union(rast), 'Gtiff') FROM %s WHERE rast_date = %s AND rast_hour = %s;"
                 data = (AsIs(table_name), current_date.strftime("%Y-%m-%d"), hour)
@@ -133,11 +138,16 @@ class Six:
 
 
     @staticmethod
-    def load_daily_climate_data(start_date, end_date, climate_data_provider, region):
+    def load_daily_climate_data(start_date, end_date, climate_data_provider, region, conn):
         year = start_date.year
         num_days = (end_date - start_date).days + 1
         if num_days > 240:
             num_days = 240
+
+        #with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as ymlfile:
+        #    cfg = yaml.load(ymlfile)
+        #db = cfg["postgis"]
+        #conn = psycopg2.connect(dbname=db["db"], port=db["port"], user=db["user"], password=db["password"], host=db["host"])
 
         # Load raster from postgis into a virtual memory file
         vsipath = '/vsimem/from_postgis'
@@ -146,17 +156,19 @@ class Six:
         elif region == 'alaska':
             table_name = "tmin_alaska_" + str(year)
         else:
-            table_name = "tmin_" + str(year)
+            table_name = "tmin_" + str(year)    
         for day in range(0, num_days):
-            curs = Six.conn.cursor()
-            current_date = start_date + td(days=day)
-            # print('getting ' + table_name + ' ' + current_date.strftime("%Y-%m-%d"))
-            query = "SELECT ST_AsGDALRaster(ST_Union(rast), 'Gtiff') FROM %s WHERE rast_date = %s;"
-            data = (AsIs(table_name), current_date.strftime("%Y-%m-%d"))
-            curs.execute(query, data)
+            curs = conn.cursor()
+            try:
+                current_date = start_date + td(days=day)
+                print('getting ' + table_name + ' ' + current_date.strftime("%Y-%m-%d"))
+                query = "SELECT ST_AsGDALRaster(ST_Union(rast), 'Gtiff') FROM %s WHERE rast_date = %s;"
+                data = (AsIs(table_name), current_date.strftime("%Y-%m-%d"))
+                curs.execute(query, data)
 
-            gdal.FileFromMemBuffer(vsipath, bytes(curs.fetchone()[0]))
-            curs.close()
+                gdal.FileFromMemBuffer(vsipath, bytes(curs.fetchone()[0]))
+            finally:
+                curs.close()
 
             # Read first band of raster with GDAL
             ds = gdal.Open(vsipath)
@@ -179,8 +191,9 @@ class Six:
         else:
             table_name = "tmax_" + str(year)
         for day in range(0, num_days):
-            curs = Six.conn.cursor()
+            curs = conn.cursor()
             current_date = start_date + td(days=day)
+            print('getting ' + table_name + ' ' + current_date.strftime("%Y-%m-%d"))
             query = "SELECT ST_AsGDALRaster(ST_Union(rast), 'Gtiff') FROM %s WHERE rast_date = %s;"
             data = (AsIs(table_name), current_date.strftime("%Y-%m-%d"))
             curs.execute(query, data)
@@ -243,7 +256,7 @@ class Six:
             Six.leaf_array = spring_index(Six.max_temps, Six.min_temps, Six.base_temp, Six.leaf_array, phenophase, plant, site_latitudes)
             leaf_copy = np.copy(Six.leaf_array)
             leaf_copy[leaf_copy < 0] = np.nan
-            if Six.leaf_average_array == None:
+            if Six.leaf_average_array is None:
                 Six.leaf_average_array = leaf_copy
             else:
                 Six.leaf_average_array = Six.leaf_average_array + leaf_copy
@@ -251,7 +264,7 @@ class Six:
             Six.bloom_array = spring_index(Six.max_temps, Six.min_temps, Six.base_temp, Six.leaf_array, phenophase, plant, site_latitudes)
             bloom_copy = np.copy(Six.bloom_array)
             bloom_copy[bloom_copy < 0] = np.nan
-            if Six.bloom_average_array == None:
+            if Six.bloom_average_array is None:
                 Six.bloom_average_array = bloom_copy
             else:
                 Six.bloom_average_array = Six.bloom_average_array + bloom_copy
@@ -263,13 +276,13 @@ class Six:
     def compute_hourly_index(plant, phenophase):
         if phenophase == 'leaf':
             Six.leaf_array = spring_index_hourly(Six.max_temps, Six.gdh, Six.base_temp, Six.leaf_array, phenophase, plant)
-            if Six.leaf_average_array == None:
+            if Six.leaf_average_array is None:
                 Six.leaf_average_array = np.copy(Six.leaf_array)
             else:
                 Six.leaf_average_array = Six.leaf_average_array + Six.leaf_array
         elif phenophase == 'bloom':
             Six.bloom_array = spring_index_hourly(Six.max_temps, Six.gdh, Six.base_temp, Six.leaf_array, phenophase, plant)
-            if Six.bloom_average_array == None:
+            if Six.bloom_average_array is None:
                 Six.bloom_average_array = np.copy(Six.bloom_array)
             else:
                 Six.bloom_average_array = Six.bloom_average_array + Six.bloom_array
@@ -379,8 +392,19 @@ class Six:
         else:
             table_name = climate_source + '_spring_index'
 
-        conn = Six.conn
+        with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as ymlfile:
+            cfg = yaml.load(ymlfile)
+        db = cfg["postgis"]
+        conn = psycopg2.connect(dbname=db["db"], port=db["port"], user=db["user"], password=db["password"], host=db["host"])
         curs = conn.cursor()
+
+        tile_arg = ''
+        if region == 'alaska':
+            tile_arg = "-t 613x377"
+        elif climate_source == 'prism':
+            tile_arg = "-t 281x207"
+        else:
+            tile_arg = "-t 1303x307"
 
         # check if we need to create a new table
         new_table = True
@@ -391,15 +415,16 @@ class Six:
 
         # insert the raster (either create a new table or append to previously created table)
         if new_table:
-            import_command = "raster2pgsql -s 4269 -c -R -I -C -F -t auto {file} public.{table}"\
-                .format(file=file_path, table=table_name)
+            import_command = "raster2pgsql -s 4269 -c -R -I -C -F -k {tilearg} {file} public.{table}"\
+                .format(tilearg=tile_arg, file=file_path, table=table_name)
         else:
             # overwrite raster if already exists
             query = "DELETE FROM %(table)s WHERE rast_date = to_date(%(rast_date)s, 'YYYYMMDD') AND plant = %(plant)s AND phenophase = %(phenophase)s;"
             data = {"table": AsIs(table_name), "rast_date": date_string, "plant": plant, "phenophase": phenophase}
             curs.execute(query, data)
             conn.commit()
-            import_command = 'raster2pgsql -s 4269 -a -R -F -t auto ' + file_path + ' public.' + table_name
+            import_command = "raster2pgsql -a -R -F -k {tilearg} {file} public.{table}"\
+                .format(tilearg=tile_arg, file=file_path, table=table_name)
 
         import_command2 = "psql -h {host} -p {port} -d {database} --username={user}"\
             .format(host=Six.db["host"], port=Six.db["port"], database=Six.db["db"], user=Six.db["user"])

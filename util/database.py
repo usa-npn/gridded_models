@@ -16,7 +16,8 @@ db = cfg["postgis"]
 
 try:
     conn = psycopg2.connect(dbname=db["db"], port=db["port"], user=db["user"],
-                        password=db["password"], host=db["host"])
+                        password=db["password"], host=db["host"], keepalives=1, keepalives_idle=30,
+                        keepalives_interval=10, keepalives_count=5)
 except:
     error_log.error('database.py failed to connect to the database: ', exc_info=True)
 
@@ -74,8 +75,12 @@ def remove_from_table_by_filename(raster_path, table_name):
 def save_raster_to_postgis(raster_path, table_name, srid, tile=True):
     curs = conn.cursor()
     new_table = not table_exists(table_name)
-    if tile:
-        tile_arg = "-t auto "
+    if tile and 'alaska' in table_name:
+        tile_arg = "-t 613x377 "
+    elif tile and 'prism' in table_name:
+        tile_arg = "-t 281x207 "
+    elif tile:
+        tile_arg = "-t 1303x307 "
     else:
         tile_arg = ""
 

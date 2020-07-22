@@ -301,8 +301,8 @@ def get_prism_data(start_date, end_date, climate_variables):
                     continue
 
                 # only download file if we don't already have the stable version
-                if not os.path.isfile(zipped_files_path + 'PRISM_' + climate_variable + '_stable_4kmD1_' + day.strftime("%Y%m%d") + '_bil.zip')\
-                        and not os.path.isfile(zipped_files_archive_path + 'PRISM_' + climate_variable + '_stable_4kmD1_' + day.strftime("%Y%m%d") + '_bil.zip'):
+                if not os.path.isfile(zipped_files_path + 'PRISM_' + climate_variable + '_stable_4kmD2_' + day.strftime("%Y%m%d") + '_bil.zip')\
+                        and not os.path.isfile(zipped_files_archive_path + 'PRISM_' + climate_variable + '_stable_4kmD2_' + day.strftime("%Y%m%d") + '_bil.zip'):
                     request_url = "http://services.nacse.org/prism/data/public/4km/{climate_var}/{date}"\
                         .format(climate_var=climate_variable, date=day.strftime("%Y%m%d"))
                     try:
@@ -325,7 +325,7 @@ def get_prism_data(start_date, end_date, climate_variables):
                     # import bil file into database as a raster
                     bil_files_path = unzip_path + "*.bil"
                     for bil_file in glob.glob(bil_files_path):
-                        raster_date = re.search('4kmD1_(.*)_bil.bil', bil_file).group(1)
+                        raster_date = re.search('4kmD2_(.*)_bil.bil', bil_file).group(1)
                         raster_date = '-'.join([raster_date[:4], raster_date[4:6], raster_date[6:]])
                         postgis_import(bil_file, raster_date, climate_variable)
 

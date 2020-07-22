@@ -136,7 +136,9 @@ def main():
     # compute_tavg_from_prism_zips(start_date, stop_date)
 
     #generate ncep tavg
-    #start_date = "2018-10-15"
+    #start_date = "2019-01-01"
+    #stop_date = "2019-01-31"
+    #compute_ncep_tavg(start_date, stop_date)
     start_date = datetime.today() - timedelta(days=7)
     stop_date = datetime.today() + timedelta(days=6)
     compute_ncep_tavg(start_date.strftime('%Y-%m-%d'), stop_date.strftime('%Y-%m-%d'))

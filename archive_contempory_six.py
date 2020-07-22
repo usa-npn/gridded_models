@@ -128,7 +128,7 @@ def main():
     plants = ['lilac', 'arnoldred', 'zabelli', 'average']
     phenophases = ['leaf', 'bloom']
 
-    year = 2017
+    year = 2018
 
     for plant in plants:
         for phenophase in phenophases:

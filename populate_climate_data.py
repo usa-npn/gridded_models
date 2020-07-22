@@ -49,7 +49,7 @@ def main():
     # this looks back one week,
     # another script is in place to delete rtma data older than two weeks for which we also have urma data
     # won't overwrite any previously downloaded files
-    download_historic_climate_data(one_week_ago, today, 'rtma', 'conus')
+    ##download_historic_climate_data(one_week_ago, today, 'rtma', 'conus')
     # alaska historic rtma temps don't exist in the archive
     # download_historic_climate_data(one_week_ago, today, 'rtma', 'alaska')
 
