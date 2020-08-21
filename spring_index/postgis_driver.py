@@ -490,6 +490,7 @@ class Six:
               );"""
             data = {"table": AsIs(time_series_table), "filename": file_name, "rast_date": date_string}
             curs.execute(query, data)
+            conn.commit()
 
             curs.close()
 

@@ -15,6 +15,7 @@ import yaml
 import os.path
 from util.log_manager import get_error_log
 import psycopg2
+import gc
 
 
 # dates
@@ -121,7 +122,7 @@ def importClimateData():
     # another script is in place to delete rtma data older than two weeks for which we also have urma data
     # won't overwrite any previously downloaded files
     logging.info('importing historic rtma hourly data')
-    download_historic_climate_data(one_week_ago, today, 'rtma', 'conus')
+    #download_historic_climate_data(one_week_ago, today, 'rtma', 'conus')
     # alaska rtma archive doesn't exist
     # download_historic_climate_data(one_week_ago, today, 'rtma', 'alaska')
 
@@ -280,6 +281,11 @@ def main():
 
     importCustomPestMapAgdd()
     t3 = time.time()
+
+    logging.info(gc.get_threshold())
+    logging.info(gc.get_count())
+    gc.collect()
+    logging.info(gc.get_count())
     
     importSix()    
     t4 = time.time()
