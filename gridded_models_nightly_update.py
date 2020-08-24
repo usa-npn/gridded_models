@@ -214,6 +214,13 @@ def importSix():
         import_six_anomalies(end_of_this_year, phenophase)
 
 
+def importSixReturnInterval():
+    phenophases = ['leaf', 'bloom']
+    ri_year = current_year
+    for phenophase in phenophases:
+        import_six_return_interval(ri_year, phenophase)
+
+
 def importCustomPestMapAgdd():
     ############## PEST MAP CUSTOM AGDD RASTER CACHE POPULATOR #######################################
     # pine needle scale, bagworm, and eastern tent caterpillar
@@ -288,6 +295,7 @@ def main():
     logging.info(gc.get_count())
     
     importSix()    
+    #importSixReturnInterval()
     t4 = time.time()
     
     importQcData()

@@ -131,6 +131,72 @@ def copy_spring_index_anomaly_raster(phenophase, from_date, to_date):
                      to_date.strftime("%Y-%m-%d"), str(day_of_year))
 
 
+def import_six_return_interval(ri_year, phenophase):
+    logging.info(' ')
+    logging.info('-----------------populating spring index %s return intervals-----------------', phenophase)
+
+    time_series_table_name = 'six_' + phenophase + '_return_interval'
+    six_return_interval_table_name = 'six_return_interval'
+    save_path = cfg["six_return_interval_path"] + 'six_' + phenophase + '_return_interval' + os.sep
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+
+    #load 1981-2019 2.5k SI-x Anomalies
+    prism_anomaly_path = cfg["six_return_interval_path"] + 'six_' + phenophase + '_anomaly_prism_2.5k'
+    historic_anom_array = {}
+    for year in range(1981, 2019):
+        prism_anom_file = prism_anomaly_path + os.sep + 'six_' + phenophase + '_anomaly_' + str(year) + '.tif'
+        # gdalwarp_file was originally used on 4k anomalies to preprocess resampled 2.5k prism rasters
+        # gdalwarp_file(prism_anom_file)
+        ds = gdal.Open(prism_anom_file)
+        historic_anom_array[year] = np.array(ds.GetRasterBand(1).ReadAsArray())
+    
+    #load ncep current day anomaly raster, set null values
+    current_month_and_day = date.today().strftime("%m%d")
+    ncep_anomaly_path = cfg["six_anomaly_path"] + 'six_' + phenophase + '_anomaly'
+    ds = gdal.Open(ncep_anomaly_path + os.sep + 'six_' + phenophase + '_anomaly_' + str(ri_year) + current_month_and_day + '.tif')
+    ncep_anom_array = np.array(ds.GetRasterBand(1).ReadAsArray())
+    conus_mask = np.where(ncep_anom_array == -9999, np.nan, 0)
+
+    num_cols = ds.RasterXSize
+    num_rows = ds.RasterYSize
+    transform = ds.GetGeoTransform()
+    projection = ds.GetProjection()
+
+    #create an "Early" current year raster where all late or on-time pixels are null.
+    SIXA20_4k_Early = np.where(ncep_anom_array <= -0.0000001, ncep_anom_array, np.nan)
+    SIXA20_4k_Early_Mask = np.where(ncep_anom_array <= -0.0000001, 0, np.nan)
+
+    #create a "Late" current year raster where all early or on-time pixels are null.
+    SIXA20_4k_Late = np.where(ncep_anom_array >= 0.0000001, ncep_anom_array, np.nan)
+    SIXA20_4k_Late_Mask = np.where(ncep_anom_array >= 0.0000001, 0, np.nan)
+
+    #sum them up
+    RI_Early = np.copy(conus_mask)
+    RI_Late = np.copy(conus_mask)
+    first = True
+    for year in range(1981, 2019):
+        if first:
+            RI_Early = conus_mask + np.where(historic_anom_array[year] <= SIXA20_4k_Early, 1, 0)
+            RI_Late = conus_mask + np.where(historic_anom_array[year] >= SIXA20_4k_Late, 1, 0)
+        else:
+            RI_Early = RI_Early + np.where(historic_anom_array[year] <= SIXA20_4k_Early, 1, 0)
+            RI_Late = RI_Late + np.where(historic_anom_array[year] >= SIXA20_4k_Late, 1, 0)
+        first = False
+    #divide count raster by 38 to create Return Interval raster.
+    RI_Early = np.where(RI_Early == 0, 0, -38 / RI_Early) 
+    RI_Early = np.where(np.logical_and(RI_Early == 0, SIXA20_4k_Early_Mask == 0), -39, RI_Early)
+    RI_Late = np.where(RI_Late == 0, 0, 38 / RI_Late)
+    RI_Late = np.where(np.logical_and(RI_Late == 0, SIXA20_4k_Late_Mask == 0), 39, RI_Late)
+    #combine early, late and ontime rasters
+    RI = RI_Early + RI_Late
+    #Output the raster of the Return interval 
+    file_name = 'six_return_interval_' + str(ri_year) + '.tiff'
+    output_file_path = save_path + file_name
+    write_raster(output_file_path, RI, -9999, num_cols, num_rows, projection, transform)
+                
+    import_six_postgis(output_file_path, file_name, six_return_interval_table_name, time_series_table_name, 'average', phenophase, day)
+
+
 def import_six_anomalies(anomaly_date, phenophase):
     logging.info(' ')
     logging.info('-----------------populating spring index %s anomalies-----------------', phenophase)
