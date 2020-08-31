@@ -209,7 +209,16 @@ def import_six_return_interval(ri_year, phenophase):
     output_file_path = save_path + file_name
     write_raster(output_file_path, RI, -9999, num_cols, num_rows, projection, transform)
                 
-    import_six_postgis(output_file_path, file_name, six_return_interval_table_name, time_series_table_name, 'average', phenophase, date(ri_year, 1, 1))
+    #import into postgis raster and timeseries tables
+    new_table = not table_exists(six_return_interval_table_name)
+    new_time_series = not table_exists(time_series_table_name)
+
+    save_raster_to_postgis(output_file_path, six_return_interval_table_name, 4269)
+    set_date_column(six_return_interval_table_name, date(ri_year, 1, 1), new_table)
+    set_plant_column(six_return_interval_table_name, 'average', new_table)
+    set_phenophase_column(six_return_interval_table_name, phenophase, new_table)
+    if not new_time_series and ri_year != 2020:
+        update_time_series(time_series_table_name, file_name, date(ri_year, 1, 1))
 
 
 def import_six_anomalies(anomaly_date, phenophase):
