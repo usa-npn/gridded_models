@@ -797,6 +797,22 @@ def gdalwarp_file(bin_file):
     os.remove(temp_file)
 
 
+def gdalwarp_tif_file(tif_file):
+    if '.tif' in tif_file:
+        temp_file = str.replace(tif_file, ".tif", "_warpme.tif")
+    else:
+        temp_file = tif_file + "_warpme.tif"
+    os.rename(tif_file, temp_file)
+
+    extent = "-125.0208333 24.0625000 -66.4791667 49.9375000"
+    warp_command = "gdalwarp -of ENVI -srcnodata 9999 -dstnodata -9999 -t_srs EPSG:4269 -ts 2606 1228 -te {extent} {source_file} {dest_file}"\
+        .format(extent=extent, source_file=temp_file, dest_file=tif_file)
+
+    ps = subprocess.Popen(warp_command, stdout=subprocess.PIPE, shell=True)
+    ps.wait()
+    os.remove(temp_file)
+
+
 def cleanup(path):
     for file in glob.glob(path + "*"):
         os.remove(file)

@@ -5,6 +5,7 @@ import numpy as np
 from datetime import date
 import logging
 import shutil
+from climate.importer import gdalwarp_tif_file
 # from urllib.request import urlretrieve
 # import urllib
 
@@ -140,15 +141,29 @@ def import_six_return_interval(ri_year, phenophase):
     save_path = cfg["six_return_interval_path"] + 'six_' + phenophase + '_return_interval' + os.sep
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
-    #load 1981-2019 2.5k SI-x Anomalies
+    #load 1981 through previous year 2.5k SI-x Anomalies
     prism_anomaly_path = cfg["six_return_interval_path"] + 'six_' + phenophase + '_anomaly_prism_2.5k'
+    prism_anomaly_path_4k = cfg["six_anomaly_path"] + 'six_' + phenophase + '_anomaly_prism'
     historic_anom_array = {}
-    for year in range(1981, 2019):
+    for year in range(1981, ri_year - 1):
         prism_anom_file = prism_anomaly_path + os.sep + 'six_' + phenophase + '_anomaly_' + str(year) + '.tif'
+        prism_anom_file_4k = prism_anomaly_path_4k + os.sep + 'six_' + phenophase + '_anomaly_' + str(year) + '.tif'
+        ncep_historic_anom_file = cfg["six_anomaly_path"] + 'six_' + phenophase + '_anomaly_historic' + os.sep + 'six_' + phenophase + '_anomaly_' + str(year) + '.tif'
+        ncep_anom_file = cfg["six_anomaly_path"] + 'six_' + phenophase + '_anomaly' + os.sep + 'six_' + phenophase + '_anomaly_' + str(year) + '1231' + '.tif'
         # gdalwarp_file was originally used on 4k anomalies to preprocess resampled 2.5k prism rasters
         # gdalwarp_file(prism_anom_file)
-        ds = gdal.Open(prism_anom_file)
-        historic_anom_array[year] = np.array(ds.GetRasterBand(1).ReadAsArray())
+        # todo if file doesn't exist, copy and warp file
+        if (os.path.isfile(prism_anom_file_4k)):
+            shutil.copy(prism_anom_file_4k, prism_anom_file)
+            gdalwarp_tif_file(prism_anom_file)
+            ds = gdal.Open(prism_anom_file)
+            historic_anom_array[year] = np.array(ds.GetRasterBand(1).ReadAsArray())
+        elif(os.path.isfile(ncep_historic_anom_file)): #use ncep historic when prism doesn't exist
+            ds = gdal.Open(ncep_historic_anom_file)
+            historic_anom_array[year] = np.array(ds.GetRasterBand(1).ReadAsArray())
+        else: #use ncep daily if ncep historic hasn't been created yet
+            ds = gdal.Open(ncep_anom_file)
+            historic_anom_array[year] = np.array(ds.GetRasterBand(1).ReadAsArray())
     
     #load ncep current day anomaly raster, set null values
     current_month_and_day = date.today().strftime("%m%d")
@@ -194,7 +209,7 @@ def import_six_return_interval(ri_year, phenophase):
     output_file_path = save_path + file_name
     write_raster(output_file_path, RI, -9999, num_cols, num_rows, projection, transform)
                 
-    import_six_postgis(output_file_path, file_name, six_return_interval_table_name, time_series_table_name, 'average', phenophase, day)
+    import_six_postgis(output_file_path, file_name, six_return_interval_table_name, time_series_table_name, 'average', phenophase, date(ri_year, 1, 1))
 
 
 def import_six_anomalies(anomaly_date, phenophase):
