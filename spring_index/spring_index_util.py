@@ -189,7 +189,7 @@ def import_six_return_interval(ri_year, phenophase):
     RI_Early = np.copy(conus_mask)
     RI_Late = np.copy(conus_mask)
     first = True
-    for year in range(1981, 2019):
+    for year in range(1981+(ri_year - 2020), ri_year - 1):
         if first:
             RI_Early = conus_mask + np.where(historic_anom_array[year] <= SIXA20_4k_Early, 1, 0)
             RI_Late = conus_mask + np.where(historic_anom_array[year] >= SIXA20_4k_Late, 1, 0)
