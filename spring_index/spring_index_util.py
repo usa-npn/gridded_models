@@ -141,18 +141,18 @@ def import_six_return_interval(ri_year, phenophase):
     save_path = cfg["six_return_interval_path"] + 'six_' + phenophase + '_return_interval' + os.sep
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
-    #load sliding window of yearly 2.5k SI-x anomalies
+    #load 40 year sliding window of yearly 2.5k SI-x anomalies (39 years if 2020)
     prism_anomaly_path = cfg["six_return_interval_path"] + 'six_' + phenophase + '_anomaly_prism_2.5k'
     prism_anomaly_path_4k = cfg["six_anomaly_path"] + 'six_' + phenophase + '_anomaly_prism'
     historic_anom_array = {}
-    for year in range(1981+(ri_year - 2020), ri_year - 1):
+    prism_range_start = 1981+(ri_year - 2021)
+    if ri_year == 2020 or ri_year == 2021:
+        prism_range_start = 1981
+    for year in range(prism_range_start, ri_year - 1):
         prism_anom_file = prism_anomaly_path + os.sep + 'six_' + phenophase + '_anomaly_' + str(year) + '.tif'
         prism_anom_file_4k = prism_anomaly_path_4k + os.sep + 'six_' + phenophase + '_anomaly_' + str(year) + '.tif'
         ncep_historic_anom_file = cfg["six_anomaly_path"] + 'six_' + phenophase + '_anomaly_historic' + os.sep + 'six_' + phenophase + '_anomaly_' + str(year) + '.tif'
         ncep_anom_file = cfg["six_anomaly_path"] + 'six_' + phenophase + '_anomaly' + os.sep + 'six_' + phenophase + '_anomaly_' + str(year) + '1231' + '.tif'
-        # gdalwarp_file was originally used on 4k anomalies to preprocess resampled 2.5k prism rasters
-        # gdalwarp_file(prism_anom_file)
-        # todo if file doesn't exist, copy and warp file
         if (os.path.isfile(prism_anom_file_4k)):
             shutil.copy(prism_anom_file_4k, prism_anom_file)
             gdalwarp_tif_file(prism_anom_file)
@@ -189,7 +189,7 @@ def import_six_return_interval(ri_year, phenophase):
     RI_Early = np.copy(conus_mask)
     RI_Late = np.copy(conus_mask)
     first = True
-    for year in range(1981+(ri_year - 2020), ri_year - 1):
+    for year in range(prism_range_start, ri_year - 1):
         if first:
             RI_Early = conus_mask + np.where(historic_anom_array[year] <= SIXA20_4k_Early, 1, 0)
             RI_Late = conus_mask + np.where(historic_anom_array[year] >= SIXA20_4k_Late, 1, 0)
@@ -197,11 +197,14 @@ def import_six_return_interval(ri_year, phenophase):
             RI_Early = RI_Early + np.where(historic_anom_array[year] <= SIXA20_4k_Early, 1, 0)
             RI_Late = RI_Late + np.where(historic_anom_array[year] >= SIXA20_4k_Late, 1, 0)
         first = False
-    #divide count raster by 38 to create Return Interval raster.
-    RI_Early = np.where(RI_Early == 0, 0, -38 / RI_Early) 
-    RI_Early = np.where(np.logical_and(RI_Early == 0, SIXA20_4k_Early_Mask == 0), -39, RI_Early)
-    RI_Late = np.where(RI_Late == 0, 0, 38 / RI_Late)
-    RI_Late = np.where(np.logical_and(RI_Late == 0, SIXA20_4k_Late_Mask == 0), 39, RI_Late)
+    #divide count raster by 39 to create Return Interval raster.
+    prism_years = 40
+    if ri_year == 2020:
+        prism_years = 39
+    RI_Early = np.where(RI_Early == 0, 0, -prism_years / RI_Early) 
+    RI_Early = np.where(np.logical_and(RI_Early == 0, SIXA20_4k_Early_Mask == 0), -(prism_years+1), RI_Early)
+    RI_Late = np.where(RI_Late == 0, 0, prism_years / RI_Late)
+    RI_Late = np.where(np.logical_and(RI_Late == 0, SIXA20_4k_Late_Mask == 0), prism_years, RI_Late)
     #combine early, late and ontime rasters
     RI = RI_Early + RI_Late
     #Output the raster of the Return interval 
