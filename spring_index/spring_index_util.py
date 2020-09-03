@@ -148,7 +148,7 @@ def import_six_return_interval(ri_year, phenophase):
     prism_range_start = 1981+(ri_year - 2021)
     if ri_year == 2020 or ri_year == 2021:
         prism_range_start = 1981
-    for year in range(prism_range_start, ri_year - 1):
+    for year in range(prism_range_start, ri_year):
         prism_anom_file = prism_anomaly_path + os.sep + 'six_' + phenophase + '_anomaly_' + str(year) + '.tif'
         prism_anom_file_4k = prism_anomaly_path_4k + os.sep + 'six_' + phenophase + '_anomaly_' + str(year) + '.tif'
         ncep_historic_anom_file = cfg["six_anomaly_path"] + 'six_' + phenophase + '_anomaly_historic' + os.sep + 'six_' + phenophase + '_anomaly_' + str(year) + '.tif'
@@ -189,7 +189,7 @@ def import_six_return_interval(ri_year, phenophase):
     RI_Early = np.copy(conus_mask)
     RI_Late = np.copy(conus_mask)
     first = True
-    for year in range(prism_range_start, ri_year - 1):
+    for year in range(prism_range_start, ri_year):
         if first:
             RI_Early = conus_mask + np.where(historic_anom_array[year] <= SIXA20_4k_Early, 1, 0)
             RI_Late = conus_mask + np.where(historic_anom_array[year] >= SIXA20_4k_Late, 1, 0)
