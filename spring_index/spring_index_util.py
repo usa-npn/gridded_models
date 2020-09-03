@@ -197,14 +197,14 @@ def import_six_return_interval(ri_year, phenophase):
             RI_Early = RI_Early + np.where(historic_anom_array[year] <= SIXA20_4k_Early, 1, 0)
             RI_Late = RI_Late + np.where(historic_anom_array[year] >= SIXA20_4k_Late, 1, 0)
         first = False
-    #divide count raster by 39 to create Return Interval raster.
+    #divide count raster by 39 (2020) or 40 (2021 & beyond) to create Return Interval raster.
     prism_years = 40
     if ri_year == 2020:
         prism_years = 39
     RI_Early = np.where(RI_Early == 0, 0, -prism_years / RI_Early) 
     RI_Early = np.where(np.logical_and(RI_Early == 0, SIXA20_4k_Early_Mask == 0), -(prism_years+1), RI_Early)
     RI_Late = np.where(RI_Late == 0, 0, prism_years / RI_Late)
-    RI_Late = np.where(np.logical_and(RI_Late == 0, SIXA20_4k_Late_Mask == 0), prism_years, RI_Late)
+    RI_Late = np.where(np.logical_and(RI_Late == 0, SIXA20_4k_Late_Mask == 0), prism_years+1, RI_Late)
     #combine early, late and ontime rasters
     RI = RI_Early + RI_Late
     #Output the raster of the Return interval 
