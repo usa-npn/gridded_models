@@ -427,7 +427,7 @@ def get_day_lengths():
     (upper_left_x, x_size, x_rotation, upper_left_y, y_rotation, y_size) = geo_transform
     num_lats = 1228
     num_longs = 2606
-    day_max = 240
+    day_max = 90
 
     # calculate latitudes
     site_latitudes = np.arange(num_lats, dtype=float)
@@ -493,10 +493,11 @@ def gdh_to_memmap(site_day_lengths):
     site_day_lengths_rounded = site_day_lengths.astype(int)
 
     # min day of year is either two weeks ago or beginning of the year
-    # today = datetime.now()
-    # day_of_year = (today - datetime(today.year, 1, 1)).days + 1
-    # day_min = max(0, day_of_year - 14)
-    day_min = 0 #todo fix
+    day_min = 0
+    if memmap_mode == 'r+':
+        today = datetime.now()
+        day_of_year = (today - datetime(today.year, 1, 1)).days + 1
+        day_min = max(0, day_of_year - 14)
 
     # calculate growing degree hours (parallelized across all longitudes on a latitude)
     for lat in range(0, num_lats):
@@ -650,7 +651,7 @@ def compute_spring_index(plant, pheno_event, growing_deg_hrs, leaf_out_days):
     base_temp = 31
     num_lats = 1228
     num_longs = 2606
-    day_max = 240
+    day_max = 90
 
     max_temps = np.memmap(f"{base_path}/mem_map_tmax.dat", dtype='float32', mode='r', shape=(365, num_lats, num_longs))
     max_temps = np.swapaxes(max_temps, 1, 0)
@@ -742,11 +743,12 @@ if __name__ == "__main__":
                 spring_index_average_leaf_array += spring_index_array
             else: 
                 spring_index_average_bloom_array += spring_index_array
+            spring_index_average_leaf_array[spring_index_average_leaf_array < 0] = np.nan
+            spring_index_average_bloom_array[spring_index_average_bloom_array < 0] = np.nan
             #todo anomalies
         first_plant = False
     #write out the average spring index tiffs
-    print("dividing averages by 3 and writing out")
-    spring_index_average_leaf_array /= 3
-    spring_index_average_bloom_array /= 3
+    spring_index_average_leaf_array /= len(plants)
+    spring_index_average_bloom_array /= len(plants)
     write_int16_raster(f"{base_path}/average_leaf.tif", spring_index_average_leaf_array, -9999, spring_index_average_leaf_array.shape[1], spring_index_average_leaf_array.shape[0], projection, geo_transform)
     write_int16_raster(f"{base_path}/average_bloom.tif", spring_index_average_bloom_array, -9999, spring_index_average_bloom_array.shape[1], spring_index_average_bloom_array.shape[0], projection, geo_transform)
