@@ -5,5 +5,6 @@
 *.pyc
 .DS_Store
 config.yml
+six_config.yml
 launch.json
 settings.json

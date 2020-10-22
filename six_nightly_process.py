@@ -4,6 +4,19 @@ from datetime import timedelta
 import numpy as np
 from osgeo import gdal
 import os.path
+import yaml
+import logging
+import time
+
+# get paths from config file
+with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'six_config.yml')), 'r') as ymlfile:
+    cfg = yaml.load(ymlfile)
+
+mem_map_path = cfg["mem_map_path"]
+six_path = cfg["six_path"]
+daily_temp_path = cfg["daily_temp_path"]
+avg_six_path = cfg["avg_six_path"]
+log_path = cfg["log_path"]
 
 solar_declination = [307,
                      308,
@@ -376,11 +389,12 @@ geo_transform = None
 projection = None
 ydim = None
 xdim = None
-base_path = "/geo-data/testing"
+
 
 def load_temperature(fp, temp_type, day, doy):
-    temperature_files_path = "/geo-data/climate_data/daily_data/{temp_type}/".format(temp_type=temp_type)
-    file_name = temperature_files_path + "{temp_type}_{date}.tif".format(temp_type=temp_type, date=day.strftime("%Y%m%d"))
+    date_as_string = day.strftime("%Y%m%d")
+    temperature_files_path = f"{daily_temp_path}/{temp_type}/"
+    file_name = f"{temperature_files_path}{temp_type}_{date_as_string}.tif"
     ds = gdal.Open(file_name)
     #todo optimize, only set once
     global geo_transform
@@ -406,7 +420,7 @@ def load_temperature(fp, temp_type, day, doy):
 def temperatures_to_memmap(start_date, stop_date):
     temperature_shape = (1228, 2606)
     for temperature_type in ("tmin", "tmax"):
-        mem_map_file = f"{base_path}/mem_map_{temperature_type}.dat"
+        mem_map_file = f"{mem_map_path}/mem_map_{temperature_type}.dat"
         #if memmap already exists, just update the past 2 weeks
         memmap_mode = 'w+' #create or overwrite
         if os.path.exists(mem_map_file):
@@ -427,7 +441,7 @@ def get_day_lengths():
     (upper_left_x, x_size, x_rotation, upper_left_y, y_rotation, y_size) = geo_transform
     num_lats = 1228
     num_longs = 2606
-    day_max = 90
+    day_max = 240
 
     # calculate latitudes
     site_latitudes = np.arange(num_lats, dtype=float)
@@ -455,7 +469,7 @@ def gdh_to_memmap(site_day_lengths):
     print("computing growing degree hours")
     base_temp = 31
     temperature_shape = (1228, 2606)
-    gdh_mem_map_file = f"{base_path}/mem_map_gdh.dat"
+    gdh_mem_map_file = f"{mem_map_path}/mem_map_gdh.dat"
     #if memmap already exists, just update the past 2 weeks
     memmap_mode = 'w+' #create or overwrite
     if os.path.exists(gdh_mem_map_file):
@@ -463,8 +477,8 @@ def gdh_to_memmap(site_day_lengths):
     growing_deg_hrs = np.memmap(gdh_mem_map_file, dtype='float32', mode=memmap_mode, shape=(temperature_shape[0], temperature_shape[1], 240))
         
     #load temperatures
-    min_temps = np.memmap(f"{base_path}/mem_map_tmin.dat", dtype='float32', mode='r', shape=(365, temperature_shape[0], temperature_shape[1]))
-    max_temps = np.memmap(f"{base_path}/mem_map_tmax.dat", dtype='float32', mode='r', shape=(365, temperature_shape[0], temperature_shape[1]))
+    min_temps = np.memmap(f"{mem_map_path}/mem_map_tmin.dat", dtype='float32', mode='r', shape=(365, temperature_shape[0], temperature_shape[1]))
+    max_temps = np.memmap(f"{mem_map_path}/mem_map_tmax.dat", dtype='float32', mode='r', shape=(365, temperature_shape[0], temperature_shape[1]))
 
     # reshape the array to be station lat, station long, day of year, temperature
     min_temps = np.swapaxes(min_temps, 1, 0)
@@ -494,14 +508,17 @@ def gdh_to_memmap(site_day_lengths):
 
     # min day of year is either two weeks ago or beginning of the year
     day_min = 0
-    if memmap_mode == 'r+':
-        today = datetime.now()
-        day_of_year = (today - datetime(today.year, 1, 1)).days + 1
-        day_min = max(0, day_of_year - 14)
+    # if memmap_mode == 'r+':
+    #     today = datetime.now()
+    #     day_of_year = (today - datetime(today.year, 1, 1)).days + 1
+    #     day_min = max(0, day_of_year - 14)
 
     # calculate growing degree hours (parallelized across all longitudes on a latitude)
     for lat in range(0, num_lats):
         lat_gdh = np.empty((day_max, num_longs))
+        # if memmap_mode == 'r+':
+        #     lat_gdh = growing_deg_hrs[lat]
+        #     np.swapaxes(lat_gdh, 0, 1)
         for day in range(day_min, day_max):
             lat_temp_difs = temperature_differences[lat, :, day]
             lat_day_length = site_day_lengths[day, lat]
@@ -536,8 +553,8 @@ def gdh_to_memmap(site_day_lengths):
     return growing_deg_hrs
 
 
-def get_mem_map(base_path, filename, map_shape, type):
-    mem_map_file = f"{base_path}/{filename}.dat"
+def get_mem_map(path, filename, map_shape, type):
+    mem_map_file = f"{path}/{filename}.dat"
     memmap_mode = 'w+' #create or overwrite
     if os.path.exists(mem_map_file):
         memmap_mode = 'r+' #open for read and write
@@ -653,7 +670,7 @@ def compute_spring_index(plant, pheno_event, growing_deg_hrs, leaf_out_days):
     num_longs = 2606
     day_max = 90
 
-    max_temps = np.memmap(f"{base_path}/mem_map_tmax.dat", dtype='float32', mode='r', shape=(365, num_lats, num_longs))
+    max_temps = np.memmap(f"{mem_map_path}/mem_map_tmax.dat", dtype='float32', mode='r', shape=(365, num_lats, num_longs))
     max_temps = np.swapaxes(max_temps, 1, 0)
     max_temps = np.swapaxes(max_temps, 2, 1)
     #max_temps = np.swapaxes(max_temps, 1, 0) #double check why this needed added
@@ -661,7 +678,7 @@ def compute_spring_index(plant, pheno_event, growing_deg_hrs, leaf_out_days):
 
     spring_index_array = np.empty((num_lats, num_longs))
 
-    cached_six = get_mem_map(base_path, f"{plant}_{pheno_event}", (num_lats, num_longs), 'float32')
+    cached_six = get_mem_map(mem_map_path, f"{plant}_{pheno_event}", (num_lats, num_longs), 'float32')
     #todo initialize to -9999s?
 
     # now we have all the data structures built that could be parallelized, so now run the main six algorithm
@@ -695,6 +712,8 @@ def compute_spring_index(plant, pheno_event, growing_deg_hrs, leaf_out_days):
 
 def write_int16_raster(file_path, rast_array, no_data_value, rast_cols, rast_rows, projection, transform):
         print("writing geotiff to disk")
+        rast_array[np.isnan(rast_array)] = no_data_value
+        rast_array[rast_array > 240] = no_data_value
         driver = gdal.GetDriverByName('Gtiff')
         raster = driver.Create(file_path, rast_cols, rast_rows, 1, gdal.GDT_Int16)
         band = raster.GetRasterBand(1)
@@ -706,33 +725,51 @@ def write_int16_raster(file_path, rast_array, no_data_value, rast_cols, rast_row
 
         
 if __name__ == "__main__":
+    logging.basicConfig(filename=log_path+'six_nightly_process.log',
+                        level=logging.INFO,
+                        format='%(asctime)s %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p')
+    
+    logging.info('**********************************')
+    logging.info('six_nightly_process.py has started')
+    logging.info('**********************************')
+
     start_date = "2020-01-01"
     # stop_date = "2020-01-22"
 
     climate_provider = ['ncep']
-    plants = ['lilac']
-    phenophases = ['leaf']
     # plants = ['lilac', 'arnoldred', 'zabelli']
+    plants = ['lilac']
     # phenophases = ['leaf', 'bloom']
+    phenophases = ['leaf']
 
+    no_data_value = -9999
     num_lats = 1228
     num_longs = 2606
     spring_index_average_leaf_array = np.empty((num_lats, num_longs))
     spring_index_average_bloom_array = np.empty((num_lats, num_longs))
 
     stop_date = datetime.strftime((date.today() + timedelta(days=6)), "%Y-%m-%d")
+    logging.info('loading daily tmin & tmax')
+    t0 = time.time()
     temperatures_to_memmap(start_date,stop_date)
+    t1 = time.time()
+    logging.info(f"loading temperatures took time: {t1 - t0}")
+    logging.info('loading growing degree hours')
     growing_deg_hrs = gdh_to_memmap(get_day_lengths())
+    t2 = time.time()
+    logging.info(f"loading gdh took time: {t2 - t1}")
+    logging.info('computing spring index submodels')
     first_plant = True
     for plant in plants:
         for phenophase in phenophases:
+            logging.info(f"computing spring index for {plant} {phenophase}")
             print(f"computing spring index for {plant} {phenophase}")
             if phenophase == 'leaf':
-                print('SHOULD SEE THIS')
                 spring_index_array = compute_spring_index(plant, phenophase, growing_deg_hrs, None)
             else:
                 spring_index_array = compute_spring_index(plant, phenophase, growing_deg_hrs, spring_index_array)
-            write_int16_raster(f"{base_path}/{plant}_{phenophase}.tif", spring_index_array, -9999, spring_index_array.shape[1], spring_index_array.shape[0], projection, geo_transform)
+            write_int16_raster(f"{six_path}/{plant}_{phenophase}.tif", spring_index_array, no_data_value, spring_index_array.shape[1], spring_index_array.shape[0], projection, geo_transform)
             #add to average array
             print("adding to average")
             if first_plant and phenophase == 'leaf':
@@ -747,8 +784,14 @@ if __name__ == "__main__":
             spring_index_average_bloom_array[spring_index_average_bloom_array < 0] = np.nan
             #todo anomalies
         first_plant = False
+    t3 = time.time()
+    logging.info(f"computing spring index submodels took: {t3 - t2}")
     #write out the average spring index tiffs
+    logging.info('computing spring index average')
     spring_index_average_leaf_array /= len(plants)
+    write_int16_raster(f"{avg_six_path}/average_leaf.tif", spring_index_average_leaf_array, no_data_value, spring_index_average_leaf_array.shape[1], spring_index_average_leaf_array.shape[0], projection, geo_transform)
     spring_index_average_bloom_array /= len(plants)
-    write_int16_raster(f"{base_path}/average_leaf.tif", spring_index_average_leaf_array, -9999, spring_index_average_leaf_array.shape[1], spring_index_average_leaf_array.shape[0], projection, geo_transform)
-    write_int16_raster(f"{base_path}/average_bloom.tif", spring_index_average_bloom_array, -9999, spring_index_average_bloom_array.shape[1], spring_index_average_bloom_array.shape[0], projection, geo_transform)
+    write_int16_raster(f"{avg_six_path}/average_bloom.tif", spring_index_average_bloom_array, no_data_value, spring_index_average_bloom_array.shape[1], spring_index_average_bloom_array.shape[0], projection, geo_transform)
+    t4 = time.time()
+    logging.info(f"computing spring index averages took: {t4 - t3}")
+    logging.info(f"total script time: {t4 - t0}")
