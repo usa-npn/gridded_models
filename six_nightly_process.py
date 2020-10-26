@@ -16,6 +16,8 @@ mem_map_path = cfg["mem_map_path"]
 six_path = cfg["six_path"]
 daily_temp_path = cfg["daily_temp_path"]
 avg_six_path = cfg["avg_six_path"]
+six_30_year_average_path = cfg["six_30_year_average_path"]
+six_anomaly_path = cfg["six_anomaly_path"]
 log_path = cfg["log_path"]
 
 solar_declination = [307,
@@ -723,6 +725,52 @@ def write_int16_raster(file_path, rast_array, no_data_value, rast_cols, rast_row
         raster.SetGeoTransform(transform)
         band.FlushCache()
 
+
+def import_six_anomalies(anomaly_date, phenophase):
+
+    first_day_of_year = date(anomaly_date.year, 1, 1)
+    day = first_day_of_year
+    delta = timedelta(days=1)
+
+    #load 30 year average file from disk into numpy array
+    file_name = f"{six_30_year_average_path}/six_30yr_average_{phenophase}/six_average_{phenophase}_365.tif"
+    ds = gdal.Open(file_name)
+    avg_30yr_array = np.array(ds.GetRasterBand(1).ReadAsArray())
+    avg_30yr_array[avg_30yr_array == -9999] = np.nan
+
+    today = datetime.today().date()
+    while day <= anomaly_date:
+        day_of_year = day.timetuple().tm_yday
+
+        #can't see more than a week into the future
+        if day > (today + timedelta(days=8)):
+            day += delta
+            continue
+
+        #load current year ncep file from disk into numpy array
+        file_name = f"{six_path}/average_{phenophase}.tif"
+        ds = gdal.Open(file_name)
+        ncep_avg_array = np.array(ds.GetRasterBand(1).ReadAsArray())
+        ncep_avg_array[ncep_avg_array == -9999] = np.nan
+
+        diff_six = ncep_avg_array - avg_30yr_array
+        diff_six[np.isnan(diff_six)] = -9999
+
+        # write the raster to disk and import it to the database
+        datestring = day.strftime("%Y%m%d")
+        write_int16_raster(f"{six_anomaly_path}/six_{phenophase}_anomaly_{datestring}.tif", diff_six, no_data_value, diff_six.shape[1], diff_six.shape[0], projection, geo_transform)
+
+        # plant = 'average'
+        # six_anomaly_table_name = 'six_anomaly'
+        # time_series_table_name = 'six_' + phenophase + '_anomaly'
+        # import_six_postgis(file_path, file_name, six_anomaly_table_name, time_series_table_name, plant, phenophase,
+        #                    day)
+
+        new_table = False
+        logging.info('populated six %s anomaly for %s based on historical six average for doy %s', phenophase, day.strftime("%Y-%m-%d"), str(day_of_year))
+
+        day += delta
+
         
 if __name__ == "__main__":
     logging.basicConfig(filename=log_path+'six_nightly_process.log',
@@ -782,7 +830,6 @@ if __name__ == "__main__":
                 spring_index_average_bloom_array += spring_index_array
             spring_index_average_leaf_array[spring_index_average_leaf_array < 0] = np.nan
             spring_index_average_bloom_array[spring_index_average_bloom_array < 0] = np.nan
-            #todo anomalies
         first_plant = False
     t3 = time.time()
     logging.info(f"computing spring index submodels took: {t3 - t2}")
@@ -794,4 +841,9 @@ if __name__ == "__main__":
     write_int16_raster(f"{avg_six_path}/average_bloom.tif", spring_index_average_bloom_array, no_data_value, spring_index_average_bloom_array.shape[1], spring_index_average_bloom_array.shape[0], projection, geo_transform)
     t4 = time.time()
     logging.info(f"computing spring index averages took: {t4 - t3}")
-    logging.info(f"total script time: {t4 - t0}")
+    logging.info('computing spring index anomalies')
+    for phenophase in phenophases:
+         import_six_anomalies(stop_date, phenophase)
+    t5 = time.time()
+    logging.info(f"computing spring anomalies took: {t5 - t4}")
+    logging.info(f"total script time: {t5 - t0}")
