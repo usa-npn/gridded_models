@@ -397,7 +397,6 @@ with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml'))
 log_path = cfg["log_path"]
 daily_tmin_path = cfg["daily_tmin_path"]
 daily_tmax_path = cfg["daily_tmax_path"]
-winter_wheat_path = cfg["winter_wheat_path"]
 
 def vernalization_days(tavg):
     vd = tavg.copy()
