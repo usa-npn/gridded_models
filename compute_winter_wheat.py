@@ -35,7 +35,7 @@ def vernalization_days(tavg):
     vd = tavg.copy()
     vd[vd < 32] = 0
     vd[vd > 64.4] = 0
-    vd[(vd >= 32) & (vd <= 42.8)] = 1
+    vd[(vd >= 32) & (vd < 44.6)] = 1
     vd[(vd >= 44.6) & (vd <= 64.4)] = -(0.06 * vd[(vd >= 44.6) & (vd <= 64.4)]) + 3.38
     return vd
 
