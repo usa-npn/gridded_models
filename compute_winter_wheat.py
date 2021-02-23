@@ -18,7 +18,6 @@ import contextlib
 import subprocess
 import shutil
 from pathlib import Path
-from prism.importer import get_prism_data_outdb
 import numpy as np
 from osgeo import gdal
 from util.raster import *
@@ -76,10 +75,10 @@ def compute_winter_wheat(start_date, stop_date):
     doy = 0
     while day <= stop:
 
-        tmin_tif_path = daily_tmin_path + "tmin_{day}.tif".format(day=day.strftime("%Y%m%d"))
-        tmax_tif_path = daily_tmax_path + "tmax_{day}.tif".format(day=day.strftime("%Y%m%d"))
-        # tmin_tif_path = "/Users/npn/Documents/geo-data/tmin_tmax/tmin_{day}.tif".format(day=day.strftime("%Y%m%d"))
-        # tmax_tif_path = "/Users/npn/Documents/geo-data/tmin_tmax/tmax_{day}.tif".format(day=day.strftime("%Y%m%d"))
+        # tmin_tif_path = daily_tmin_path + "tmin_{day}.tif".format(day=day.strftime("%Y%m%d"))
+        # tmax_tif_path = daily_tmax_path + "tmax_{day}.tif".format(day=day.strftime("%Y%m%d"))
+        tmin_tif_path = "/Users/npn/Documents/geo-data/tmin_tmax/tmin_{day}.tif".format(day=day.strftime("%Y%m%d"))
+        tmax_tif_path = "/Users/npn/Documents/geo-data/tmin_tmax/tmax_{day}.tif".format(day=day.strftime("%Y%m%d"))
         try:
             tmin = get_climate_data_from_file(tmin_tif_path, temp_unit)
             tmax = get_climate_data_from_file(tmax_tif_path, temp_unit)
@@ -138,9 +137,14 @@ def compute_winter_wheat(start_date, stop_date):
         # end nonoptimized version of algorithm
         
         # write the raster to disk
-        winter_wheat_path = "/geo-data/gridded_models/winter_wheat/winter_wheat_{day}.tif".format(day=day.strftime("%Y%m%d"))
-        # winter_wheat_path = "/Users/npn/Documents/geo-data/winter_wheat/winter_wheat_{day}.tif".format(day=day.strftime("%Y%m%d"))
+        tif_name = "winter_wheat_{day}.tif".format(day=day.strftime("%Y%m%d"))
+        winter_wheat_path = "/geo-data/gridded_models/winter_wheat/" + tif_name
+        # winter_wheat_path = "/Users/npn/Documents/geo-data/winter_wheat/" + tif_name
         write_raster(winter_wheat_path, agdd, -9999, num_lngs, num_lats, projection, transform)
+
+        time_series_table = "winter_wheat"
+        if table_exists(time_series_table):
+            update_time_series(time_series_table, tif_name, day)
 
         doy += 1
         day = day + timedelta(days=1)
@@ -154,11 +158,11 @@ def main():
     logging.info('***********beginning script compute_buffelgrass.py*****************')
     logging.info('*****************************************************************************')
 
-    start_date = "2020-01-01"
-    stop_date = "2020-12-31"
-    # start_date = "2021-01-01"
+    start_date = "2021-01-01"
     # stop_date = "2021-01-31"
-    #stop_date = date.today().strftime("%Y-%m-%d")
+    today = date.today()
+    one_week_into_future = today + timedelta(days=6)
+    stop_date = one_week_into_future.strftime("%Y-%m-%d")
     compute_winter_wheat(start_date, stop_date)
 
     t1 = time.time()
