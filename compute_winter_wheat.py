@@ -108,7 +108,7 @@ def compute_winter_wheat(start_date, stop_date):
         vd_penalty = 0.005 * vd_accum + 0.75
 
         # begin optimized version of algorithm
-        bases = np.where(750 < agdd < 1265, 32, 32)
+        bases = np.where(agdd <= 752, 32, 32)
         gdd = tavg - bases
         gdd[gdd < 0] = 0
         # this is to transform dimensions (doy, lat) -> (lat, lng) by repeating the
