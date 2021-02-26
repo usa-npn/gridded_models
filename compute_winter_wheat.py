@@ -105,12 +105,10 @@ def compute_winter_wheat(start_date, stop_date):
         # compute vernalization days, add it to the accum, and calculate the penalty from the accum
         vd = vernalization_days(tavg)
         vd_accum = vd_accum + vd
-        ##vd_penalty = 0.015 * vd_accum + 0.21
         vd_penalty = 0.005 * vd_accum + 0.75
 
         # begin optimized version of algorithm
-        ##bases = np.where(agdd <= 752, 35.6, 32)
-        bases = np.where(750 < agdd < 1265, 35.6, 32)
+        bases = np.where(750 < agdd < 1265, 32, 32)
         gdd = tavg - bases
         gdd[gdd < 0] = 0
         # this is to transform dimensions (doy, lat) -> (lat, lng) by repeating the
@@ -121,23 +119,6 @@ def compute_winter_wheat(start_date, stop_date):
         gdd *= penalties
         agdd += gdd
         # end optimized version of algorithm
-
-        # begin nonoptimized version of algorithm
-        # for lat in range(0, num_lats):
-        #     for lng in range(0, num_lngs):
-        #         base = 35.6
-        #         if agdd[lat, lng] > 752:
-        #             base = 32
-        #         if tavg[lat, lng] - base < 0:
-        #             gdd[lat, lng] = 0
-        #         else:
-        #             # vd_penalty = 0.015 * vd_accum[lat, lng] + 0.21
-        #             if vd_accum[lat, lng] < 50 and vd_penalty[lat, lng] < photoperiod_penalty[doy, lat]:
-        #                 gdd[lat, lng] = (tavg[lat, lng] - base) * vd_penalty[lat, lng]
-        #             else:
-        #                 gdd[lat, lng] = (tavg[lat, lng] - base) * photoperiod_penalty[doy, lat]
-        #         agdd[lat, lng] += gdd[lat, lng]
-        # end nonoptimized version of algorithm
         
         # write the raster to disk
         tif_name = "winter_wheat_{day}.tif".format(day=day.strftime("%Y%m%d"))
