@@ -578,7 +578,7 @@ def download_historic_climate_data(start_date, end_date, dataset, region):
                         file_not_found = True
                     else:
                         logging.warning("couldn't retrieve file (retrying): %s", str(e))
-                except e:
+                except Exception as e:
                     logging.error("couldn't retrieve file, giving up: %s", str(e))
                     file_not_found = True
                 else:
