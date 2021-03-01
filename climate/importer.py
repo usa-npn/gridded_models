@@ -566,9 +566,11 @@ def download_historic_climate_data(start_date, end_date, dataset, region):
                 try:
                     logging.info('downloading %s to %s', url, working_path + file_name)
                     urlretrieve(url, working_path + file_name)
+                except urllib.error.ContentTooShortError as e:
+                    logging.warning("couldn't retrieve file (retrying): %s", str(e))
                 except urllib.error.URLError as e:
                     if "550 Failed to change directory" in str(e):
-                        logging.warning("That day is currently not available, moving onto next day.", str(e))
+                        logging.warning("That day is currently not available, moving onto next day. %s", str(e))
                         day_unavailable = True
                         file_not_found = True
                     elif str(e) == "HTTP Error 404: Not Found":
@@ -576,8 +578,9 @@ def download_historic_climate_data(start_date, end_date, dataset, region):
                         file_not_found = True
                     else:
                         logging.warning("couldn't retrieve file (retrying): %s", str(e))
-                except urllib.error.ContentTooShortError as e:
-                    logging.warning("couldn't retrieve file (retrying): %s", str(e))
+                except e:
+                    logging.error("couldn't retrieve file, giving up: %s", str(e))
+                    file_not_found = True
                 else:
                     retrieved = True
 
