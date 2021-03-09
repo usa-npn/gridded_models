@@ -97,18 +97,17 @@ def compute_winter_wheat(start_date, stop_date):
             ds = None
             # compute photoperiod penalty
             daylengths = photoperiod(upper_left_y)
-            ##photoperiod_penalty = 0.075 * daylengths - 0.24
-            photoperiod_penalty = 1.0 - 0.0025*(20 - (daylengths))**2
+            photoperiod_penalty = 0.075 * daylengths - 0.24
             # intialize vernalization days accum and agdd to zeros
             vd_accum = np.zeros_like(tmin)
             agdd = np.zeros_like(tmin)
         # compute vernalization days, add it to the accum, and calculate the penalty from the accum
         vd = vernalization_days(tavg)
         vd_accum = vd_accum + vd
-        vd_penalty = 0.005 * vd_accum + 0.75
+        vd_penalty = 0.015 * vd_accum + 0.21
 
         # begin optimized version of algorithm
-        bases = np.where(agdd <= 752, 32, 32)
+        bases = np.where(750 < agdd < 1265, 35.6, 32)
         gdd = tavg - bases
         gdd[gdd < 0] = 0
         # this is to transform dimensions (doy, lat) -> (lat, lng) by repeating the
@@ -139,10 +138,10 @@ def main():
 
     logging.info(' ')
     logging.info('*****************************************************************************')
-    logging.info('***********beginning script compute_buffelgrass.py*****************')
+    logging.info('***********beginning script compute_winter_wheat.py*****************')
     logging.info('*****************************************************************************')
 
-    start_date = "2021-01-01"
+    start_date = "2020-10-01"
     # stop_date = "2021-01-31"
     today = date.today()
     one_week_into_future = today + timedelta(days=6)
