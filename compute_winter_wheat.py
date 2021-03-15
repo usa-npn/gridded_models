@@ -72,8 +72,15 @@ def compute_winter_wheat(start_date, stop_date):
 
     temp_unit = 'fahrenheit'
 
-    doy = 0
+    doy = 274 # day of year for oct 1
     while day <= stop:
+
+        if doy == 365:
+            doy = 0
+            agdd = np.zeros_like(tmin)
+
+        print(day.strftime("%Y%m%d"))
+        print(doy)
 
         tmin_tif_path = daily_tmin_path + "tmin_{day}.tif".format(day=day.strftime("%Y%m%d"))
         tmax_tif_path = daily_tmax_path + "tmax_{day}.tif".format(day=day.strftime("%Y%m%d"))
@@ -89,7 +96,7 @@ def compute_winter_wheat(start_date, stop_date):
         except:
             logging.error('could not get temp data, aborting winter wheat computation: ', exc_info=True)
             return
-        if doy == 0:
+        if doy == 274:
             ds = gdal.Open(tmin_tif_path)
             projection = ds.GetProjection()
             transform = ds.GetGeoTransform()
@@ -107,7 +114,8 @@ def compute_winter_wheat(start_date, stop_date):
         vd_penalty = 0.015 * vd_accum + 0.21
 
         # begin optimized version of algorithm
-        bases = np.where(750 < agdd < 1265, 35.6, 32)
+        #bases = np.where((750 < agdd) & (agdd < 1265), 35.6, 32)
+        bases = np.where((750 < agdd) & (agdd < 1265), 32, 32)
         gdd = tavg - bases
         gdd[gdd < 0] = 0
         # this is to transform dimensions (doy, lat) -> (lat, lng) by repeating the
@@ -142,7 +150,7 @@ def main():
     logging.info('*****************************************************************************')
 
     start_date = "2020-10-01"
-    # stop_date = "2021-01-31"
+    #stop_date = "2020-10-01"
     today = date.today()
     one_week_into_future = today + timedelta(days=6)
     stop_date = one_week_into_future.strftime("%Y-%m-%d")
