@@ -77,7 +77,7 @@ def apply_alaska_mask(source_file, dest_file):
 
 
 def warp_to_rtma_resolution(source_file, dest_file):
-    warp_command = "gdalwarp -r bilinear -ts 2606 1228 -srcnodata -9999 -dstnodata -9999 {source_file} {dest_file}"\
+    warp_command = "gdalwarp -overwrite -r bilinear -ts 2606 1228 -srcnodata -9999 -dstnodata -9999 {source_file} {dest_file}"\
         .format(source_file=source_file, dest_file=dest_file)
     ps = subprocess.Popen(warp_command, stdout=subprocess.PIPE, shell=True)
     ps.wait()
