@@ -20,13 +20,18 @@ def compute_six_ncep_anomalies():
             six_file = f"/geo-data/gridded_models/spring_index/six_average_{phenophase}_ncep_historic/average_{phenophase}_ncep_{year}.tif"
             six_avg_file = f"/geo-data/gridded_models/avg_spring_index/six_30yr_average_{phenophase}/six_average_{phenophase}_365.tif"
 
-            six = gdal.Open(six_file)
-            av_six = gdal.Open(six_avg_file)
+            six_ds = gdal.Open(six_file)
+            av_six_ds = gdal.Open(six_avg_file)
     
-            rast_cols = six.RasterXSize
-            rast_rows = six.RasterYSize
-            transform = six.GetGeoTransform()
-            projection = six.GetProjection()
+            rast_cols = six_ds.RasterXSize
+            rast_rows = six_ds.RasterYSize
+            transform = six_ds.GetGeoTransform()
+            projection = six_ds.GetProjection()
+
+            six_band = six_ds.GetRasterBand(1)
+            six = six_band.ReadAsArray()
+            av_six_band = av_six_ds.GetRasterBand(1)
+            av_six = av_six_band.ReadAsArray()
             
             av_six = av_six.astype(np.float32, copy=False)
             av_six[av_six == -9999] = np.nan
