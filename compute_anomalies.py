@@ -12,13 +12,18 @@ log_path = cfg["log_path"]
 email = cfg["email"]
 
 
-def compute_six_ncep_anomalies():
+def compute_six_historic_anomalies(climate_data):
     phenophases = ['leaf', 'bloom']
     years = range(2016,2022)
+    if climate_data == 'prism':
+        years = range(1981,2022)
     for year in years:
         for phenophase in phenophases:
             six_file = f"/geo-data/gridded_models/spring_index/six_average_{phenophase}_ncep_historic/average_{phenophase}_ncep_{year}.tif"
             six_avg_file = f"/geo-data/gridded_models/avg_spring_index/six_30yr_average_{phenophase}/six_average_{phenophase}_365.tif"
+            if climate_data == 'prism':
+                six_file = f"/geo-data/gridded_models/spring_index/six_average_{phenophase}_prism/average_{phenophase}_prism_{year}.tif"
+                six_avg_file = f"/geo-data/gridded_models/avg_spring_index/six_30yr_average_4k_{phenophase}/six_average_unwarped_{phenophase}_365.tif"
 
             six_ds = gdal.Open(six_file)
             av_six_ds = gdal.Open(six_avg_file)
@@ -44,12 +49,16 @@ def compute_six_ncep_anomalies():
             diff_six = diff_six.astype(np.int16, copy=False)
 
             six_anomaly_path = f"/geo-data/gridded_models/spring_index_anomaly/six_{phenophase}_anomaly_historic/"
+            if climate_data == 'prism':
+                six_anomaly_path = f"/geo-data/gridded_models/spring_index_anomaly/six_{phenophase}_anomaly_prism/"
             six_anomaly_file_name = f"six_{phenophase}_anomaly_{year}.tif"
             six_anomaly_file = six_anomaly_path + six_anomaly_file_name
 
             write_raster(six_anomaly_file, diff_six, -9999, rast_cols, rast_rows, projection, transform)
 
             six_anomaly_table_name = 'six_anomaly_historic'
+            if climate_data == 'prism':
+                six_anomaly_table_name = 'six_anomaly_historic_prism'
             plant = 'average'
             new_table = False
             day = date(year, 1, 1)
@@ -69,7 +78,8 @@ def main():
     logging.info('***********beginning script compute_anomalies.py*****************')
     logging.info('*****************************************************************************')
 
-    compute_six_ncep_anomalies()
+    compute_six_historic_anomalies('ncep')
+    compute_six_historic_anomalies('prism')
 
     t1 = time.time()
     logging.info('*****************************************************************************')
