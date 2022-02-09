@@ -4,12 +4,70 @@ import time
 from util.raster import *
 from util.database import *
 from datetime import date
+from datetime import timedelta
 import logging
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 log_path = cfg["log_path"]
 email = cfg["email"]
+
+
+def compute_agdd_historic_anomalies():
+    bases = [32, 50]
+    for base in bases:
+        years = range(2016,2022)
+        for year in years:
+            anom_date = date(year, 1, 1)
+            for doy in range(1,366):
+                agdd_file = f"/geo-data/gridded_models/agdd_anomaly/agdd_anomaly_{anom_date:%Y%m%d}_base_thirtytwo_f.tif"
+                agdd_avg_file = f"/geo-data/gridded_models/avg_agdd/agdd_{doy}_base_thirtytwo_f.tif"
+
+                if base == 50:
+                    agdd_file = f"/geo-data/gridded_models/agdd_anomaly_50f/agdd_anomaly_{anom_date:%Y%m%d}_base_fifty_f.tif"
+                    agdd_avg_file = f"/geo-data/gridded_models/avg_agdd_50f/agdd_{doy}_base_fifty_f.tif"
+
+                agdd_ds = gdal.Open(agdd_file)
+                av_agdd_ds = gdal.Open(agdd_avg_file)
+        
+                rast_cols = agdd_ds.RasterXSize
+                rast_rows = agdd_ds.RasterYSize
+                transform = agdd_ds.GetGeoTransform()
+                projection = agdd_ds.GetProjection()
+
+                agdd_band = agdd_ds.GetRasterBand(1)
+                agdd = agdd_band.ReadAsArray()
+                av_agdd_band = av_agdd_ds.GetRasterBand(1)
+                av_agdd = av_agdd_band.ReadAsArray()
+                
+                av_agdd = av_agdd.astype(np.float32, copy=False)
+                av_agdd[av_agdd == -9999] = np.nan
+                agdd = agdd.astype(np.float32, copy=False)
+                agdd[agdd == -9999] = np.nan
+
+                diff_agdd = agdd - av_agdd
+                diff_agdd[np.isnan(diff_agdd)] = -9999
+
+                diff_agdd = diff_agdd.astype(np.int16, copy=False)
+
+                agdd_anomaly_path = f"/geo-data/gridded_models/agdd_anomaly/"
+                agdd_anomaly_file_name = f"agdd_anomaly_{anom_date:%Y%m%d}_base_thirtytwo_f.tif"
+                if base == 50:
+                    agdd_anomaly_path = f"/geo-data/gridded_models/agdd_anomaly_50f/"
+                    agdd_anomaly_file_name = f"agdd_anomaly_{anom_date:%Y%m%d}_base_fifty_f.tif"
+                agdd_anomaly_file = agdd_anomaly_path + agdd_anomaly_file_name
+
+                write_raster(agdd_anomaly_file, diff_agdd, -9999, rast_cols, rast_rows, projection, transform)
+
+                agdd_anomaly_table_name = f"agdd_anomaly_{year}"
+                new_table = False
+                save_raster_to_postgis(agdd_anomaly_file, agdd_anomaly_table_name, 4269)
+                set_date_column(agdd_anomaly_table_name, anom_date, new_table)
+                set_scale_column(agdd_anomaly_table_name, 'fahrenheit', new_table)
+                set_base_column(agdd_anomaly_table_name, base, new_table)
+                anom_date = anom_date + timedelta(days=1)
+                # import_six_postgis(six_anomaly_file, six_anomaly_file_name, six_anomaly_table_name, time_series_table_name, plant, phenophase,
+                #                     day)
 
 
 def compute_six_historic_anomalies(climate_data):
@@ -80,6 +138,8 @@ def main():
 
     compute_six_historic_anomalies('ncep')
     compute_six_historic_anomalies('prism')
+    #only have agdd anom for ncep against prism normal
+    compute_agdd_historic_anomalies()
 
     t1 = time.time()
     logging.info('*****************************************************************************')
