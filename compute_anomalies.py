@@ -20,11 +20,11 @@ def compute_agdd_historic_anomalies():
         for year in years:
             anom_date = date(year, 1, 1)
             for doy in range(1,366):
-                agdd_file = f"/geo-data/gridded_models/agdd_anomaly/agdd_anomaly_{anom_date:%Y%m%d}_base_thirtytwo_f.tif"
+                agdd_file = f"/geo-data/gridded_models/agdd/agdd_{anom_date:%Y%m%d}_base_thirtytwo_f.tif"
                 agdd_avg_file = f"/geo-data/gridded_models/avg_agdd/agdd_{doy}_base_thirtytwo_f.tif"
 
                 if base == 50:
-                    agdd_file = f"/geo-data/gridded_models/agdd_anomaly_50f/agdd_anomaly_{anom_date:%Y%m%d}_base_fifty_f.tif"
+                    agdd_file = f"/geo-data/gridded_models/agdd_50f/agdd_{anom_date:%Y%m%d}_base_fifty_f.tif"
                     agdd_avg_file = f"/geo-data/gridded_models/avg_agdd_50f/agdd_{doy}_base_fifty_f.tif"
 
                 agdd_ds = gdal.Open(agdd_file)
