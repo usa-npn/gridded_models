@@ -67,6 +67,10 @@ def photoperiod(upper_left_y):
 
 
 def compute_winter_wheat(start_date, stop_date):
+    
+    #don't want to reset agdd until Jan
+    inSecondYear = False
+
     day = datetime.strptime(start_date, "%Y-%m-%d")
     stop = datetime.strptime(stop_date, "%Y-%m-%d")
 
@@ -76,6 +80,7 @@ def compute_winter_wheat(start_date, stop_date):
     while day <= stop:
 
         if doy == 365:
+            inSecondYear = True
             doy = 0
             agdd = np.zeros_like(tmin)
 
@@ -96,7 +101,7 @@ def compute_winter_wheat(start_date, stop_date):
         except:
             logging.error('could not get temp data, aborting winter wheat computation: ', exc_info=True)
             return
-        if doy == 274:
+        if doy == 274 and not inSecondYear:
             ds = gdal.Open(tmin_tif_path)
             projection = ds.GetProjection()
             transform = ds.GetGeoTransform()
@@ -149,7 +154,7 @@ def main():
     logging.info('***********beginning script compute_winter_wheat.py*****************')
     logging.info('*****************************************************************************')
 
-    start_date = "2020-10-01"
+    start_date = "2021-10-01"
     #stop_date = "2020-10-01"
     today = date.today()
     one_week_into_future = today + timedelta(days=6)
