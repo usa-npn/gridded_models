@@ -127,7 +127,7 @@ def compute_brome(phenophase):
         
         # write the raster to disk
         tif_name = "red_brome_{phenophase}_{day}.tif".format(phenophase=phenophase, day=day.strftime("%Y%m%d"))
-        red_brome_path = "/geo-data/gridded_models/red_brome/" + phenophase + "/" + tif_name
+        red_brome_path = "/geo-data/gridded_models/red_brome/red_brome_" + phenophase + "/" + tif_name
         # winter_wheat_path = "/Users/npn/Documents/geo-data/winter_wheat/" + tif_name
         write_raster(red_brome_path, agdd, -9999, num_lngs, num_lats, projection, transform)
 
