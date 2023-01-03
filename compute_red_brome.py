@@ -83,8 +83,9 @@ def compute_brome(phenophase):
 
     while day <= stop:
 
-        if count == 364:
-            agdd = np.zeros_like(tmin)
+        if doy == 365:
+            doy = 0
+            # agdd = np.zeros_like(tmin)
 
         print(day.strftime("%Y%m%d"))
         print(doy)
