@@ -121,8 +121,7 @@ def compute_brome(phenophase):
         # lat penalties across the lng dimension
         photoperiod_penalty_broadcasted = np.swapaxes(np.repeat(photoperiod_penalty[doy,np.newaxis], 2606, 0),0,1)
         
-        if phenophase == 'flowering':
-            gdd *= photoperiod_penalty_broadcasted
+        gdd *= photoperiod_penalty_broadcasted
         agdd += gdd
         
         # write the raster to disk
