@@ -1,0 +1,1 @@
+https://geoserver.usanpn.org/geoserver/gdd/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=gdd:states&CQL_FILTER=NAME%20IN%20(%27Washington%27,%20%27Idaho%27,%20%27Montana%27,%20%27Oregon%27,%20%27Wyoming%27,%20%27California%27,%20%27Nevada%27,%20%27Utah%27,%20%27Colorado%27,%20%27Arizona%27,%20%27New%20Mexico%27,%20%27Texas%27)&outputFormat=SHAPE-ZIP

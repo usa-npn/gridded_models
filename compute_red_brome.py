@@ -30,6 +30,21 @@ log_path = cfg["log_path"]
 daily_tmin_path = cfg["daily_tmin_path"]
 daily_tmax_path = cfg["daily_tmax_path"]
 
+def clip_to_region(raster_file):
+    brome_files_path = "/geo-data/gridded_models/red_brome/"
+
+    brome_shp_path = Path("/usr/local/scripts/gridded_models/assets/shape_files/brome/states.shp")
+
+    temp_file = brome_files_path + 'temp.tif'
+    shutil.copy(raster_file, temp_file)
+    os.remove(raster_file)
+
+    warp_command = "gdalwarp -cutline {mask_file} -crop_to_cutline -srcnodata 9999 -dstnodata -9999 -t_srs EPSG:4269 {source_file} {dest_file}" \
+        .format(mask_file=brome_shp_path, source_file=temp_file, dest_file=raster_file)
+    ps = subprocess.Popen(warp_command, stdout=subprocess.PIPE, shell=True)
+    ps.wait()
+    os.remove(temp_file)
+
 # returns array[day, lat] = [daylength at each longitude]
 def photoperiod(upper_left_y):
     num_lats = 1228
@@ -129,6 +144,7 @@ def compute_brome(phenophase):
         red_brome_path = "/geo-data/gridded_models/red_brome/red_brome_" + phenophase + "/" + tif_name
         # winter_wheat_path = "/Users/npn/Documents/geo-data/winter_wheat/" + tif_name
         write_raster(red_brome_path, agdd, -9999, num_lngs, num_lats, projection, transform)
+        clip_to_region(red_brome_path)
 
         time_series_table = "red_brome_" + phenophase
         if table_exists(time_series_table):
