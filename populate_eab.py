@@ -8,10 +8,10 @@ eab_adult_url = f'https://uspest.org/CAPS/EAB_cohorts/Misc_output/Earliest_PEMp0
 eab_egg_url = f'https://uspest.org/CAPS/EAB_cohorts/Misc_output/Earliest_PEMe1Excl1_{current_year}1231.tif'
 
 
-with open(f'/geo-data/gridded_models/eab/eab_adult/eab_adult_{date.today().strftime("%Y-%m-%d")}.tif', 'wb') as out_file:
+with open(f'/geo-data/gridded_models/eab/eab_adult/eab_adult_{date.today().strftime("%Y%m%d")}.tif', 'wb') as out_file:
    content = requests.get(eab_adult_url, stream=True).content
    out_file.write(content)
 
-with open(f'/geo-data/gridded_models/eab/eab_egg/eab_egg_{date.today().strftime("%Y-%m-%d")}.tif', 'wb') as out_file:
+with open(f'/geo-data/gridded_models/eab/eab_egg/eab_egg_{date.today().strftime("%Y%m%d")}.tif', 'wb') as out_file:
    content = requests.get(eab_egg_url, stream=True).content
    out_file.write(content)
