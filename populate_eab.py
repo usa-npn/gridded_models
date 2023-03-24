@@ -30,7 +30,7 @@ with open(filename, 'wb') as out_file:
    time_series_table = 'eab_adult'
    tif_name = f'eab_adult_{date.today().strftime("%Y%m%d")}.tif'
    if table_exists(time_series_table):
-      update_time_series(time_series_table, tif_name, today_as_string)
+      update_time_series(time_series_table, tif_name, today)
 set_srs(filename)
 
 filename = f'/geo-data/gridded_models/eab/eab_egg_hatch/eab_egg_hatch_{date.today().strftime("%Y%m%d")}.tif'
@@ -40,5 +40,5 @@ with open(filename, 'wb') as out_file:
    time_series_table = 'eab_egg_hatch'
    tif_name = f'eab_egg_hatch_{date.today().strftime("%Y%m%d")}.tif'
    if table_exists(time_series_table):
-      update_time_series(time_series_table, tif_name, today_as_string)
+      update_time_series(time_series_table, tif_name, today)
 set_srs(filename)
