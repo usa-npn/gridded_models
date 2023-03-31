@@ -9,8 +9,8 @@ today = date.today()
 current_year = today.year
 today_as_string = today.strftime("%Y-%m-%d")
 
-eab_adult_url = f'https://uspest.org/CAPS/EAB_cohorts/Misc_output/Earliest_PEMp0Excl1_{current_year}1231.tif'
-eab_egg_url = f'https://uspest.org/CAPS/EAB_cohorts/Misc_output/Earliest_PEMe1Excl1_{current_year}1231.tif'
+eab_adult_url = f'https://uspest.org/CAPS/EAB2_cohorts/Misc_output/Earliest_PEMp0Excl1_{current_year}1231.tif'
+eab_egg_url = f'https://uspest.org/CAPS/EAB2_cohorts/Misc_output/Earliest_PEMe1Excl1_{current_year}1231.tif'
 
 def set_srs(tif_file):
     temp_file = str.replace(tif_file, ".tif", "_warpme.tif")
