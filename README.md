@@ -1,6 +1,6 @@
 # USA-NPN gridded models platform
 
-This repository contains the python code used to generate the [USA-NPN phenology maps.](https://www.usanpn.org/data/phenology_maps) 
+This repository contains the python code used to generate the [USA-NPN phenology maps.](https://www.usanpn.org/data/maps)
 
 
 ## Overview
