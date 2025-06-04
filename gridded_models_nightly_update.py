@@ -115,7 +115,12 @@ def importClimateData():
         logging.info('importing rtma hourly data')
         download_hourly_temps('rtma', region)
         logging.info('importing urma hourly data')
-        download_hourly_temps('urma', region)
+        if region != 'alaska':
+            download_hourly_temps('urma', region)
+    
+    logging.info('importing urma hourly data')
+    ##download_hourly_temps('urma', 'conus')
+    ##download_hourly_temps('urma', 'alaska')
 
     # download and import rtma data for the date range that was missed for any reason
     # this looks back one week,
@@ -135,6 +140,7 @@ def importClimateData():
         logging.info('computing daily temperatures based on ncep hourly data')
         hour_shift = -12
         compute_tmin_tmax(min(beginning_of_this_year, one_week_ago), one_week_into_future, hour_shift, 7, region)
+        compute_tmin_tmax(date(2022, 12, 31), one_week_into_future, hour_shift, 7, region)
     
     logging.info('computing daily ncep tavg')
     try:
@@ -259,16 +265,16 @@ def importCustomPestMapAgdd():
 
 def importQcData():
     # populates various climate variables in the climate agdds mysql db
-    urma_start = one_month_ago #three_days_ago
+    urma_start = beginning_of_this_year #one_month_ago #three_days_ago
     urma_end = today
-    acis_start = one_month_ago #one_week_ago
+    acis_start = beginning_of_this_year #one_month_ago #one_week_ago
     acis_end = today
-    prism_start = one_month_ago #one_week_ago
+    prism_start = beginning_of_this_year #one_month_ago #one_week_ago
     prism_end = three_days_ago
     logging.info('populating agdd qc')
     populate_agdd_qc(urma_start, urma_end, acis_start, acis_end, prism_start, prism_end)
     logging.info('populating six qc')
-    populate_six_qc(beginning_of_this_year, urma_end, beginning_of_this_year, acis_end, beginning_of_this_year, prism_end)
+    #populate_six_qc(beginning_of_this_year, urma_end, beginning_of_this_year, acis_end, beginning_of_this_year, prism_end)
 
 
 # This is the main gridded models script. It runs nightly to both pull climate data and generate various rasters which
@@ -295,7 +301,7 @@ def main():
     logging.info(gc.get_count())
     
     importSix()    
-    #importSixReturnInterval()
+    importSixReturnInterval()
     t4 = time.time()
     
     importQcData()

@@ -40,7 +40,7 @@ def populate_six_30yr_average(plant, phenophase, climateToWarpTo):
 
     # calculate average over 30 years by grabbing the year-01-01 map from each year (01-01 represents entire year)
     count = 0
-    for year in range(1981, 2011):
+    for year in range(1991, 2021):
         query = """
           SELECT ST_AsGDALRaster(ST_Union(rast), 'Gtiff')
           FROM %s

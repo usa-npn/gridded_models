@@ -354,6 +354,7 @@ def dynamic_double_sine_agdd(start_date, num_days, lct, uct, climate_data_provid
                 file_path = save_path + file_name
                 write_raster(file_path, dailyAgdd, no_data_value, rast_cols, rast_rows, projection, transform)
                 print('file saved to: ' + file_path)
+                # for asian long horn beetle, we want to also save to image mosaic directory and into postgres db
                 dailyAgdd = None
 
             first = False
@@ -681,7 +682,7 @@ def import_average_agdd(first_year, last_year, base):
                 gdd = (tmin + tmax) / 2 - base
                 gdd[gdd < 0] = 0
 
-                if agdd[year_idx] == None:
+                if year is first_year:
                     agdd[year_idx] = gdd
                 else:
                     agdd[year_idx] += gdd
