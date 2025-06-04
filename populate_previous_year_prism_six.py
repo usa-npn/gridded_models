@@ -7,11 +7,16 @@ import os.path
 import smtplib
 from email.mime.text import MIMEText
 from spring_index.spring_index_util import import_prism_on_prism_six_anomaly
+import psycopg2
+
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 log_path = cfg["log_path"]
 email = cfg["email"]
+
+db = cfg["postgis"]
+conn = psycopg2.connect(dbname=db["db"], port=db["port"], user=db["user"], password=db["password"], host=db["host"])
 
 
 def email_log_results(log_to_email, from_address, to_address, subject):
@@ -39,7 +44,7 @@ def populate_yearly_prism_six(year):
     phenophases = ['leaf', 'bloom']
 
     # compute individual plants
-    driver.Six.load_daily_climate_data(start_date, end_date, climate_data_provider, 'conus')
+    driver.Six.load_daily_climate_data(start_date, end_date, climate_data_provider, 'conus', conn)
     for plant in plants:
         for phenophase in phenophases:
             driver.Six.compute_daily_index(plant, phenophase)
