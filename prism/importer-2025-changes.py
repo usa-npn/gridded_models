@@ -27,6 +27,7 @@ import logging
 from datetime import datetime, date, timedelta
 from pathlib import Path
 import time
+import zipfile
 
 # Configuration
 BASE_URL = "https://services.nacse.org/prism/data/get/us/4km"  # PRISM web service base URL
@@ -35,9 +36,9 @@ BASE_DOWNNLOAD_DIR = Path("/geo-data/climate_data/prism")  # Base directory for 
 
 # Variables to download with their corresponding output directories
 VARIABLES = {
-    'ppt': 'prism_ppt',
-    'tmin': 'prism_tmin', 
-    'tmax': 'prism_tmax'
+    'ppt': 'prism_ppt'
+    # 'tmin': 'prism_tmin', 
+    # 'tmax': 'prism_tmax'
 }
 
 def setup_logger():
@@ -92,6 +93,7 @@ def generate_date_list(start_date, end_date):
 def download_prism_data_webservice(target_date, variable, logger):
     """
     Download PRISM data for a specific date and variable using web services.
+    Downloads zip file and extracts contents to the output directory.
     """
     date_str = target_date.strftime("%Y%m%d")
     output_dir = BASE_DOWNNLOAD_DIR.joinpath(VARIABLES[variable])
@@ -99,13 +101,16 @@ def download_prism_data_webservice(target_date, variable, logger):
     # Web service URL format (this is an example - actual API may differ)
     url = f"{BASE_URL}/{variable}/{date_str}"
     
-    # New PRISM filename format (COG)
-    output_filename = f"prism_{variable}_us_4km_{date_str}.tif"
+    # PRISM zip filename format
+    output_filename = f"prism_{variable}_us_4km_{date_str}.zip"
     output_path = os.path.join(output_dir, output_filename)
     
-    # Skip if file already exists
-    if os.path.exists(output_path):
-        logger.info(f"✓ {output_filename} already exists, skipping")
+    # Check if the extracted .tif file already exists (skip download if so)
+    # note that even thogh the zip file is named with 4km, the extracted file uses 25m 
+    tif_filename = f"prism_{variable}_us_25m_{date_str}.tif"
+    tif_path = os.path.join(output_dir, tif_filename)
+    if os.path.exists(tif_path):
+        logger.info(f"✓ {tif_filename} already exists, skipping")
         return True
     
     try:
@@ -118,11 +123,40 @@ def download_prism_data_webservice(target_date, variable, logger):
         response = requests.get(url, headers=headers, timeout=60)
         response.raise_for_status()
         
+        # Save the zip file
         with open(output_path, 'wb') as f:
             f.write(response.content)
         
         logger.info(f"✓ Successfully downloaded {output_filename}")
-        return True
+        
+        # Extract the zip file
+        try:
+            logger.info(f"Extracting {output_filename}...")
+            with zipfile.ZipFile(output_path, 'r') as zip_ref:
+                zip_ref.extractall(output_dir)
+            logger.info(f"✓ Successfully extracted {output_filename}")
+            
+            # Remove the zip file after successful extraction
+            os.remove(output_path)
+            logger.info(f"✓ Removed zip file {output_filename}")
+            
+            return True
+            
+        except zipfile.BadZipFile as e:
+            logger.error(f"Failed to extract {output_filename}: Invalid zip file - {e}")
+            # Delete the corrupted zip file
+            if os.path.exists(output_path):
+                os.remove(output_path)
+                logger.info(f"Deleted corrupted zip file {output_filename}")
+            return False
+            
+        except Exception as e:
+            logger.error(f"Failed to extract {output_filename}: {e}")
+            # Delete the zip file on extraction failure
+            if os.path.exists(output_path):
+                os.remove(output_path)
+                logger.info(f"Deleted zip file {output_filename} due to extraction failure")
+            return False
         
     except requests.exceptions.RequestException as e:
         logger.error(f"Failed to download {variable.upper()} via web service for {date_str}: {e}")
