@@ -22,11 +22,11 @@ from prism.importer import get_prism_data_outdb
 
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
-    cfg = yaml.load(ymlfile)
+    cfg = yaml.safe_load(ymlfile)
 log_path = cfg["log_path"]
 
 def populate_precip():
-    start = date(2019, 1, 1)
+    start = date(2025, 2, 1)
     end = date.today() - timedelta(days=1)
     get_prism_data_outdb(start, end, ['ppt'])
 
@@ -118,7 +118,7 @@ def main():
 
     populate_precip()
 
-    start_date = "2020-01-01"
+    start_date = "2025-01-01"
     # stop_date = "2019-12-27"
     stop_date = date.today().strftime("%Y-%m-%d")
     compute_buffelgrass(start_date, stop_date)
