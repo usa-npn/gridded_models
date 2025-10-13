@@ -46,16 +46,10 @@ def clip_to_arizona(raster_file):
     os.remove(temp_file)
 
 def get_prism_precip_file_name(day):
-    precip_files_path = "/geo-data/climate_data/prism/prism_data/prism_ppt/"
-    stable_file_name = precip_files_path + "PRISM_ppt_stable_4kmD2_{date}_bil.tif".format(date=day.strftime("%Y%m%d"))
-    provisional_file_name = precip_files_path + "PRISM_ppt_provisional_4kmD2_{date}_bil.tif".format(date=day.strftime("%Y%m%d"))
-    early_file_name = precip_files_path + "PRISM_ppt_early_4kmD2_{date}_bil.tif".format(date=day.strftime("%Y%m%d"))
-    if Path(stable_file_name).is_file():
-        return stable_file_name
-    elif Path(provisional_file_name).is_file():
-        return provisional_file_name
-    elif Path(early_file_name).is_file():
-        return early_file_name
+    precip_files_path = "/geo-data/climate_data/prism/prism_ppt/"
+    file_name = precip_files_path + "prism_ppt_us_4km_{date}.tif".format(date=day.strftime("%Y%m%d"))
+    if Path(file_name).is_file():
+        return file_name
     else:
         return None
 
