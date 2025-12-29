@@ -154,7 +154,7 @@ def main():
     logging.info('***********beginning script compute_winter_wheat.py*****************')
     logging.info('*****************************************************************************')
 
-    start_date = "2021-10-01"
+    start_date = "2024-10-01"
     #stop_date = "2020-10-01"
     today = date.today()
     one_week_into_future = today + timedelta(days=6)

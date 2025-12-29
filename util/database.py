@@ -10,7 +10,7 @@ import mysql.connector
 error_log = get_error_log()
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as ymlfile:
-    cfg = yaml.load(ymlfile)
+    cfg = yaml.safe_load(ymlfile)
 db = cfg["postgis"]
 
 
@@ -108,8 +108,8 @@ def save_raster_to_postgis(raster_path, table_name, srid, tile=True):
         else:
             import_command = "raster2pgsql -a -R -F {tile_arg}{file} public.{table}"\
                 .format(file=raster_path, table=table_name, tile_arg=tile_arg)
-    import_command2 = "psql -h {host} -p {port} -d {database} -U {user} --no-password"\
-        .format(host=db["host"], port=db["port"], database=db["db"], user=db["user"])
+    import_command2 = "PGPASSWORD={password} psql -h {host} -p {port} -d {database} -U {user}"\
+        .format(host=db["host"], port=db["port"], database=db["db"], user=db["user"], password=db["password"])
 
     # for windows machine (also works on linux, but i think has mem leak)
     # ps = subprocess.Popen(import_command, stdout=subprocess.PIPE, shell=True)
@@ -117,6 +117,8 @@ def save_raster_to_postgis(raster_path, table_name, srid, tile=True):
     # ps.wait()
 
     # for linux machine
+    print(import_command)
+    print(import_command2)
     subprocess.check_output(import_command + " | " + import_command2, shell=True)
 
     # get rid of generated enforce_max_extent_rast constraint because rounding error was preventing some rasters from being saved to db

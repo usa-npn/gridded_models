@@ -81,12 +81,12 @@ def compute_brome(phenophase):
 
     if phenophase == 'flowering':
         base = 23
-        start_date = "2022-12-01"
+        start_date = "2024-12-01"
         doy_start = 335 # day of year for dec 1
 
     else: #senescence
         base = 32
-        start_date = "2023-01-01"
+        start_date = "2025-01-01"
         doy_start = 1 # day of year for jan 1
 
     doy = doy_start - 1

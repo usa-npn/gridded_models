@@ -11,7 +11,8 @@ import psycopg2
 
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
-    cfg = yaml.load(ymlfile)
+    cfg = yaml.safe_load(ymlfile)
+    #cfg = yaml.load(ymlfile)
 log_path = cfg["log_path"]
 email = cfg["email"]
 
@@ -88,7 +89,7 @@ def main():
 
     today = date.today()
     current_year = today.year
-    previous_year = current_year - 1
+    previous_year = current_year
 
     logging.info('populating previous year si-x')
     populate_yearly_prism_six(previous_year)

@@ -26,7 +26,7 @@ with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml'))
 log_path = cfg["log_path"]
 
 def populate_precip():
-    start = date(2025, 2, 1)
+    start = date(2025, 9, 1)
     end = date.today() - timedelta(days=1)
     get_prism_data_outdb(start, end, ['ppt'])
 
@@ -37,6 +37,9 @@ def clip_to_arizona(raster_file):
 
     temp_file = buffelgrass_files_path + 'temp.tif'
     shutil.copy(raster_file, temp_file)
+    print('testing--------')
+    print(raster_file)
+    print(temp_file)
     os.remove(raster_file)
 
     warp_command = "gdalwarp -cutline {mask_file} -crop_to_cutline -srcnodata 9999 -dstnodata -9999 -t_srs EPSG:4269 {source_file} {dest_file}" \
@@ -47,7 +50,8 @@ def clip_to_arizona(raster_file):
 
 def get_prism_precip_file_name(day):
     precip_files_path = "/geo-data/climate_data/prism/prism_ppt/"
-    file_name = precip_files_path + "prism_ppt_us_4km_{date}.tif".format(date=day.strftime("%Y%m%d"))
+    file_name = precip_files_path + "prism_ppt_us_25m_{date}.tif".format(date=day.strftime("%Y%m%d"))
+    print(file_name)
     if Path(file_name).is_file():
         return file_name
     else:
@@ -110,9 +114,9 @@ def main():
     logging.info('***********beginning script compute_buffelgrass.py*****************')
     logging.info('*****************************************************************************')
 
-    populate_precip()
+    #populate_precip()
 
-    start_date = "2025-01-01"
+    start_date = "2025-10-01"
     # stop_date = "2019-12-27"
     stop_date = date.today().strftime("%Y-%m-%d")
     compute_buffelgrass(start_date, stop_date)

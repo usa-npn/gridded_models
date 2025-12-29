@@ -36,9 +36,9 @@ BASE_DOWNNLOAD_DIR = Path("/geo-data/climate_data/prism")  # Base directory for 
 
 # Variables to download with their corresponding output directories
 VARIABLES = {
-    'ppt': 'prism_ppt'
-    # 'tmin': 'prism_tmin', 
-    # 'tmax': 'prism_tmax'
+    'ppt': 'prism_ppt',
+    'tmin': 'prism_tmin', 
+    'tmax': 'prism_tmax'
 }
 
 def setup_logger():

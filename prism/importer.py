@@ -24,7 +24,7 @@ import re
 
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as yml_file:
-    cfg = yaml.load(yml_file)
+    cfg = yaml.safe_load(yml_file)
 db = cfg["postgis"]
 prism_path = cfg["prism_path"]
 prism_archive_path = cfg["prism_archive_path"]
@@ -76,8 +76,8 @@ def postgis_import(filename, raster_date, climate_variable):
     else:
         import_command = "raster2pgsql -s 4269 -a -M -F -t auto {file} public.{table}"\
             .format(file=filename, table=table_name)
-    import_command2 = "psql -h {host} -p {port} -d {database} -U {user} --no-password"\
-        .format(host=db["host"], port=db["port"], database=db["db"], user=db["user"])
+    import_command2 = "PGPASSWORD={password} psql -h {host} -p {port} -d {database} -U {user}"\
+        .format(host=db["host"], port=db["port"], database=db["db"], user=db["user"], password=db["password"])
     ps = subprocess.Popen(import_command, stdout=subprocess.PIPE, shell=True)
     subprocess.check_output(import_command2, stdin=ps.stdout, shell=True)
     ps.wait()

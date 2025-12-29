@@ -3,7 +3,7 @@ import yaml
 import os.path
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as ymlfile:
-    cfg = yaml.load(ymlfile)
+    cfg = yaml.safe_load(ymlfile)
 log_path = cfg["log_path"]
 
 def get_error_log():

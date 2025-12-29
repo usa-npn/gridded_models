@@ -8,7 +8,7 @@ from osgeo import gdal
 
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as ymlfile:
-    cfg = yaml.load(ymlfile)
+    cfg = yaml.safe_load(ymlfile)
 
 def dynamic_agdd_in_db(agdd_table_name, start_date, num_days):
 

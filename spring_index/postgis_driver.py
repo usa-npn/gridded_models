@@ -2,6 +2,7 @@
 import psycopg2
 from psycopg2.extensions import AsIs
 from osgeo import gdal
+from osgeo import osr
 import numpy as np
 from datetime import date
 from datetime import timedelta as td
@@ -10,7 +11,6 @@ from spring_index.spring_index import spring_index
 from spring_index.spring_index import spring_index_hourly
 import os.path
 import yaml
-import osr
 from util.raster import *
 import time
 import shutil
@@ -21,7 +21,7 @@ class Six:
     base_temp = 31
 
     with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as ymlfile:
-        cfg = yaml.load(ymlfile)
+        cfg = yaml.safe_load(ymlfile)
     db = cfg["postgis"]
     #conn = psycopg2.connect(dbname=db["db"], port=db["port"], user=db["user"],
     #                    password=db["password"], host=db["host"], keepalives=1, keepalives_idle=30,
@@ -54,7 +54,7 @@ class Six:
         vsipath = '/vsimem/from_postgis'
         table_name = climate_data_provider + '_' + str(year)
         with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as ymlfile:
-            cfg = yaml.load(ymlfile)
+            cfg = yaml.safe_load(ymlfile)
         db = cfg["postgis"]
         conn = psycopg2.connect(dbname=db["db"], port=db["port"], user=db["user"], password=db["password"], host=db["host"])
         for day in range(0, num_days):
@@ -393,7 +393,7 @@ class Six:
             table_name = climate_source + '_spring_index'
 
         with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as ymlfile:
-            cfg = yaml.load(ymlfile)
+            cfg = yaml.safe_load(ymlfile)
         db = cfg["postgis"]
         conn = psycopg2.connect(dbname=db["db"], port=db["port"], user=db["user"], password=db["password"], host=db["host"])
         curs = conn.cursor()
@@ -426,8 +426,8 @@ class Six:
             import_command = "raster2pgsql -a -R -F -k {tilearg} {file} public.{table}"\
                 .format(tilearg=tile_arg, file=file_path, table=table_name)
 
-        import_command2 = "psql -h {host} -p {port} -d {database} --username={user}"\
-            .format(host=Six.db["host"], port=Six.db["port"], database=Six.db["db"], user=Six.db["user"])
+        import_command2 = "PGPASSWORD={password} psql -h {host} -p {port} -d {database} --username={user}"\
+            .format(host=Six.db["host"], port=Six.db["port"], database=Six.db["db"], user=Six.db["user"], password=Six.db["password"])
         ps = subprocess.Popen(import_command, stdout=subprocess.PIPE, shell=True)
         subprocess.check_output(import_command2, stdin=ps.stdout, shell=True)
         ps.wait()

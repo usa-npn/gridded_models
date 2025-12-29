@@ -23,7 +23,7 @@ socket.setdefaulttimeout(timeout)
 
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'config.yml')), 'r') as ymlfile:
-    cfg = yaml.load(ymlfile)
+    cfg = yaml.safe_load(ymlfile)
 
 
 def retrieve_from_url(url_to_get, path_to_save):
@@ -135,7 +135,7 @@ def download_forecast(region):
             else:
                 logging.warning('invalid element: %s', element)
                 continue
-            extract_command = "gdal_translate -b {band_number} {source_file} {dest_file}"\
+            extract_command = "gdal_translate -if GRIB -of GRIB -b {band_number} {source_file} {dest_file}"\
                 .format(band_number=band, source_file=working_path + file_name, dest_file=file)
             ps = subprocess.Popen(extract_command, stdout=subprocess.PIPE, shell=True)
             ps.wait()

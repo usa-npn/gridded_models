@@ -18,7 +18,7 @@ import subprocess
 
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
-    cfg = yaml.load(ymlfile)
+    cfg = yaml.safe_load(ymlfile)
 log_path = cfg["log_path"]
 
 
