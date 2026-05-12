@@ -12,7 +12,7 @@ from util.log_manager import get_error_log
 
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
-    cfg = yaml.load(ymlfile)
+    cfg = yaml.safe_load(ymlfile)
 log_path = cfg["log_path"]
 
 
@@ -28,23 +28,25 @@ def main():
     beginning_of_this_year = date(current_year, 1, 1)
     one_year_ago = today - timedelta(days=365)
 
-    regions = ['conus', 'alaska']
+    #regions = ['conus', 'alaska']
+    regions = ['conus']
+    regions = ['alaska']
 
     logging.info(' ')
     logging.info('*****************************************************************************')
     logging.info('***********beginning script populate_climate_data.py*****************')
     logging.info('*****************************************************************************')
 
-    for region in regions:
+    #####for region in regions:
         # download and import ndfd forecast temps for the next week
         # overwrites all files previously downloaded files
-        download_forecast(region)
+        #####download_forecast(region)
 
         # downloads hourly rtma/urma temps into our postgis db for the past 24 hours (each hour represents GMT)
         # overwrites all files previously downloaded files
-        download_hourly_temps('rtma', region)
-        if region != 'alaska':
-            download_hourly_temps('urma', region)
+        #####download_hourly_temps('rtma', region)
+        #####if region != 'alaska':
+            #####download_hourly_temps('urma', region)
 
     # download and import rtma data for the date range that was missed for any reason
     # this looks back one week,
@@ -60,8 +62,8 @@ def main():
     # urma -> urma/rtma -> forecast
     # hour_shift makes data match prism (prism day goes from -12 utc to +12 utc)
     hour_shift = -12
-    for region in regions:
-        compute_tmin_tmax(min(beginning_of_this_year, one_week_ago), one_week_into_future, hour_shift, 7, region)
+    #####for region in regions:
+        #####compute_tmin_tmax(min(beginning_of_this_year, one_week_ago), one_week_into_future, hour_shift, 7, region)
 
     # POPULATE PRISM
     # Specify the climate elements you want to download as well as the date range to download those elements for:

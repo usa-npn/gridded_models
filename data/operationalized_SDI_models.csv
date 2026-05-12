@@ -1,0 +1,3 @@
+common_name,latin_name,functional_type,lifeform_description,event,cohort,pr_model,group,group_type,reg2_type,si_model,t0,T_base,t0_chill,T_min,T_opt,T_max,C_req,f,F_crit,alpha,p_alpha,beta,p_beta,gamma,p_gamma,delta,p_delta,mae,mbe
+Black Cherry,Prunus serotina,Deciduous broadleaf,tree,bloom,Late bloom,TT,,,,NOSPL,62,9.44347557,NA,NA,NA,NA,NA,NA,176.9677373,4.528331589,2.27E-88,0.037279527,4.37E-31,NA,NA,NA,NA,7.594827586,-1.698275862
+Common Snowberry,Symphoricarpos albus,Deciduous broadleaf,shrub,bloom,Late bloom,PTT,,,MAT,NOSPL_REG2MAT,62,1.77050403,NA,NA,NA,NA,NA,NA,506.4768746,3.929804101,4.87E-16,0.018233303,1.85E-04,-27.82090152,4.01E-06,2.624376872,2.29E-06,11.47316575,-0.079586875

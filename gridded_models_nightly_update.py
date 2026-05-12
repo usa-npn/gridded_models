@@ -36,7 +36,7 @@ agdd_bases = [32, 50]
 
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
-    cfg = yaml.load(ymlfile)
+    cfg = yaml.safe_load(ymlfile)
 log_path = cfg["log_path"]
 db = cfg["postgis"]
 conn = psycopg2.connect(dbname=db["db"], port=db["port"], user=db["user"], password=db["password"], host=db["host"])
@@ -292,7 +292,7 @@ def main():
     importAgdd()
     t2 = time.time()
 
-    importCustomPestMapAgdd()
+    #importCustomPestMapAgdd()
     t3 = time.time()
 
     logging.info(gc.get_threshold())
@@ -300,11 +300,11 @@ def main():
     gc.collect()
     logging.info(gc.get_count())
     
-    importSix()    
-    importSixReturnInterval()
+    #importSix()    
+    #importSixReturnInterval()
     t4 = time.time()
     
-    importQcData()
+    ##importQcData()
     t5 = time.time()
 
     logging.info('***time stats***')

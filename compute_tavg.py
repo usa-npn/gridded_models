@@ -87,6 +87,43 @@ def compute_tavg_from_prism_zips(start_date, stop_date):
         day = day + timedelta(days=1)
 
 
+def compute_prism_tavg():
+    tmax_files_path = "/geo-data/climate_data/prism/prism_tmax/"
+    tmin_files_path = "/geo-data/climate_data/prism/prism_tmin/"
+    tavg_files_path = "/geo-data/climate_data/prism/prism_tavg/"
+
+    os.makedirs(tavg_files_path, exist_ok=True)
+
+    tavg_table_name = "prism_tavg"
+    new_table = not table_exists(tavg_table_name)
+
+    tmin_files = sorted(glob.glob(os.path.join(tmin_files_path, "prism_tmin_us_25m_*.tif")))
+    # exclude aux files
+    tmin_files = [f for f in tmin_files if not f.endswith('.aux.xml')]
+
+    for tmin_tiffile in tmin_files:
+        match = re.search(r'prism_tmin_us_25m_(\d{8})\.tif$', os.path.basename(tmin_tiffile))
+        if not match:
+            continue
+        date_str = match.group(1)
+        day = datetime.strptime(date_str, "%Y%m%d")
+
+        tmax_tiffile = os.path.join(tmax_files_path, "prism_tmax_us_25m_{}.tif".format(date_str))
+        avg_tiffile = os.path.join(tavg_files_path, "prism_tavg_us_25m_{}.tif".format(date_str))
+
+        if not os.path.exists(tmax_tiffile):
+            continue
+
+        if os.path.exists(avg_tiffile):
+            continue
+
+        subprocess.call("gdal_calc.py -A " + tmin_tiffile + " -B " + tmax_tiffile + " --outfile=" + avg_tiffile + " --NoDataValue=-9999 --calc='((A*1.8+32)+(B*1.8+32))/2'", shell=True)
+
+        save_raster_to_postgis(avg_tiffile, tavg_table_name, 4269)
+        set_date_column(tavg_table_name, day, new_table)
+        new_table = False
+
+
 def compute_ncep_tavg(start_date, stop_date):
     tmax_files_path = "/geo-data/climate_data/daily_data/tmax/"
     tmin_files_path = "/geo-data/climate_data/daily_data/tmin/"
@@ -139,9 +176,11 @@ def main():
     #start_date = "2019-01-01"
     #stop_date = "2019-01-31"
     #compute_ncep_tavg(start_date, stop_date)
-    start_date = datetime.today() - timedelta(days=7)
-    stop_date = datetime.today() + timedelta(days=6)
-    compute_ncep_tavg(start_date.strftime('%Y-%m-%d'), stop_date.strftime('%Y-%m-%d'))
+    ##start_date = datetime.today() - timedelta(days=7)
+    ##stop_date = datetime.today() + timedelta(days=6)
+    ##compute_ncep_tavg(start_date.strftime('%Y-%m-%d'), stop_date.strftime('%Y-%m-%d'))
+
+    compute_prism_tavg()
 
     t1 = time.time()
     logging.info('*****************************************************************************')

@@ -4,6 +4,8 @@ from util.database import update_time_series
 from util.database import table_exists
 import subprocess
 import os.path
+import numpy as np
+from osgeo import gdal
 
 today = date.today()
 current_year = today.year
@@ -23,6 +25,17 @@ def set_srs(tif_file):
     ps.wait()
     os.remove(temp_file)
 
+
+def fix_negative2_nodata(tif_file):
+    """Replace -2 values with nodata (nan) in the raster."""
+    ds = gdal.Open(tif_file, gdal.GA_Update)
+    band = ds.GetRasterBand(1)
+    data = band.ReadAsArray()
+    data[data == -2] = np.nan
+    band.WriteArray(data)
+    band.FlushCache()
+    ds = None
+
 filename = f'/geo-data/gridded_models/slf/slf_adult/slf_adult_{date.today().strftime("%Y%m%d")}.tif'
 with open(filename, 'wb') as out_file:
    content = requests.get(slf_adult_url, stream=True).content
@@ -32,6 +45,7 @@ with open(filename, 'wb') as out_file:
    if table_exists(time_series_table):
       update_time_series(time_series_table, tif_name, today)
 set_srs(filename)
+fix_negative2_nodata(filename)
 
 filename = f'/geo-data/gridded_models/slf/slf_egg_hatch/slf_egg_hatch_{date.today().strftime("%Y%m%d")}.tif'
 with open(filename, 'wb') as out_file:
@@ -42,3 +56,4 @@ with open(filename, 'wb') as out_file:
    if table_exists(time_series_table):
       update_time_series(time_series_table, tif_name, today)
 set_srs(filename)
+fix_negative2_nodata(filename)

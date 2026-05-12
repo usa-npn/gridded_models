@@ -25,10 +25,10 @@ from spring_index.solar_declination import solar_declination
 
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.yml')), 'r') as ymlfile:
-    cfg = yaml.load(ymlfile)
+    cfg = yaml.safe_load(ymlfile)
 log_path = cfg["log_path"]
-daily_tmin_path = cfg["daily_tmin_path"]
-daily_tmax_path = cfg["daily_tmax_path"]
+prism_tmin_path = "/geo-data/climate_data/prism/prism_tmin/"
+prism_tmax_path = "/geo-data/climate_data/prism/prism_tmax/"
 
 def vernalization_days(tavg):
     vd = tavg.copy()
@@ -40,8 +40,8 @@ def vernalization_days(tavg):
 
 # returns array[day, lat] = [daylength at each longitude]
 def photoperiod(upper_left_y):
-    num_lats = 1228
-    #num_longs = 2606
+    num_lats = 621
+    #num_longs = 1405
     day_max = 365
 
     ydim = 0.04166666666667
@@ -87,10 +87,8 @@ def compute_winter_wheat(start_date, stop_date):
         print(day.strftime("%Y%m%d"))
         print(doy)
 
-        tmin_tif_path = daily_tmin_path + "tmin_{day}.tif".format(day=day.strftime("%Y%m%d"))
-        tmax_tif_path = daily_tmax_path + "tmax_{day}.tif".format(day=day.strftime("%Y%m%d"))
-        # tmin_tif_path = "/Users/npn/Documents/geo-data/tmin_tmax/tmin_{day}.tif".format(day=day.strftime("%Y%m%d"))
-        # tmax_tif_path = "/Users/npn/Documents/geo-data/tmin_tmax/tmax_{day}.tif".format(day=day.strftime("%Y%m%d"))
+        tmin_tif_path = prism_tmin_path + "prism_tmin_us_25m_{day}.tif".format(day=day.strftime("%Y%m%d"))
+        tmax_tif_path = prism_tmax_path + "prism_tmax_us_25m_{day}.tif".format(day=day.strftime("%Y%m%d"))
         try:
             tmin = get_climate_data_from_file(tmin_tif_path, temp_unit)
             tmax = get_climate_data_from_file(tmax_tif_path, temp_unit)
@@ -125,7 +123,7 @@ def compute_winter_wheat(start_date, stop_date):
         gdd[gdd < 0] = 0
         # this is to transform dimensions (doy, lat) -> (lat, lng) by repeating the
         # lat penalties across the lng dimension
-        photoperiod_penalty_broadcasted = np.swapaxes(np.repeat(photoperiod_penalty[doy,np.newaxis], 2606, 0),0,1)
+        photoperiod_penalty_broadcasted = np.swapaxes(np.repeat(photoperiod_penalty[doy,np.newaxis], 1405, 0),0,1)
         
         penalties = np.where((vd_accum < 50) & (photoperiod_penalty_broadcasted > vd_penalty), vd_penalty, photoperiod_penalty_broadcasted)
         gdd *= penalties
@@ -154,11 +152,17 @@ def main():
     logging.info('***********beginning script compute_winter_wheat.py*****************')
     logging.info('*****************************************************************************')
 
-    start_date = "2024-10-01"
-    #stop_date = "2020-10-01"
-    today = date.today()
-    one_week_into_future = today + timedelta(days=6)
-    stop_date = one_week_into_future.strftime("%Y-%m-%d")
+    start_date = "2025-10-01"
+    tmin_files = sorted(glob.glob(prism_tmin_path + "prism_tmin_us_25m_*.tif"))
+    tmax_files = sorted(glob.glob(prism_tmax_path + "prism_tmax_us_25m_*.tif"))
+    tmin_dates = set(re.search(r'(\d{8})\.tif$', f).group(1) for f in tmin_files if re.search(r'(\d{8})\.tif$', f))
+    tmax_dates = set(re.search(r'(\d{8})\.tif$', f).group(1) for f in tmax_files if re.search(r'(\d{8})\.tif$', f))
+    common_dates = sorted(tmin_dates & tmax_dates)
+    if not common_dates:
+        logging.error('No PRISM tmin/tmax files found, aborting.')
+        return
+    stop_date = datetime.strptime(common_dates[-1], "%Y%m%d").strftime("%Y-%m-%d")
+    logging.info('Most recent PRISM date with both tmin and tmax: %s', stop_date)
     compute_winter_wheat(start_date, stop_date)
 
     t1 = time.time()
